@@ -1,6 +1,6 @@
 import Foundation
 
-struct LearningLog: Identifiable, Codable {
+struct LearningLog: Identifiable, Codable, Hashable {
     let id: UUID
     let title: String
     let description: String
@@ -28,6 +28,14 @@ struct LearningLog: Identifiable, Codable {
         self.reflections = []
         self.isPublic = isPublic
     }
+    
+    static func == (lhs: LearningLog, rhs: LearningLog) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
 }
 
 enum LearningCategory: String, Codable, CaseIterable {
@@ -50,7 +58,7 @@ enum LearningCategory: String, Codable, CaseIterable {
     }
 }
 
-struct Skill: Identifiable, Codable {
+struct Skill: Identifiable, Codable, Hashable {
     let id: UUID
     let name: String
     let level: SkillLevel
@@ -69,7 +77,7 @@ enum SkillLevel: String, Codable {
     case expert = "エキスパート"
 }
 
-struct Reflection: Identifiable, Codable {
+struct Reflection: Identifiable, Codable, Hashable {
     let id: UUID
     let content: String
     let createdAt: Date
