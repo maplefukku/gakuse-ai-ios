@@ -15,12 +15,20 @@ settings:
     SWIFT_VERSION: "6.0"
     ENABLE_USER_SCRIPT_SANDBOXING: false
 
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: 2.0.0
+
 targets:
   GakuseAI:
     type: application
     platform: iOS
     sources:
       - GakuseAI
+    dependencies:
+      - package: Supabase
+        product: Supabase
     settings:
       base:
         INFOPLIST_FILE: GakuseAI/Info.plist
@@ -43,6 +51,10 @@ targets:
           - UIInterfaceOrientationPortrait
         UIRequiredDeviceCapabilities:
           - arm64
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLSchemes:
+              - ai.gakuse.app
 
   GakuseAITests:
     type: bundle.unit-test

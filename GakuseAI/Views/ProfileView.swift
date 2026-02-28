@@ -2,8 +2,10 @@ import SwiftUI
 
 struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
+    @EnvironmentObject var authViewModel: AuthViewModel
     @State private var showingEditProfile = false
     @State private var showingThemePicker = false
+    @State private var showingLogoutConfirmation = false
     
     var body: some View {
         NavigationStack {
@@ -129,7 +131,7 @@ struct ProfileView: View {
                 // Logout Section
                 Section {
                     Button("ログアウト", role: .destructive) {
-                        // TODO: 実装
+                        showingLogoutConfirmation = true
                     }
                 }
             }
@@ -139,6 +141,16 @@ struct ProfileView: View {
             }
             .sheet(isPresented: $showingThemePicker) {
                 ThemePickerView(viewModel: viewModel)
+            }
+            .alert("ログアウトしますか？", isPresented: $showingLogoutConfirmation) {
+                Button("キャンセル", role: .cancel) {}
+                Button("ログアウト", role: .destructive) {
+                    Task {
+                        await authViewModel.signOut()
+                    }
+                }
+            } message: {
+                Text("アカウントからログアウトします。学習データは保存されます。")
             }
         }
     }
@@ -299,4 +311,5 @@ struct ExportView: View {
 
 #Preview {
     ProfileView()
+        .environmentObject(AuthViewModel())
 }

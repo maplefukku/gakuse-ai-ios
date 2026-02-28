@@ -1,15 +1,24 @@
 import Foundation
+import Supabase
 
 actor APIService {
     static let shared = APIService()
     
     private let baseURL = "https://api.gakuse.ai" // TODO: Configure actual API URL
+    private let supabase = SupabaseManager.shared
     private let session: URLSession
     
     init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         self.session = URLSession(configuration: config)
+    }
+    
+    // MARK: - Helper
+    
+    private func getAuthToken() async throws -> String? {
+        let session = try await supabase.currentSession
+        return session?.accessToken
     }
     
     // MARK: - Learning Logs
