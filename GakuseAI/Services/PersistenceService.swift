@@ -115,6 +115,58 @@ actor PersistenceService {
     func clearChatHistory() async throws {
         try? fileManager.removeItem(at: chatHistoryURL)
     }
+    
+    // MARK: - Export
+    
+    /// 全データをエクスポート用JSONとして書き出し
+    func exportAllData() async throws -> URL {
+        ensureDirectoryExists()
+        
+        let logs = try await loadLearningLogs()
+        let profile = try await loadUserProfile()
+        let chatHistory = try await loadChatHistory()
+        
+        let exportData = ExportData(
+            exportedAt: Date(),
+            profile: profile,
+            learningLogs: logs,
+            chatHistory: chatHistory
+        )
+        
+        let data = try encoder.encode(exportData)
+        let exportURL = appSupportURL.appendingPathComponent("gakuseai_export_\(ISO8601DateFormatter().string(from: Date())).json")
+        try data.write(to: exportURL)
+        
+        return exportURL
+    }
+    
+    /// 学習ログのみをJSONとして書き出し
+    func exportLearningLogs() async throws -> URL {
+        ensureDirectoryExists()
+        
+        let logs = try await loadLearningLogs()
+        let data = try encoder.encode(logs)
+        let exportURL = appSupportURL.appendingPathComponent("learning_logs_export_\(ISO8601DateFormatter().string(from: Date())).json")
+        try data.write(to: exportURL)
+        
+        return exportURL
+    }
+    
+    /// すべてのデータを削除
+    func deleteAllData() async throws {
+        try? fileManager.removeItem(at: learningLogsURL)
+        try? fileManager.removeItem(at: userProfileURL)
+        try? fileManager.removeItem(at: chatHistoryURL)
+    }
+}
+
+// MARK: - Export Data Model
+
+struct ExportData: Codable {
+    let exportedAt: Date
+    let profile: UserProfile?
+    let learningLogs: [LearningLog]
+    let chatHistory: [ChatMessageData]
 }
 
 // MARK: - Supporting Models

@@ -276,37 +276,148 @@ struct ThemePickerView: View {
 
 struct ExportView: View {
     @State private var isExporting = false
+    @State private var exportError: String?
+    @State private var exportedFileURL: URL?
+    @State private var showingShareSheet = false
+    @State private var showingSuccessAlert = false
+    @State private var logCount = 0
+    
+    private let persistenceService = PersistenceService.shared
     
     var body: some View {
         List {
             Section {
-                Button {
-                    // TODO: 実装
-                } label: {
-                    HStack {
-                        Image(systemName: "square.and.arrow.up")
-                        Text("JSONでエクスポート")
-                    }
+                HStack {
+                    Image(systemName: "book.fill")
+                        .foregroundColor(.pink)
+                    Text("学習ログ数")
+                    Spacer()
+                    Text("\(logCount)件")
+                        .foregroundColor(.secondary)
                 }
-                
-                Button {
-                    // TODO: 実装
-                } label: {
-                    HStack {
-                        Image(systemName: "doc.text")
-                        Text("PDFでエクスポート")
-                    }
-                }
+            } header: {
+                Text("エクスポート対象")
             }
             
             Section {
-                Text("学習ログを他のデバイスやサービスに移行できます。")
+                Button {
+                    Task {
+                        await exportLearningLogs()
+                    }
+                } label: {
+                    HStack {
+                        if isExporting {
+                            ProgressView()
+                                .padding(.trailing, 4)
+                        } else {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        Text("学習ログをJSONでエクスポート")
+                    }
+                }
+                .disabled(isExporting)
+                
+                Button {
+                    Task {
+                        await exportAllData()
+                    }
+                } label: {
+                    HStack {
+                        if isExporting {
+                            ProgressView()
+                                .padding(.trailing, 4)
+                        } else {
+                            Image(systemName: "doc.on.doc")
+                        }
+                        Text("全データをJSONでエクスポート")
+                    }
+                }
+                .disabled(isExporting)
+            } header: {
+                Text("エクスポート形式")
+            } footer: {
+                Text("JSONファイルは他のアプリやデバイスで利用できます。")
+            }
+            
+            Section {
+                Text("学習ログを他のデバイスやサービスに移行できます。エクスポートしたファイルは「ファイル」アプリから確認できます。")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
         }
         .navigationTitle("エクスポート")
+        .alert("エクスポート完了", isPresented: $showingSuccessAlert) {
+            Button("共有") {
+                showingShareSheet = true
+            }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("ファイルが正常にエクスポートされました。")
+        }
+        .alert("エラー", isPresented: .init(
+            get: { exportError != nil },
+            set: { if !$0 { exportError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(exportError ?? "")
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            if let url = exportedFileURL {
+                ShareSheet(items: [url])
+            }
+        }
+        .task {
+            await loadLogCount()
+        }
     }
+    
+    private func loadLogCount() async {
+        do {
+            let logs = try await persistenceService.loadLearningLogs()
+            logCount = logs.count
+        } catch {
+            logCount = 0
+        }
+    }
+    
+    private func exportLearningLogs() async {
+        isExporting = true
+        defer { isExporting = false }
+        
+        do {
+            let url = try await persistenceService.exportLearningLogs()
+            exportedFileURL = url
+            showingSuccessAlert = true
+        } catch {
+            exportError = "エクスポートに失敗しました: \(error.localizedDescription)"
+        }
+    }
+    
+    private func exportAllData() async {
+        isExporting = true
+        defer { isExporting = false }
+        
+        do {
+            let url = try await persistenceService.exportAllData()
+            exportedFileURL = url
+            showingSuccessAlert = true
+        } catch {
+            exportError = "エクスポートに失敗しました: \(error.localizedDescription)"
+        }
+    }
+}
+
+// MARK: - Share Sheet
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 #Preview {
