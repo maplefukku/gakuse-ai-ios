@@ -17,11 +17,7 @@ actor AuthService {
                 data: ["name": .string(name)]
             )
             
-            guard let user = response.user else {
-                throw AuthError.signupFailed
-            }
-            
-            return user
+            return response.user
         } catch {
             throw mapError(error)
         }
