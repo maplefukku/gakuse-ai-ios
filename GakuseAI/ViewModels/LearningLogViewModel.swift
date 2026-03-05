@@ -86,6 +86,18 @@ class LearningLogViewModel: ObservableObject {
         await updateLog(updatedLog)
     }
     
+    func removeSkill(at offsets: IndexSet, from log: LearningLog) async {
+        var updatedLog = log
+        updatedLog.skills.remove(atOffsets: offsets)
+        await updateLog(updatedLog)
+    }
+    
+    func removeReflection(at offsets: IndexSet, from log: LearningLog) async {
+        var updatedLog = log
+        updatedLog.reflections.remove(atOffsets: offsets)
+        await updateLog(updatedLog)
+    }
+    
     private func updateLog(_ log: LearningLog) async {
         do {
             try await persistenceService.updateLearningLog(log)

@@ -341,7 +341,7 @@ struct LearningLogDetailView: View {
                     .background(Color(.systemGray6))
                     .cornerRadius(8)
             } else {
-                ForEach(currentLog.skills) { skill in
+                ForEach(Array(currentLog.skills.enumerated()), id: \.element.id) { index, skill in
                     HStack {
                         Text(skill.name)
                         Spacer()
@@ -351,6 +351,14 @@ struct LearningLogDetailView: View {
                             .padding(.vertical, 4)
                             .background(Color.pink.opacity(0.2))
                             .cornerRadius(8)
+                        Button {
+                            Task {
+                                await viewModel.removeSkill(at: IndexSet(integer: index), from: currentLog)
+                            }
+                        } label: {
+                            Image(systemName: "trash")
+                                .foregroundColor(.red)
+                        }
                     }
                     .padding(.vertical, 8)
                     .padding(.horizontal, 12)
@@ -385,13 +393,24 @@ struct LearningLogDetailView: View {
                     .background(Color(.systemGray6))
                     .cornerRadius(8)
             } else {
-                ForEach(currentLog.reflections) { reflection in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(reflection.type.rawValue)
-                            .font(.caption)
-                            .foregroundColor(.pink)
-                        Text(reflection.content)
-                            .font(.body)
+                ForEach(Array(currentLog.reflections.enumerated()), id: \.element.id) { index, reflection in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(reflection.type.rawValue)
+                                .font(.caption)
+                                .foregroundColor(.pink)
+                            Text(reflection.content)
+                                .font(.body)
+                        }
+                        Spacer()
+                        Button {
+                            Task {
+                                await viewModel.removeReflection(at: IndexSet(integer: index), from: currentLog)
+                            }
+                        } label: {
+                            Image(systemName: "trash")
+                                .foregroundColor(.red)
+                        }
                     }
                     .padding()
                     .background(Color(.systemGray6))
