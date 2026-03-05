@@ -161,6 +161,13 @@ actor PersistenceService {
         
         return exportURL
     }
+    
+    /// 全データを削除
+    func deleteAllData() async throws {
+        try? fileManager.removeItem(at: learningLogsURL)
+        try? fileManager.removeItem(at: userProfileURL)
+        try? fileManager.removeItem(at: chatHistoryURL)
+    }
 }
 
 // MARK: - Export Data Structure

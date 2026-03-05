@@ -6,6 +6,8 @@ struct ProfileView: View {
     @State private var showingEditProfile = false
     @State private var showingThemePicker = false
     @State private var showingLogoutConfirmation = false
+    @State private var showingDeleteDataConfirmation = false
+    @State private var isDeletingData = false
     
     var body: some View {
         NavigationStack {
@@ -104,14 +106,18 @@ struct ProfileView: View {
                     }
                     
                     Button(role: .destructive) {
-                        // TODO: 実装
+                        showingDeleteDataConfirmation = true
                     } label: {
                         HStack {
+                            if isDeletingData {
+                                ProgressView()
+                            }
                             Text("すべてのデータを削除")
                             Spacer()
                             Image(systemName: "trash")
                         }
                     }
+                    .disabled(isDeletingData)
                 }
                 
                 // About Section
@@ -152,6 +158,14 @@ struct ProfileView: View {
             } message: {
                 Text("アカウントからログアウトします。学習データは保存されます。")
             }
+            .alert("すべてのデータを削除しますか？", isPresented: $showingDeleteDataConfirmation) {
+                Button("キャンセル", role: .cancel) {}
+                Button("削除", role: .destructive) {
+                    deleteAllData()
+                }
+            } message: {
+                Text("この操作は取り消せません。学習ログ、プロファイル、チャット履歴がすべて削除されます。")
+            }
         }
     }
     
@@ -172,6 +186,15 @@ struct ProfileView: View {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         return "\(version) (\(build))"
+    }
+    
+    private func deleteAllData() {
+        isDeletingData = true
+        Task {
+            try? await PersistenceService.shared.deleteAllData()
+            await viewModel.loadProfile()
+            isDeletingData = false
+        }
     }
 }
 
