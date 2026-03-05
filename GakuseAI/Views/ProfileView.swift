@@ -276,37 +276,92 @@ struct ThemePickerView: View {
 
 struct ExportView: View {
     @State private var isExporting = false
+    @State private var exportURL: URL?
+    @State private var showShareSheet = false
+    @State private var errorMessage: String?
+    @State private var showError = false
+    
+    private let persistence = PersistenceService.shared
     
     var body: some View {
         List {
             Section {
                 Button {
-                    // TODO: 実装
+                    exportAsJSON()
                 } label: {
                     HStack {
                         Image(systemName: "square.and.arrow.up")
+                            .foregroundColor(.pink)
                         Text("JSONでエクスポート")
+                        Spacer()
+                        if isExporting {
+                            ProgressView()
+                        }
                     }
                 }
+                .disabled(isExporting)
                 
                 Button {
-                    // TODO: 実装
+                    // PDF形式は将来実装予定
                 } label: {
                     HStack {
                         Image(systemName: "doc.text")
-                        Text("PDFでエクスポート")
+                            .foregroundColor(.gray)
+                        Text("PDFでエクスポート（準備中）")
                     }
                 }
+                .disabled(true)
             }
             
             Section {
-                Text("学習ログを他のデバイスやサービスに移行できます。")
+                Text("学習ログ、プロファイル、チャット履歴をJSON形式でエクスポートします。他のデバイスやサービスへの移行に利用できます。")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
         }
         .navigationTitle("エクスポート")
+        .sheet(isPresented: $showShareSheet) {
+            if let url = exportURL {
+                ShareSheet(activityItems: [url])
+            }
+        }
+        .alert("エラー", isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(errorMessage ?? "不明なエラーが発生しました")
+        }
     }
+    
+    private func exportAsJSON() {
+        isExporting = true
+        Task {
+            do {
+                let url = try await persistence.exportAllData()
+                exportURL = url
+                showShareSheet = true
+            } catch {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+            isExporting = false
+        }
+    }
+}
+
+// MARK: - Share Sheet
+
+struct ShareSheet: UIViewControllerRepresentable {
+    var activityItems: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(
+            activityItems: activityItems,
+            applicationActivities: nil
+        )
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 #Preview {

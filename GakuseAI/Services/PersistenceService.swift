@@ -115,6 +115,61 @@ actor PersistenceService {
     func clearChatHistory() async throws {
         try? fileManager.removeItem(at: chatHistoryURL)
     }
+    
+    // MARK: - Export
+    
+    /// 全データをエクスポート用JSONとして一時ファイルに保存し、そのURLを返す
+    func exportAllData() async throws -> URL {
+        ensureDirectoryExists()
+        
+        // 全データを収集
+        let logs = try await loadLearningLogs()
+        let profile = try await loadUserProfile()
+        let chatHistory = try await loadChatHistory()
+        
+        // エクスポート用データ構造
+        let exportData = ExportData(
+            exportedAt: Date(),
+            profile: profile,
+            learningLogs: logs,
+            chatHistory: chatHistory
+        )
+        
+        // 一時ファイルに保存
+        let tempDir = fileManager.temporaryDirectory
+        let fileName = "GakuseAI_Export_\(ISO8601DateFormatter().string(from: Date())).json"
+        let exportURL = tempDir.appendingPathComponent(fileName)
+        
+        let data = try encoder.encode(exportData)
+        try data.write(to: exportURL)
+        
+        return exportURL
+    }
+    
+    /// 学習ログのみをエクスポート
+    func exportLearningLogs() async throws -> URL {
+        ensureDirectoryExists()
+        
+        let logs = try await loadLearningLogs()
+        
+        let tempDir = fileManager.temporaryDirectory
+        let fileName = "GakuseAI_LearningLogs_\(ISO8601DateFormatter().string(from: Date())).json"
+        let exportURL = tempDir.appendingPathComponent(fileName)
+        
+        let data = try encoder.encode(logs)
+        try data.write(to: exportURL)
+        
+        return exportURL
+    }
+}
+
+// MARK: - Export Data Structure
+
+struct ExportData: Codable {
+    let exportedAt: Date
+    let profile: UserProfile?
+    let learningLogs: [LearningLog]
+    let chatHistory: [ChatMessageData]
 }
 
 // MARK: - Supporting Models
