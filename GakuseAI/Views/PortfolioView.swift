@@ -3,14 +3,15 @@ import Charts
 
 struct PortfolioView: View {
     @StateObject private var viewModel = PortfolioViewModel()
-    
+    @State private var showingStatistics = false
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
                     // Profile Header
                     profileHeader
-                    
+
                     // Stats
                     statsSection
 
@@ -28,7 +29,7 @@ struct PortfolioView: View {
                     if !viewModel.categoriesWithCount.isEmpty {
                         categoryBreakdown
                     }
-                    
+
                     // Public Logs
                     publicLogsSection
                 }
@@ -37,6 +38,18 @@ struct PortfolioView: View {
             .navigationTitle("ポートフォリオ")
             .refreshable {
                 await viewModel.loadData()
+            }
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showingStatistics = true
+                    } label: {
+                        Image(systemName: "chart.bar.fill")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingStatistics) {
+                StatisticsView()
             }
         }
     }

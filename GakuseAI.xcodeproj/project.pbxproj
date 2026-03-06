@@ -7,10 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		098202E914428B9EDE9DB65E /* StatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE4244CA84020167F6CE2FB4 /* StatisticsView.swift */; };
 		1423BBE626BD081307155131 /* GakuseAITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D11FD95DB1D5284F512FDDC /* GakuseAITests.swift */; };
 		15216031CC94FE9EBB7134A3 /* GakuseAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97AB956D99D86A2AF02B1F6 /* GakuseAIApp.swift */; };
 		15E3914B295CD47C3D1CABA9 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = C0BD5802D7F3FAC688360BBB /* Supabase */; };
 		1685C582B73390FD75098449 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D0A47CA6A7368476E0929B1 /* ContentViewModel.swift */; };
+		1B73D813FDE281C2604ED21D /* StatisticsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7DDD866C105A41B44DD6918 /* StatisticsViewModel.swift */; };
 		216FE832731D9C856F36FFC2 /* LearningLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5681FA8DA8115D2FF252EBDE /* LearningLogView.swift */; };
 		253256EF9DBCB6C11929A845 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB502C42F43DEEEE83ACEF5 /* AuthService.swift */; };
 		496CDC2A0A0CED80E9FCF662 /* AIChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53B0235B676D4A39676D821E /* AIChatViewModel.swift */; };
@@ -68,10 +70,12 @@
 		A97AB956D99D86A2AF02B1F6 /* GakuseAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GakuseAIApp.swift; sourceTree = "<group>"; };
 		AAB502C42F43DEEEE83ACEF5 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		B1DDF7CC322C3C34143A48E0 /* GakuseAIUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GakuseAIUITests.swift; sourceTree = "<group>"; };
+		BE4244CA84020167F6CE2FB4 /* StatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsView.swift; sourceTree = "<group>"; };
 		D82F1001D68B2CA61D1C6EA8 /* GakuseAI.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GakuseAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEB485DC1DE76FD78AFD76D4 /* GakuseAIUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GakuseAIUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E54EBD4D02518269A622C9C0 /* GakuseAITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GakuseAITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E6C8FDA32CB60A0C902B25DE /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		E7DDD866C105A41B44DD6918 /* StatisticsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsViewModel.swift; sourceTree = "<group>"; };
 		E88FB99B682125606C32F0AA /* LearningLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningLog.swift; sourceTree = "<group>"; };
 		F7C6F3AFE662B318F5C8D812 /* LearningLogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningLogViewModel.swift; sourceTree = "<group>"; };
 		FC1FE75A9FBEC69059BA66D3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -98,6 +102,7 @@
 				F7C6F3AFE662B318F5C8D812 /* LearningLogViewModel.swift */,
 				63CADAE9B697F008E7FFF5E9 /* PortfolioViewModel.swift */,
 				02FDDB329E65417CE061EAC1 /* ProfileViewModel.swift */,
+				E7DDD866C105A41B44DD6918 /* StatisticsViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -196,6 +201,7 @@
 				5681FA8DA8115D2FF252EBDE /* LearningLogView.swift */,
 				9CD55FFBD583D29CDC0997DC /* PortfolioView.swift */,
 				03206AAD21390FE19A6216AF /* ProfileView.swift */,
+				BE4244CA84020167F6CE2FB4 /* StatisticsView.swift */,
 				34C6006582551C31871F91B0 /* Auth */,
 			);
 			path = Views;
@@ -338,6 +344,8 @@
 				54A9C139199D2C11ACD315DC /* ProfileView.swift in Sources */,
 				6CF1D5A75C1BAC7AFCA7C1AF /* ProfileViewModel.swift in Sources */,
 				8F1A7B58ED6EC3B2D25524CC /* SignUpView.swift in Sources */,
+				098202E914428B9EDE9DB65E /* StatisticsView.swift in Sources */,
+				1B73D813FDE281C2604ED21D /* StatisticsViewModel.swift in Sources */,
 				BD2FD7E6FB0903B1F4430722 /* SupabaseManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

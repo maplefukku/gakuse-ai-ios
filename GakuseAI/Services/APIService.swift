@@ -1,6 +1,37 @@
 import Foundation
 import Supabase
 
+// MARK: - API Error
+
+enum APIError: LocalizedError {
+    case unauthenticated
+    case invalidResponse
+    case httpError(statusCode: Int)
+    case decodingError(Error)
+    case encodingError(Error)
+    case networkError(Error)
+    case unknown
+
+    var errorDescription: String? {
+        switch self {
+        case .unauthenticated:
+            return "認証が必要です"
+        case .invalidResponse:
+            return "無効なレスポンスです"
+        case .httpError(let statusCode):
+            return "HTTPエラー: \(statusCode)"
+        case .decodingError(let error):
+            return "デコードエラー: \(error.localizedDescription)"
+        case .encodingError(let error):
+            return "エンコードエラー: \(error.localizedDescription)"
+        case .networkError(let error):
+            return "ネットワークエラー: \(error.localizedDescription)"
+        case .unknown:
+            return "不明なエラー"
+        }
+    }
+}
+
 actor APIService {
     static let shared = APIService()
     
@@ -22,40 +53,142 @@ actor APIService {
     }
     
     // MARK: - Learning Logs
-    
+
     func fetchLearningLogs() async throws -> [LearningLog] {
-        // TODO: Implement actual API call
-        // For now, return sample data
-        return [
-            LearningLog(
-                title: "SwiftUI学習開始",
-                description: "SwiftUIの基本概念を学んだ。View、State、Bindingの理解。",
-                category: .programming,
-                isPublic: true
-            ),
-            LearningLog(
-                title: "FigmaでUIデザイン",
-                description: "モバイルアプリのUI設計を練習。コンポーネント設計のコツを掴んだ。",
-                category: .design,
-                isPublic: false
-            )
-        ]
+        // Supabase REST APIを使用して学習ログを取得
+        guard let token = try await getAuthToken() else {
+            throw APIError.unauthenticated
+        }
+
+        var request = URLRequest(url: URL(string: "\(baseURL)/learning-logs")!)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            throw APIError.httpError(statusCode: httpResponse.statusCode)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let logs = try decoder.decode([LearningLog].self, from: data)
+        return logs
     }
-    
+
     func createLearningLog(_ log: LearningLog) async throws -> LearningLog {
-        // TODO: Implement actual API call
-        return log
+        // Supabase REST APIを使用して学習ログを作成
+        guard let token = try await getAuthToken() else {
+            throw APIError.unauthenticated
+        }
+
+        var request = URLRequest(url: URL(string: "\(baseURL)/learning-logs")!)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        request.httpBody = try encoder.encode(log)
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 201 else {
+            throw APIError.httpError(statusCode: httpResponse.statusCode)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let createdLog = try decoder.decode(LearningLog.self, from: data)
+        return createdLog
+    }
+
+    func updateLearningLog(_ log: LearningLog) async throws -> LearningLog {
+        guard let token = try await getAuthToken() else {
+            throw APIError.unauthenticated
+        }
+
+        var request = URLRequest(url: URL(string: "\(baseURL)/learning-logs/\(log.id.uuidString)")!)
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        request.httpBody = try encoder.encode(log)
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            throw APIError.httpError(statusCode: httpResponse.statusCode)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let updatedLog = try decoder.decode(LearningLog.self, from: data)
+        return updatedLog
+    }
+
+    func deleteLearningLog(id: UUID) async throws {
+        guard let token = try await getAuthToken() else {
+            throw APIError.unauthenticated
+        }
+
+        var request = URLRequest(url: URL(string: "\(baseURL)/learning-logs/\(id.uuidString)")!)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        let (_, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 204 else {
+            throw APIError.httpError(statusCode: httpResponse.statusCode)
+        }
     }
     
     // MARK: - AI Chat
-    
+
     func sendChatMessage(_ text: String, history: [ChatMessageData]) async throws -> ChatMessageData {
-        // TODO: 実際のAI APIと連携
+        // 実際のAI APIと連携（TODO: OpenAI APIや自社APIを使用）
         // 現在はモックレスポンスを返す
-        // 将来的にはOpenAI APIや自社APIを使用
-        
+
+        // TODO: 将来的には以下のようなAPI呼び出しを実装
+        // guard let token = try await getAuthToken() else {
+        //     throw APIError.unauthenticated
+        // }
+        //
+        // var request = URLRequest(url: URL(string: "\(baseURL)/ai/chat")!)
+        // request.httpMethod = "POST"
+        // request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        // request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        //
+        // let requestBody = ["message": text, "history": history.map { $0.toDictionary() }]
+        // request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+        //
+        // let (data, response) = try await session.data(for: request)
+        // ...
+
         try await Task.sleep(nanoseconds: 1_000_000_000) // 1秒待機
-        
+
         // 文脈を考慮したモックレスポンス
         let responses = generateMockResponse(for: text, history: history)
         return ChatMessageData(content: responses, isUser: false)

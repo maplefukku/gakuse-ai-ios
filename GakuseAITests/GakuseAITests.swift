@@ -380,3 +380,41 @@ struct PortfolioViewModelTests {
     }
 }
 
+// MARK: - APIService Tests
+
+struct APIServiceTests {
+    
+    @Test func testAPIErrorDescriptions() async throws {
+        #expect(APIError.unauthenticated.errorDescription == "認証が必要です")
+        #expect(APIError.invalidResponse.errorDescription == "無効なレスポンスです")
+        #expect(APIError.httpError(statusCode: 404).errorDescription == "HTTPエラー: 404")
+        #expect(APIError.unknown.errorDescription == "不明なエラー")
+    }
+    
+    @Test func testSendChatMessageMock() async throws {
+        let service = APIService.shared
+        
+        // モックレスポンスをテスト
+        let response = try await service.sendChatMessage("目標を立てたい", history: [])
+        
+        #expect(response.isUser == false)
+        #expect(response.content.contains("なぜ"))
+    }
+    
+    @Test func testSendChatMessageWithContext() async throws {
+        let service = APIService.shared
+        
+        // チャット履歴を含めたテスト
+        let history = [
+            ChatMessageData(content: "プロジェクトを始めました", isUser: true),
+            ChatMessageData(content: "素晴らしいですね！", isUser: false)
+        ]
+        
+        let response = try await service.sendChatMessage("計画を立てたい", history: history)
+        
+        #expect(response.isUser == false)
+        #expect(!response.content.isEmpty)
+    }
+}
+
+
