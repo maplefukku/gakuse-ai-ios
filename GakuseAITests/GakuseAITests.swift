@@ -568,4 +568,162 @@ struct LearningLogViewModelTests {
     }
 }
 
+// MARK: - Export Tests
+
+struct LearningLogViewModelExportTests {
+
+    @Test func testExportToCSV() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        let log1 = createLogWithFavorite(isFavorite: true)
+        let log2 = createLogWithFavorite(isFavorite: false)
+
+        try await service.appendLearningLog(log1)
+        try await service.appendLearningLog(log2)
+
+        let viewModel = LearningLogViewModel()
+        await viewModel.loadLogs()
+
+        if let csvURL = viewModel.exportToCSV() {
+            let csvContent = try String(contentsOf: csvURL)
+            #expect(csvContent.contains("タイトル,説明,カテゴリ"))
+            #expect(csvContent.contains(log1.title))
+            #expect(csvContent.contains(log2.title))
+        } else {
+            #expect(Bool(false), "CSVエクスポートに失敗しました")
+        }
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testExportToJSON() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        let log1 = createLogWithFavorite(isFavorite: true)
+        try await service.appendLearningLog(log1)
+
+        let viewModel = LearningLogViewModel()
+        await viewModel.loadLogs()
+
+        if let jsonURL = viewModel.exportToJSON() {
+            let jsonData = try Data(contentsOf: jsonURL)
+            let decoder = JSONDecoder()
+            let logs = try decoder.decode([LearningLog].self, from: jsonData)
+
+            #expect(logs.count == 1)
+            #expect(logs[0].id == log1.id)
+        } else {
+            #expect(Bool(false), "JSONエクスポートに失敗しました")
+        }
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+}
+
+// MARK: - Search Options Tests
+
+struct LearningLogViewModelSearchOptionsTests {
+
+    @Test func testDateRangeFilter() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        let calendar = Calendar.current
+        let today = Date()
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: today)!
+
+        let log1 = createLogWithDate(twoDaysAgo)
+        let log2 = createLogWithDate(yesterday)
+        let log3 = createLogWithDate(today)
+
+        try await service.appendLearningLog(log1)
+        try await service.appendLearningLog(log2)
+        try await service.appendLearningLog(log3)
+
+        let viewModel = LearningLogViewModel()
+        await viewModel.loadLogs()
+
+        // 昨日以降のフィルター
+        viewModel.dateRangeStart = yesterday
+        let filtered = viewModel.filteredLogs
+
+        #expect(filtered.count == 2)
+        #expect(filtered.contains { $0.id == log2.id })
+        #expect(filtered.contains { $0.id == log3.id })
+        #expect(!filtered.contains { $0.id == log1.id })
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testSearchInSkills() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        let log = LearningLog(
+            title: "テストログ",
+            description: "説明",
+            category: .programming
+        )
+        log.skills.append(Skill(name: "Swift", level: .intermediate))
+
+        try await service.appendLearningLog(log)
+
+        let viewModel = LearningLogViewModel()
+        await viewModel.loadLogs()
+
+        // スキル検索を有効化
+        viewModel.searchInSkills = true
+        viewModel.searchText = "Swift"
+
+        let filtered = viewModel.filteredLogs
+
+        #expect(filtered.count == 1)
+        #expect(filtered[0].id == log.id)
+
+        // スキル検索を無効化
+        viewModel.searchInSkills = false
+        viewModel.searchText = "Swift"
+
+        let filteredNoSkill = viewModel.filteredLogs
+
+        #expect(filteredNoSkill.isEmpty)
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testResetSearchOptions() async throws {
+        let viewModel = LearningLogViewModel()
+
+        // 各オプションを設定
+        viewModel.searchText = "test"
+        viewModel.selectedCategory = .programming
+        viewModel.showOnlyPublic = true
+        viewModel.showingFavoritesOnly = true
+        viewModel.sortOrder = .oldestFirst
+        viewModel.dateRangeStart = Date()
+        viewModel.dateRangeEnd = Date()
+        viewModel.searchInSkills = true
+
+        // リセット
+        viewModel.resetSearchOptions()
+
+        // リセットされたことを確認
+        #expect(viewModel.searchText.isEmpty)
+        #expect(viewModel.selectedCategory == nil)
+        #expect(viewModel.showOnlyPublic == false)
+        #expect(viewModel.showingFavoritesOnly == false)
+        #expect(viewModel.sortOrder == .newestFirst)
+        #expect(viewModel.dateRangeStart == nil)
+        #expect(viewModel.dateRangeEnd == nil)
+        #expect(viewModel.searchInSkills == false)
+    }
+}
+
 

@@ -22,6 +22,11 @@ class LearningLogViewModel: ObservableObject {
     @Published var logToEdit: LearningLog? = nil
     @Published var sortOrder: LogSortOrder = .newestFirst
     @Published var showingFavoritesOnly = false
+    @Published var showingExportOptions = false
+    @Published var showingSearchOptions = false
+    @Published var dateRangeStart: Date? = nil
+    @Published var dateRangeEnd: Date? = nil
+    @Published var searchInSkills = false
     
     private let persistenceService = PersistenceService.shared
 
@@ -50,6 +55,21 @@ class LearningLogViewModel: ObservableObject {
         // お気に入りフィルター
         if showingFavoritesOnly {
             result = result.filter { $0.isFavorite }
+        }
+
+        // 日付範囲フィルター
+        if let startDate = dateRangeStart {
+            result = result.filter { $0.createdAt >= startDate }
+        }
+        if let endDate = dateRangeEnd {
+            result = result.filter { $0.createdAt <= endDate }
+        }
+
+        // スキル検索
+        if searchInSkills, !searchText.isEmpty {
+            result = result.filter { log in
+                log.skills.contains { $0.name.localizedCaseInsensitiveContains(searchText) }
+            }
         }
 
         // ソート
@@ -219,5 +239,78 @@ class LearningLogViewModel: ObservableObject {
             get: { self.logs[index] },
             set: { self.logs[index] = $0 }
         )
+    }
+
+    // MARK: - Export Functions
+
+    /// CSV形式でエクスポート
+    func exportToCSV() -> URL? {
+        let fileName = "learning_logs_\(Date().timeIntervalSince1970).csv"
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+
+        var csvContent = "タイトル,説明,カテゴリ,作成日時,公開設定,スキル,振り返り\n"
+
+        for log in filteredLogs {
+            let title = escapeCSV(log.title)
+            let description = escapeCSV(log.description)
+            let category = escapeCSV(log.category.rawValue)
+            let createdAt = formatDate(log.createdAt)
+            let isPublic = log.isPublic ? "公開" : "非公開"
+            let skills = log.skills.map { $0.name }.joined(separator: ";")
+            let reflections = log.reflections.map { $0.content }.joined(separator: ";")
+
+            csvContent += "\(title),\(description),\(category),\(createdAt),\(isPublic),\(skills),\(reflections)\n"
+        }
+
+        do {
+            try csvContent.write(to: path, atomically: true, encoding: .utf8)
+            return path
+        } catch {
+            errorMessage = "エクスポートエラー: \(error.localizedDescription)"
+            return nil
+        }
+    }
+
+    /// JSON形式でエクスポート
+    func exportToJSON() -> URL? {
+        let fileName = "learning_logs_\(Date().timeIntervalSince1970).json"
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+
+        do {
+            let data = try JSONEncoder().encode(filteredLogs)
+            try data.write(to: path)
+            return path
+        } catch {
+            errorMessage = "エクスポートエラー: \(error.localizedDescription)"
+            return nil
+        }
+    }
+
+    /// 検索オプションをリセット
+    func resetSearchOptions() {
+        searchText = ""
+        selectedCategory = nil
+        showOnlyPublic = false
+        showingFavoritesOnly = false
+        dateRangeStart = nil
+        dateRangeEnd = nil
+        searchInSkills = false
+        sortOrder = .newestFirst
+    }
+
+    // MARK: - Helper Methods
+
+    private func escapeCSV(_ string: String) -> String {
+        if string.contains(",") || string.contains("\"") || string.contains("\n") {
+            return "\"\(string.replacingOccurrences(of: "\"", with: "\"\""))\""
+        }
+        return string
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy/MM/dd HH:mm"
+        formatter.locale = Locale(identifier: "ja_JP")
+        return formatter.string(from: date)
     }
 }
