@@ -109,9 +109,7 @@
 				A97AB956D99D86A2AF02B1F6 /* GakuseAIApp.swift */,
 				FC1FE75A9FBEC69059BA66D3 /* Info.plist */,
 				7A5C06C6D2DF58A0E47BE7D3 /* Models */,
-				B9FBCC9954426F39E150527C /* Resources */,
 				49B7BC40B002F2A072598614 /* Services */,
-				8C53EA25A248CC7970BE963C /* Utils */,
 				000217A7815040E7DDDFA337 /* ViewModels */,
 				EA53F1D4A20B7E6D2A9E5A5E /* Views */,
 			);
@@ -170,20 +168,6 @@
 				0D11FD95DB1D5284F512FDDC /* GakuseAITests.swift */,
 			);
 			path = GakuseAITests;
-			sourceTree = "<group>";
-		};
-		8C53EA25A248CC7970BE963C /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Utils;
-			sourceTree = "<group>";
-		};
-		B9FBCC9954426F39E150527C /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Resources;
 			sourceTree = "<group>";
 		};
 		C21E9DF5508304B9C78D2CD3 = {
@@ -488,6 +472,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -563,6 +548,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -579,6 +565,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -595,6 +582,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

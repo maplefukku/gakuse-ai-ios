@@ -8,34 +8,93 @@ struct LearningLogView: View {
             Group {
                 if viewModel.isLoading && viewModel.logs.isEmpty {
                     ProgressView("読み込み中...")
-                } else if viewModel.logs.isEmpty {
-                    emptyStateView
+                } else if viewModel.filteredLogs.isEmpty {
+                    if viewModel.logs.isEmpty {
+                        emptyStateView
+                    } else {
+                        noResultsView
+                    }
                 } else {
                     logListView
                 }
             }
             .navigationTitle("学習ログ")
+            .searchable(text: $viewModel.searchText, prompt: "ログを検索...")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        viewModel.showingCreateSheet = true
+                    Menu {
+                        // カテゴリフィルター
+                        Menu {
+                            Button {
+                                viewModel.selectedCategory = nil
+                            } label: {
+                                Label("すべて", systemImage: viewModel.selectedCategory == nil ? "checkmark" : "")
+                            }
+
+                            Divider()
+
+                            ForEach(LearningCategory.allCases, id: \.self) { category in
+                                Button {
+                                    viewModel.selectedCategory = viewModel.selectedCategory == category ? nil : category
+                                } label: {
+                                    Label(category.rawValue, systemImage: viewModel.selectedCategory == category ? "checkmark" : "")
+                                }
+                            }
+                        } label: {
+                            Label("カテゴリ", systemImage: "line.3.horizontal.decrease.circle")
+                        }
+
+                        // 公開設定フィルター
+                        Button {
+                            viewModel.showOnlyPublic.toggle()
+                        } label: {
+                            Label("公開のみ", systemImage: viewModel.showOnlyPublic ? "checkmark" : "")
+                        }
+
+                        Divider()
+
+                        Button {
+                            viewModel.showingCreateSheet = true
+                        } label: {
+                            Label("新規作成", systemImage: "plus.circle.fill")
+                        }
                     } label: {
-                        Image(systemName: "plus.circle.fill")
+                        Image(systemName: "ellipsis.circle")
                     }
                 }
             }
             .sheet(isPresented: $viewModel.showingCreateSheet) {
-                CreateLearningLogView { title, description, category, isPublic in
-                    Task {
-                        await viewModel.createLog(
-                            title: title,
-                            description: description,
-                            category: category,
-                            isPublic: isPublic
-                        )
+                CreateLearningLogView(
+                    existingLog: nil,
+                    onSave: { title, description, category, isPublic in
+                        Task {
+                            await viewModel.createLog(
+                                title: title,
+                                description: description,
+                                category: category,
+                                isPublic: isPublic
+                            )
+                        }
+                        viewModel.showingCreateSheet = false
                     }
-                    viewModel.showingCreateSheet = false
-                }
+                )
+            }
+            .sheet(item: $viewModel.logToEdit) { log in
+                CreateLearningLogView(
+                    existingLog: log,
+                    onSave: { title, description, category, isPublic in
+                        Task {
+                            await viewModel.updateLog(
+                                id: log.id,
+                                title: title,
+                                description: description,
+                                category: category,
+                                isPublic: isPublic
+                            )
+                        }
+                        viewModel.logToEdit = nil
+                    }
+                )
             }
             .alert("エラー", isPresented: .init(
                 get: { viewModel.errorMessage != nil },
@@ -61,16 +120,30 @@ struct LearningLogView: View {
         )
     }
     
+    private var noResultsView: some View {
+        ContentUnavailableView(
+            "該当するログがありません",
+            systemImage: "magnifyingglass",
+            description: Text("検索条件を変更してみてください")
+        )
+    }
+    
     private var logListView: some View {
         List {
-            ForEach(viewModel.logs) { log in
+            ForEach(viewModel.filteredLogs) { log in
                 NavigationLink(value: log) {
                     LearningLogRow(log: log)
                 }
             }
             .onDelete { offsets in
+                // フィルター後の配列から削除対象を特定し、元の配列のインデックスを取得
+                let logsToDelete = offsets.map { viewModel.filteredLogs[$0] }
+                let indicesToDelete = logsToDelete.compactMap { log in
+                    viewModel.logs.firstIndex(where: { $0.id == log.id })
+                }
+
                 Task {
-                    await viewModel.deleteLog(at: offsets)
+                    await viewModel.deleteLog(at: IndexSet(indicesToDelete))
                 }
             }
         }
@@ -133,7 +206,12 @@ struct CreateLearningLogView: View {
     @State private var category: LearningCategory = .programming
     @State private var isPublic = false
     
-    let onCreate: (String, String, LearningCategory, Bool) -> Void
+    let existingLog: LearningLog?
+    let onSave: (String, String, LearningCategory, Bool) -> Void
+    
+    private var isEditMode: Bool {
+        existingLog != nil
+    }
     
     var body: some View {
         NavigationStack {
@@ -161,7 +239,7 @@ struct CreateLearningLogView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            .navigationTitle("新しいログ")
+            .navigationTitle(isEditMode ? "ログ編集" : "新しいログ")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -170,11 +248,19 @@ struct CreateLearningLogView: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("作成") {
-                        onCreate(title, description, category, isPublic)
+                    Button(isEditMode ? "更新" : "作成") {
+                        onSave(title, description, category, isPublic)
                     }
                     .disabled(title.isEmpty || description.isEmpty)
                 }
+            }
+        }
+        .onAppear {
+            if let log = existingLog {
+                title = log.title
+                description = log.description
+                category = log.category
+                isPublic = log.isPublic
             }
         }
     }
@@ -193,6 +279,7 @@ struct LearningLogDetailView: View {
     @State private var newSkillLevel: SkillLevel = .beginner
     @State private var newReflectionContent = ""
     @State private var newReflectionType: ReflectionType = .learning
+    @State private var showingDeleteConfirmation = false
     
     private var currentLog: LearningLog {
         viewModel.logs.first(where: { $0.id == log.id }) ?? log
@@ -221,6 +308,14 @@ struct LearningLogDetailView: View {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Button {
+                        viewModel.editLog(currentLog)
+                    } label: {
+                        Label("編集", systemImage: "pencil")
+                    }
+                    
+                    Divider()
+                    
+                    Button {
                         Task {
                             await viewModel.togglePublic(for: currentLog)
                         }
@@ -229,6 +324,14 @@ struct LearningLogDetailView: View {
                             currentLog.isPublic ? "非公開にする" : "公開する",
                             systemImage: currentLog.isPublic ? "lock" : "globe"
                         )
+                    }
+                    
+                    Divider()
+                    
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Label("削除", systemImage: "trash")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -270,6 +373,17 @@ struct LearningLogDetailView: View {
                     }
                 }
             )
+        }
+        .alert("削除の確認", isPresented: $showingDeleteConfirmation) {
+            Button("キャンセル", role: .cancel) { }
+            Button("削除", role: .destructive) {
+                Task {
+                    await viewModel.deleteLog(currentLog)
+                    dismiss()
+                }
+            }
+        } message: {
+            Text("この学習ログを削除しますか？この操作は取り消せません。")
         }
     }
     

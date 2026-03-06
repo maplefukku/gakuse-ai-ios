@@ -200,3 +200,183 @@ struct ChatMessageDataTests {
         #expect(decoded.isUser == false)
     }
 }
+
+// MARK: - LearningLog Update Tests
+
+struct LearningLogUpdateTests {
+    
+    @Test func testLearningLogCreatedAtIsImmutable() async throws {
+        let originalCreatedAt = Date()
+        let log = LearningLog(
+            title: "テスト",
+            description: "説明",
+            category: .programming
+        )
+        
+        // createdAtが設定されていることを確認
+        #expect(log.createdAt.timeIntervalSince(originalCreatedAt) < 1.0)
+        
+        // スキルとリフレクションを追加
+        var updatedLog = log
+        updatedLog.skills.append(Skill(name: "Swift", level: .intermediate))
+        updatedLog.reflections.append(Reflection(content: "学んだこと", type: .learning))
+        
+        // createdAtは不変であるべき
+        #expect(updatedLog.createdAt == log.createdAt)
+        
+        // updatedAtは更新可能であるべき
+        #expect(updatedLog.updatedAt.timeIntervalSince(log.updatedAt) >= 0)
+    }
+    
+    @Test func testLearningLogFullInitializer() async throws {
+        let createdAt = Date(timeIntervalSince1970: 1000)
+        let updatedAt = Date(timeIntervalSince1970: 2000)
+        let skills = [Skill(name: "Swift", level: .advanced)]
+        let reflections = [Reflection(content: "テスト", type: .learning)]
+        
+        let log = LearningLog(
+            id: UUID(),
+            title: "フルイニシャライザ",
+            description: "説明",
+            category: .programming,
+            isPublic: true,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            skills: skills,
+            reflections: reflections
+        )
+        
+        #expect(log.createdAt == createdAt)
+        #expect(log.updatedAt == updatedAt)
+        #expect(log.skills.count == 1)
+        #expect(log.reflections.count == 1)
+        #expect(log.isPublic == true)
+    }
+}
+
+// MARK: - PortfolioViewModel Tests
+
+struct PortfolioViewModelTests {
+    
+    @Test func testWeeklyDataCalculation() async throws {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // 過去7日間のテストデータを作成
+        var testLogs: [LearningLog] = []
+        for dayOffset in 0..<7 {
+            guard let targetDate = calendar.date(byAdding: .day, value: -dayOffset, to: today) else {
+                continue
+            }
+            
+            // 各曜日1つのログを作成
+            var log = LearningLog(
+                title: "ログ\(dayOffset)",
+                description: "説明",
+                category: .programming,
+                isPublic: true
+            )
+            // createdAtを上書き（フルイニシャライザを使用）
+            log = LearningLog(
+                id: log.id,
+                title: log.title,
+                description: log.description,
+                category: log.category,
+                isPublic: log.isPublic,
+                createdAt: targetDate,
+                updatedAt: log.updatedAt,
+                skills: log.skills,
+                reflections: log.reflections
+            )
+            testLogs.append(log)
+        }
+        
+        // PersistenceServiceをモックしてテストデータを設定
+        let service = PersistenceService.shared
+        try await service.saveLearningLogs(testLogs)
+        
+        // PortfolioViewModelを作成
+        @MainActor
+        func testViewModel() async {
+            let viewModel = PortfolioViewModel()
+            await viewModel.loadData()
+            
+            // 過去7日間のデータが取得されていることを確認
+            let weeklyData = viewModel.weeklyData
+            let totalCount = weeklyData.reduce(0) { $0 + $1.count }
+            
+            // すべての曜日で1つずつ、合計7つのログがあるはず
+            #expect(totalCount == 7)
+        }
+        
+        await testViewModel()
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+    
+    @Test func testWeeklyDataWithNoLogs() async throws {
+        @MainActor
+        func testViewModel() async {
+            let viewModel = PortfolioViewModel()
+            
+            // ログがない場合、すべての曜日のカウントが0であることを確認
+            let weeklyData = viewModel.weeklyData
+            for data in weeklyData {
+                #expect(data.count == 0)
+            }
+        }
+        
+        await testViewModel()
+    }
+    
+    @Test func testStreakDaysCalculation() async throws {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // 過去5日間連続でログを作成
+        var testLogs: [LearningLog] = []
+        for dayOffset in 0..<5 {
+            guard let targetDate = calendar.date(byAdding: .day, value: -dayOffset, to: today) else {
+                continue
+            }
+            
+            var log = LearningLog(
+                title: "ログ\(dayOffset)",
+                description: "説明",
+                category: .programming,
+                isPublic: true
+            )
+            log = LearningLog(
+                id: log.id,
+                title: log.title,
+                description: log.description,
+                category: log.category,
+                isPublic: log.isPublic,
+                createdAt: targetDate,
+                updatedAt: log.updatedAt,
+                skills: log.skills,
+                reflections: log.reflections
+            )
+            testLogs.append(log)
+        }
+        
+        let service = PersistenceService.shared
+        try await service.saveLearningLogs(testLogs)
+        
+        @MainActor
+        func testViewModel() async {
+            let viewModel = PortfolioViewModel()
+            await viewModel.loadData()
+            
+            // 連続5日間のログがあるので、ストリークは5日であるべき
+            #expect(viewModel.streakDays == 5)
+        }
+        
+        await testViewModel()
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+}
+

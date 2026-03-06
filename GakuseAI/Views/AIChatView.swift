@@ -18,12 +18,20 @@ struct AIChatView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
-                        Button(role: .destructive) {
+                        Button {
                             Task {
                                 await viewModel.clearHistory()
                             }
                         } label: {
                             Label("履歴をクリア", systemImage: "trash")
+                        }
+                        
+                        Button {
+                            Task {
+                                await viewModel.exportChatHistory()
+                            }
+                        } label: {
+                            Label("履歴をエクスポート", systemImage: "square.and.arrow.up")
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
@@ -38,6 +46,26 @@ struct AIChatView: View {
             } message: {
                 if let error = viewModel.errorMessage {
                     Text(error)
+                }
+            }
+            .confirmationDialog("メッセージを削除", isPresented: $viewModel.showingDeleteConfirmation) {
+                Button("キャンセル", role: .cancel) { }
+                Button("削除", role: .destructive) {
+                    Task {
+                        await viewModel.deleteMessage()
+                    }
+                }
+            } message: {
+                Text("このメッセージを削除しますか？")
+            }
+            .sheet(isPresented: $viewModel.showingShareSheet) {
+                if let text = viewModel.messageToShare {
+                    ShareSheet(activityItems: [text] as [Any])
+                }
+            }
+            .sheet(isPresented: $viewModel.showingExportSheet) {
+                if let url = viewModel.exportURL {
+                    ShareSheet(activityItems: [url])
                 }
             }
         }
@@ -62,7 +90,25 @@ struct AIChatView: View {
             }
             
             VStack(spacing: 12) {
-                ForEach(suggestedPrompts, id: \.self) { prompt in
+                HStack {
+                    Text("お勧めのトピック")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                    
+                    Button {
+                        Task {
+                            await viewModel.refreshPrompts()
+                        }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.caption)
+                    }
+                }
+                .padding(.horizontal)
+                
+                ForEach(viewModel.suggestedPrompts, id: \.self) { prompt in
                     SuggestedPromptButton(prompt: prompt) {
                         viewModel.useSuggestedPrompt(prompt)
                     }
@@ -73,15 +119,6 @@ struct AIChatView: View {
         .frame(maxHeight: .infinity)
     }
     
-    private var suggestedPrompts: [String] {
-        [
-            "今取り組んでいるプロジェクトについて話したい",
-            "キャリアの方向性について相談したい",
-            "学習計画のフィードバックが欲しい",
-            "アイデアをブラッシュアップしたい"
-        ]
-    }
-    
     // MARK: - Chat List
     
     private var chatListView: some View {
@@ -89,7 +126,7 @@ struct AIChatView: View {
             ScrollView {
                 LazyVStack(spacing: 16) {
                     ForEach(viewModel.messages) { message in
-                        MessageBubble(message: message)
+                        MessageBubble(message: message, viewModel: viewModel)
                             .id(message.id)
                     }
                     
@@ -167,6 +204,8 @@ struct AIChatView: View {
 
 struct MessageBubble: View {
     let message: ChatMessageData
+    let viewModel: AIChatViewModel
+    @State private var showingMenu = false
     
     var body: some View {
         HStack {
@@ -179,6 +218,27 @@ struct MessageBubble: View {
                     .background(message.isUser ? Color.pink : Color(.systemGray5))
                     .foregroundColor(message.isUser ? .white : .primary)
                     .cornerRadius(16)
+                    .contextMenu {
+                        Button {
+                            viewModel.copyMessage(message)
+                        } label: {
+                            Label("コピー", systemImage: "doc.on.doc")
+                        }
+                        
+                        Button {
+                            viewModel.shareMessage(message)
+                        } label: {
+                            Label("共有", systemImage: "square.and.arrow.up")
+                        }
+                        
+                        Divider()
+                        
+                        Button(role: .destructive) {
+                            viewModel.prepareDeleteMessage(message)
+                        } label: {
+                            Label("削除", systemImage: "trash")
+                        }
+                    }
                 
                 Text(message.timestamp.formatted(date: .omitted, time: .shortened))
                     .font(.caption2)

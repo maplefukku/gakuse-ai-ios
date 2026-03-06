@@ -186,6 +186,7 @@ struct UserProfile: Codable {
     var name: String
     var email: String?
     var avatarURL: URL?
+    var avatarIcon: String?
     let createdAt: Date
     var settings: UserSettings
     
@@ -194,6 +195,7 @@ struct UserProfile: Codable {
         self.name = name
         self.email = nil
         self.avatarURL = nil
+        self.avatarIcon = nil
         self.createdAt = Date()
         self.settings = UserSettings()
     }

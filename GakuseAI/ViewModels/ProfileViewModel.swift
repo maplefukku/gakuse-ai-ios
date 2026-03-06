@@ -45,6 +45,20 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
+    func updateProfile(name: String, avatarIcon: String) async {
+        guard var profile = userProfile else { return }
+        
+        profile.name = name
+        profile.avatarIcon = avatarIcon
+        
+        do {
+            try await persistenceService.saveUserProfile(profile)
+            userProfile = profile
+        } catch {
+            print("プロファイル保存エラー: \(error)")
+        }
+    }
+    
     func updateSettings(_ settings: UserSettings) async {
         guard var profile = userProfile else { return }
         

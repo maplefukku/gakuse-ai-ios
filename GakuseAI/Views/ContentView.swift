@@ -38,8 +38,13 @@ struct ContentView: View {
                         Label("ログアウト", systemImage: "rectangle.portrait.and.arrow.right")
                     }
                 } label: {
-                    Image(systemName: "person.circle.fill")
-                        .foregroundColor(.pink)
+                    if let profile = authViewModel.profile, let avatarIcon = profile.avatarIcon {
+                        Image(systemName: avatarIcon)
+                            .foregroundColor(.pink)
+                    } else {
+                        Image(systemName: "person.circle.fill")
+                            .foregroundColor(.pink)
+                    }
                 }
             }
         }

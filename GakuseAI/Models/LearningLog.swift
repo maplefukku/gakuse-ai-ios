@@ -6,7 +6,7 @@ struct LearningLog: Identifiable, Codable, Hashable {
     let description: String
     let category: LearningCategory
     let createdAt: Date
-    let updatedAt: Date
+    var updatedAt: Date
     var skills: [Skill]
     var reflections: [Reflection]
     var isPublic: Bool
@@ -27,6 +27,28 @@ struct LearningLog: Identifiable, Codable, Hashable {
         self.skills = []
         self.reflections = []
         self.isPublic = isPublic
+    }
+
+    init(
+        id: UUID,
+        title: String,
+        description: String,
+        category: LearningCategory,
+        isPublic: Bool,
+        createdAt: Date,
+        updatedAt: Date,
+        skills: [Skill],
+        reflections: [Reflection]
+    ) {
+        self.id = id
+        self.title = title
+        self.description = description
+        self.category = category
+        self.isPublic = isPublic
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.skills = skills
+        self.reflections = reflections
     }
     
     static func == (lhs: LearningLog, rhs: LearningLog) -> Bool {

@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 struct PortfolioView: View {
     @StateObject private var viewModel = PortfolioViewModel()
@@ -12,7 +13,17 @@ struct PortfolioView: View {
                     
                     // Stats
                     statsSection
-                    
+
+                    // Weekly Chart
+                    if !viewModel.weeklyData.filter({ $0.count > 0 }).isEmpty {
+                        weeklyChartSection
+                    }
+
+                    // Category Chart
+                    if !viewModel.categoryChartData.isEmpty {
+                        categoryChartSection
+                    }
+
                     // Category Breakdown
                     if !viewModel.categoriesWithCount.isEmpty {
                         categoryBreakdown
@@ -86,24 +97,97 @@ struct PortfolioView: View {
         }
     }
     
-    // MARK: - Category Breakdown
-    
-    private var categoryBreakdown: some View {
+    // MARK: - Weekly Chart Section
+
+    private var weeklyChartSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("カテゴリ別")
+            Text("週間学習ログ")
                 .font(.headline)
             
+            Chart(viewModel.weeklyData, id: \.weekday) { item in
+                BarMark(
+                    x: .value("曜日", item.weekday),
+                    y: .value("数", item.count)
+                )
+                .foregroundStyle(.pink)
+                .cornerRadius(4)
+            }
+            .frame(height: 180)
+            .chartYAxis {
+                AxisMarks(position: .leading) { value in
+                    AxisValueLabel {
+                        if let intValue = value.as(Int.self) {
+                            Text("\(intValue)")
+                                .font(.caption)
+                        }
+                    }
+                }
+            }
+            .chartXAxis {
+                AxisMarks(position: .bottom) { value in
+                    AxisValueLabel {
+                        if let stringValue = value.as(String.self) {
+                            Text(stringValue)
+                                .font(.caption)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
+    }
+    
+    // MARK: - Category Chart
+
+    private var categoryChartSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("カテゴリ別分布")
+                .font(.headline)
+            
+            Chart(viewModel.categoryChartData, id: \.category) { item in
+                SectorMark(
+                    angle: .value("数", item.count),
+                    innerRadius: .ratio(0.5),
+                    angularInset: 2
+                )
+                .foregroundStyle(item.color)
+            }
+            .frame(height: 200)
+            .chartBackground { _ in
+                VStack {
+                    Text("\(viewModel.totalLogsCount)")
+                        .font(.largeTitle.bold())
+                    Text("ログ")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
+    }
+
+    // MARK: - Category Breakdown
+
+    private var categoryBreakdown: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("カテゴリ詳細")
+                .font(.headline)
+
             ForEach(viewModel.categoriesWithCount, id: \.0) { category, count in
                 HStack {
                     Image(systemName: category.icon)
                         .foregroundColor(.pink)
                         .frame(width: 24)
-                    
+
                     Text(category.rawValue)
                         .font(.subheadline)
-                    
+
                     Spacer()
-                    
+
                     Text("\(count)")
                         .font(.headline)
                         .foregroundColor(.pink)

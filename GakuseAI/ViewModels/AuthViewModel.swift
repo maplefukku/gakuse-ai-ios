@@ -6,10 +6,12 @@ import Supabase
 class AuthViewModel: ObservableObject {
     @Published var isAuthenticated = false
     @Published var currentUser: User?
+    @Published var profile: UserProfile?
     @Published var isLoading = false
     @Published var errorMessage: String?
     
     private let authService = AuthService.shared
+    private let persistenceService = PersistenceService.shared
     
     init() {
         Task {
@@ -27,13 +29,16 @@ class AuthViewModel: ObservableObject {
             if let session = try await authService.restoreSession() {
                 isAuthenticated = true
                 currentUser = session.user
+                profile = try await persistenceService.loadUserProfile()
             } else {
                 isAuthenticated = false
                 currentUser = nil
+                profile = nil
             }
         } catch {
             isAuthenticated = false
             currentUser = nil
+            profile = nil
         }
     }
     

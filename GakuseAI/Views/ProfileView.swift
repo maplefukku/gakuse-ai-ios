@@ -28,9 +28,15 @@ struct ProfileView: View {
                                 )
                                 .frame(width: 60, height: 60)
                                 .overlay {
-                                    Text(viewModel.userProfile?.name.first?.uppercased() ?? "U")
-                                        .font(.title.bold())
-                                        .foregroundColor(.white)
+                                    if let avatarIcon = viewModel.userProfile?.avatarIcon {
+                                        Image(systemName: avatarIcon)
+                                            .font(.title)
+                                            .foregroundColor(.white)
+                                    } else {
+                                        Text(viewModel.userProfile?.name.first?.uppercased() ?? "U")
+                                            .font(.title.bold())
+                                            .foregroundColor(.white)
+                                    }
                                 }
                             
                             VStack(alignment: .leading, spacing: 4) {
@@ -204,11 +210,43 @@ struct EditProfileView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: ProfileViewModel
     @State private var name = ""
+    @State private var selectedAvatarIndex = 0
+    
+    private let avatars = [
+        "person.fill",
+        "star.fill",
+        "heart.fill",
+        "bolt.fill",
+        "moon.fill",
+        "sun.fill",
+        "cloud.fill",
+        "leaf.fill",
+        "flame.fill",
+        "sparkles"
+    ]
     
     var body: some View {
         NavigationStack {
             Form {
-                Section("プロフィール") {
+                Section("アバター") {
+                    LazyVGrid(columns: [
+                        GridItem(.adaptive(minimum: 70, maximum: 80))
+                    ], spacing: 16) {
+                        ForEach(0..<avatars.count, id: \.self) { index in
+                            Button {
+                                selectedAvatarIndex = index
+                            } label: {
+                                AvatarButtonView(
+                                    avatarName: avatars[index],
+                                    isSelected: selectedAvatarIndex == index
+                                )
+                            }
+                        }
+                    }
+                    .padding(.vertical)
+                }
+                
+                Section("名前") {
                     TextField("名前", text: $name)
                 }
             }
@@ -223,7 +261,10 @@ struct EditProfileView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") {
                         Task {
-                            await viewModel.updateProfile(name: name)
+                            await viewModel.updateProfile(
+                                name: name,
+                                avatarIcon: avatars[selectedAvatarIndex]
+                            )
                             dismiss()
                         }
                     }
@@ -232,6 +273,10 @@ struct EditProfileView: View {
             }
             .onAppear {
                 name = viewModel.userProfile?.name ?? ""
+                if let avatarIcon = viewModel.userProfile?.avatarIcon,
+                   let index = avatars.firstIndex(of: avatarIcon) {
+                    selectedAvatarIndex = index
+                }
             }
         }
     }
@@ -367,6 +412,31 @@ struct ExportView: View {
                 showError = true
             }
             isExporting = false
+        }
+    }
+}
+
+// MARK: - Avatar Button View
+
+struct AvatarButtonView: View {
+    let avatarName: String
+    let isSelected: Bool
+    
+    var body: some View {
+        ZStack {
+            if isSelected {
+                Circle()
+                    .fill(LinearGradient(colors: [.pink, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 60, height: 60)
+            } else {
+                Circle()
+                    .fill(Color(.systemGray6))
+                    .frame(width: 60, height: 60)
+            }
+            
+            Image(systemName: avatarName)
+                .font(.title2)
+                .foregroundColor(isSelected ? .white : .primary)
         }
     }
 }
