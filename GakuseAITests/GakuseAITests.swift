@@ -417,4 +417,155 @@ struct APIServiceTests {
     }
 }
 
+// MARK: - LearningLogViewModel Tests
+
+struct LearningLogViewModelTests {
+    
+    @Test func testSortOrderNewestFirst() async throws {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        let oldLog = createLogWithDate(calendar.date(byAdding: .day, value: -2, to: today)!)
+        let middleLog = createLogWithDate(calendar.date(byAdding: .day, value: -1, to: today)!)
+        let newLog = createLogWithDate(today)
+        
+        let viewModel = LearningLogViewModel()
+        viewModel.logs = [oldLog, newLog, middleLog]
+        viewModel.sortOrder = .newestFirst
+        
+        let filtered = viewModel.filteredLogs
+        
+        #expect(filtered.count == 3)
+        #expect(filtered[0].id == newLog.id)
+        #expect(filtered[1].id == middleLog.id)
+        #expect(filtered[2].id == oldLog.id)
+    }
+    
+    @Test func testSortOrderOldestFirst() async throws {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        let oldLog = createLogWithDate(calendar.date(byAdding: .day, value: -2, to: today)!)
+        let middleLog = createLogWithDate(calendar.date(byAdding: .day, value: -1, to: today)!)
+        let newLog = createLogWithDate(today)
+        
+        let viewModel = LearningLogViewModel()
+        viewModel.logs = [oldLog, newLog, middleLog]
+        viewModel.sortOrder = .oldestFirst
+        
+        let filtered = viewModel.filteredLogs
+        
+        #expect(filtered.count == 3)
+        #expect(filtered[0].id == oldLog.id)
+        #expect(filtered[1].id == middleLog.id)
+        #expect(filtered[2].id == newLog.id)
+    }
+    
+    @Test func testSortOrderTitleAscending() async throws {
+        let logA = LearningLog(title: "Apple", description: "", category: .programming)
+        let logB = LearningLog(title: "Banana", description: "", category: .programming)
+        let logC = LearningLog(title: "Cherry", description: "", category: .programming)
+        
+        let viewModel = LearningLogViewModel()
+        viewModel.logs = [logB, logA, logC]
+        viewModel.sortOrder = .titleAscending
+        
+        let filtered = viewModel.filteredLogs
+        
+        #expect(filtered.count == 3)
+        #expect(filtered[0].title == "Apple")
+        #expect(filtered[1].title == "Banana")
+        #expect(filtered[2].title == "Cherry")
+    }
+    
+    @Test func testToggleFavorite() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+        
+        let log = LearningLog(title: "テスト", description: "説明", category: .programming)
+        try await service.appendLearningLog(log)
+        
+        let viewModel = LearningLogViewModel()
+        await viewModel.loadLogs()
+        
+        let initialLog = viewModel.logs.first!
+        #expect(initialLog.isFavorite == false)
+        
+        await viewModel.toggleFavorite(for: initialLog)
+        
+        let updatedLog = viewModel.logs.first!
+        #expect(updatedLog.isFavorite == true)
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+    
+    @Test func testFavoritesFilter() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+        
+        let log1 = createLogWithFavorite(isFavorite: true)
+        let log2 = createLogWithFavorite(isFavorite: false)
+        let log3 = createLogWithFavorite(isFavorite: true)
+        
+        try await service.appendLearningLog(log1)
+        try await service.appendLearningLog(log2)
+        try await service.appendLearningLog(log3)
+        
+        let viewModel = LearningLogViewModel()
+        await viewModel.loadLogs()
+        
+        viewModel.showingFavoritesOnly = true
+        
+        let filtered = viewModel.filteredLogs
+        
+        #expect(filtered.count == 2)
+        #expect(filtered.allSatisfy { $0.isFavorite })
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+    
+    @Test func testFavoriteCount() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+        
+        try await service.appendLearningLog(createLogWithFavorite(isFavorite: true))
+        try await service.appendLearningLog(createLogWithFavorite(isFavorite: false))
+        try await service.appendLearningLog(createLogWithFavorite(isFavorite: true))
+        
+        let viewModel = LearningLogViewModel()
+        await viewModel.loadLogs()
+        
+        #expect(viewModel.favoriteCount == 2)
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+    
+    // MARK: - Helper Methods
+
+    private func createLogWithDate(_ date: Date) -> LearningLog {
+        var log = LearningLog(title: "テスト", description: "説明", category: .programming)
+        return LearningLog(
+            id: log.id,
+            title: log.title,
+            description: log.description,
+            category: log.category,
+            isPublic: log.isPublic,
+            createdAt: date,
+            updatedAt: log.updatedAt,
+            skills: log.skills,
+            reflections: log.reflections,
+            isFavorite: log.isFavorite
+        )
+    }
+    
+    private func createLogWithFavorite(isFavorite: Bool) -> LearningLog {
+        var log = LearningLog(title: "テスト", description: "説明", category: .programming)
+        log.isFavorite = isFavorite
+        return log
+    }
+}
+
 

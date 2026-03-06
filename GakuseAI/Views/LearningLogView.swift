@@ -23,6 +23,21 @@ struct LearningLogView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
+                        // ソート順
+                        Menu {
+                            ForEach(LogSortOrder.allCases, id: \.self) { order in
+                                Button {
+                                    viewModel.sortOrder = order
+                                } label: {
+                                    Label(order.rawValue, systemImage: viewModel.sortOrder == order ? "checkmark" : "")
+                                }
+                            }
+                        } label: {
+                            Label("ソート順", systemImage: "arrow.up.arrow.down")
+                        }
+
+                        Divider()
+
                         // カテゴリフィルター
                         Menu {
                             Button {
@@ -49,6 +64,13 @@ struct LearningLogView: View {
                             viewModel.showOnlyPublic.toggle()
                         } label: {
                             Label("公開のみ", systemImage: viewModel.showOnlyPublic ? "checkmark" : "")
+                        }
+
+                        // お気に入りフィルター
+                        Button {
+                            viewModel.showingFavoritesOnly.toggle()
+                        } label: {
+                            Label("お気に入り", systemImage: viewModel.showingFavoritesOnly ? "star.fill" : "star")
                         }
 
                         Divider()
@@ -132,7 +154,7 @@ struct LearningLogView: View {
         List {
             ForEach(viewModel.filteredLogs) { log in
                 NavigationLink(value: log) {
-                    LearningLogRow(log: log)
+                    LearningLogRow(log: log, viewModel: viewModel)
                 }
             }
             .onDelete { offsets in
@@ -150,6 +172,9 @@ struct LearningLogView: View {
         .navigationDestination(for: LearningLog.self) { log in
             LearningLogDetailView(log: log, viewModel: viewModel)
         }
+        .sheet(item: $viewModel.logToEdit) { log in
+            LearningLogDetailView(log: log, viewModel: viewModel)
+        }
     }
 }
 
@@ -157,6 +182,7 @@ struct LearningLogView: View {
 
 struct LearningLogRow: View {
     let log: LearningLog
+    let viewModel: LearningLogViewModel
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -171,6 +197,16 @@ struct LearningLogRow: View {
                         .foregroundColor(.green)
                         .font(.caption)
                 }
+                Button {
+                    Task {
+                        await viewModel.toggleFavorite(for: log)
+                    }
+                } label: {
+                    Image(systemName: log.isFavorite ? "star.fill" : "star")
+                        .foregroundColor(log.isFavorite ? .yellow : .gray)
+                        .font(.caption)
+                }
+                .buttonStyle(.plain)
             }
             
             Text(log.description)

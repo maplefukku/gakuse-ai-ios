@@ -1,6 +1,15 @@
 import Foundation
 import SwiftUI
 
+/// ログのソート基準
+enum LogSortOrder: String, CaseIterable {
+    case newestFirst = "新しい順"
+    case oldestFirst = "古い順"
+    case titleAscending = "タイトル順（A-Z）"
+    case titleDescending = "タイトル順（Z-A）"
+    case category = "カテゴリ順"
+}
+
 @MainActor
 class LearningLogViewModel: ObservableObject {
     @Published var logs: [LearningLog] = []
@@ -11,13 +20,15 @@ class LearningLogViewModel: ObservableObject {
     @Published var selectedCategory: LearningCategory? = nil
     @Published var showOnlyPublic = false
     @Published var logToEdit: LearningLog? = nil
+    @Published var sortOrder: LogSortOrder = .newestFirst
+    @Published var showingFavoritesOnly = false
     
     private let persistenceService = PersistenceService.shared
 
     /// フィルター適用後のログリスト
     var filteredLogs: [LearningLog] {
         var result = logs
-        
+
         // テキスト検索
         if !searchText.isEmpty {
             result = result.filter { log in
@@ -25,18 +36,49 @@ class LearningLogViewModel: ObservableObject {
                 log.description.localizedCaseInsensitiveContains(searchText)
             }
         }
-        
+
         // カテゴリフィルター
         if let category = selectedCategory {
             result = result.filter { $0.category == category }
         }
-        
+
         // 公開設定フィルター
         if showOnlyPublic {
             result = result.filter { $0.isPublic }
         }
-        
+
+        // お気に入りフィルター
+        if showingFavoritesOnly {
+            result = result.filter { $0.isFavorite }
+        }
+
+        // ソート
+        result = sortLogs(result, by: sortOrder)
+
         return result
+    }
+
+    /// お気に入りのログ数
+    var favoriteCount: Int {
+        logs.filter { $0.isFavorite }.count
+    }
+
+    /// ログのソート
+    private func sortLogs(_ logs: [LearningLog], by order: LogSortOrder) -> [LearningLog] {
+        return logs.sorted { log1, log2 in
+            switch order {
+            case .newestFirst:
+                return log1.createdAt > log2.createdAt
+            case .oldestFirst:
+                return log1.createdAt < log2.createdAt
+            case .titleAscending:
+                return log1.title.localizedCompare(log2.title) == .orderedAscending
+            case .titleDescending:
+                return log1.title.localizedCompare(log2.title) == .orderedDescending
+            case .category:
+                return log1.category.rawValue.localizedCompare(log2.category.rawValue) == .orderedAscending
+            }
+        }
     }
     
     init() {
@@ -99,6 +141,12 @@ class LearningLogViewModel: ObservableObject {
         updatedLog.isPublic.toggle()
         await updateLog(updatedLog)
     }
+
+    func toggleFavorite(for log: LearningLog) async {
+        var updatedLog = log
+        updatedLog.isFavorite.toggle()
+        await updateLog(updatedLog)
+    }
     
     func addSkill(to log: LearningLog, name: String, level: SkillLevel) async {
         var updatedLog = log
@@ -153,7 +201,8 @@ class LearningLogViewModel: ObservableObject {
             createdAt: updatedLog.createdAt,
             updatedAt: Date(),
             skills: updatedLog.skills,
-            reflections: updatedLog.reflections
+            reflections: updatedLog.reflections,
+            isFavorite: updatedLog.isFavorite
         )
 
         await updateLog(updatedLog)

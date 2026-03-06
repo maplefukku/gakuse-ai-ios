@@ -10,6 +10,7 @@ struct LearningLog: Identifiable, Codable, Hashable {
     var skills: [Skill]
     var reflections: [Reflection]
     var isPublic: Bool
+    var isFavorite: Bool
     
     init(
         id: UUID = UUID(),
@@ -27,6 +28,7 @@ struct LearningLog: Identifiable, Codable, Hashable {
         self.skills = []
         self.reflections = []
         self.isPublic = isPublic
+        self.isFavorite = false
     }
 
     init(
@@ -38,7 +40,8 @@ struct LearningLog: Identifiable, Codable, Hashable {
         createdAt: Date,
         updatedAt: Date,
         skills: [Skill],
-        reflections: [Reflection]
+        reflections: [Reflection],
+        isFavorite: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -49,7 +52,9 @@ struct LearningLog: Identifiable, Codable, Hashable {
         self.updatedAt = updatedAt
         self.skills = skills
         self.reflections = reflections
+        self.isFavorite = isFavorite
     }
+
     
     static func == (lhs: LearningLog, rhs: LearningLog) -> Bool {
         lhs.id == rhs.id
