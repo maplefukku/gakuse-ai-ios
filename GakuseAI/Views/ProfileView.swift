@@ -490,8 +490,21 @@ struct DataExportView: View {
     }
     
     private func exportToCSV() {
-        // CSVエクスポートはLearningLogViewModelで実装されています
-        // ここではダミーの実装（実際にはLearningLogViewModelのexportToCSVを使用する必要があります）
+        isExporting = true
+        defer { isExporting = false }
+
+        Task {
+            // LearningLogViewModelを作成してCSVエクスポートを実行
+            let logViewModel = LearningLogViewModel()
+            await logViewModel.loadLogs()
+
+            if let url = logViewModel.exportToCSV() {
+                exportedURL = url
+                showingShareSheet = true
+            } else if let error = logViewModel.errorMessage {
+                print("CSVエクスポートエラー: \(error)")
+            }
+        }
     }
     
     private func exportToJSON() {

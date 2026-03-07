@@ -1775,4 +1775,162 @@ struct StatisticsViewLocaleOptimizationTests {
     }
 }
 
+// MARK: - LearningLogViewModel Export Tests
+
+struct LearningLogViewModelExportTests {
+
+    @Test func testExportToCSV() async throws {
+        let service = PersistenceService.shared
+
+        // クリーンアップしてから開始
+        try await service.deleteAllData()
+
+        // テストデータを作成
+        let logs = [
+            LearningLog(
+                title: "CSVテスト1",
+                description: "説明1",
+                category: .programming,
+                isPublic: true
+            ),
+            LearningLog(
+                title: "CSVテスト2",
+                description: "説明2",
+                category: .design,
+                isPublic: false
+            )
+        ]
+
+        try await service.saveLearningLogs(logs)
+
+        @MainActor
+        func testExport() async throws {
+            let viewModel = LearningLogViewModel()
+            await viewModel.loadLogs()
+
+            // CSVエクスポート
+            guard let csvURL = viewModel.exportToCSV() else {
+                throw TestError.exportFailed
+            }
+
+            // ファイルが存在することを確認
+            #expect(FileManager.default.fileExists(atPath: csvURL.path))
+
+            // ファイルの内容を読み込み
+            let csvContent = try String(contentsOf: csvURL, encoding: .utf8)
+
+            // CSVのヘッダーが含まれていることを確認
+            #expect(csvContent.contains("タイトル,説明,カテゴリ,作成日時,公開設定,スキル,振り返り"))
+
+            // テストデータが含まれていることを確認
+            #expect(csvContent.contains("CSVテスト1"))
+            #expect(csvContent.contains("CSVテスト2"))
+
+            // ファイルを削除
+            try FileManager.default.removeItem(at: csvURL)
+        }
+
+        try await testExport()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testExportToJSON() async throws {
+        let service = PersistenceService.shared
+
+        // クリーンアップしてから開始
+        try await service.deleteAllData()
+
+        // テストデータを作成
+        let logs = [
+            LearningLog(
+                title: "JSONテスト1",
+                description: "説明1",
+                category: .business,
+                isPublic: true
+            )
+        ]
+
+        try await service.saveLearningLogs(logs)
+
+        @MainActor
+        func testExport() async throws {
+            let viewModel = LearningLogViewModel()
+            await viewModel.loadLogs()
+
+            // JSONエクスポート
+            guard let jsonURL = viewModel.exportToJSON() else {
+                throw TestError.exportFailed
+            }
+
+            // ファイルが存在することを確認
+            #expect(FileManager.default.fileExists(atPath: jsonURL.path))
+
+            // ファイルの内容を読み込み
+            let data = try Data(contentsOf: jsonURL)
+            let decodedLogs = try JSONDecoder().decode([LearningLog].self, from: data)
+
+            // デコードされたデータが正しいことを確認
+            #expect(decodedLogs.count == 1)
+            #expect(decodedLogs[0].title == "JSONテスト1")
+
+            // ファイルを削除
+            try FileManager.default.removeItem(at: jsonURL)
+        }
+
+        try await testExport()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testExportToCSVWithSpecialCharacters() async throws {
+        let service = PersistenceService.shared
+
+        // クリーンアップしてから開始
+        try await service.deleteAllData()
+
+        // 特殊文字を含むテストデータ
+        let logs = [
+            LearningLog(
+                title: "テスト,カンマ",
+                description: "説明\"引用符\"",
+                category: .programming,
+                isPublic: false
+            )
+        ]
+
+        try await service.saveLearningLogs(logs)
+
+        @MainActor
+        func testExport() async throws {
+            let viewModel = LearningLogViewModel()
+            await viewModel.loadLogs()
+
+            guard let csvURL = viewModel.exportToCSV() else {
+                throw TestError.exportFailed
+            }
+
+            let csvContent = try String(contentsOf: csvURL, encoding: .utf8)
+
+            // カンマと引用符が適切にエスケープされていることを確認
+            #expect(csvContent.contains("\"テスト,カンマ\""))
+            #expect(csvContent.contains("\"説明\"\"引用符\"\"\""))
+
+            try FileManager.default.removeItem(at: csvURL)
+        }
+
+        try await testExport()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+}
+
+enum TestError: Error {
+    case exportFailed
+}
+
+
 
