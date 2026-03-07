@@ -115,13 +115,12 @@ struct StatisticsView: View {
                 .font(.headline)
 
             Chart(viewModel.weeklyData, id: \.date) { item in
-                LineMark(
-                    x: .value("日付", item.date),
+                BarMark(
+                    x: .value("曜日", item.weekday),
                     y: .value("ログ数", item.count)
                 )
                 .foregroundStyle(.pink)
-                .lineStyle(StrokeStyle(lineWidth: 3))
-                .symbol(by: .value("日付", item.date))
+                .cornerRadius(4)
             }
             .frame(height: 200)
             .chartYAxis {
@@ -134,7 +133,6 @@ struct StatisticsView: View {
                     }
                 }
             }
-            .chartXAxis(.hidden)
         }
         .padding()
         .background(Color(.systemGray6))

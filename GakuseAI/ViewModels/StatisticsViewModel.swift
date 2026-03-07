@@ -89,6 +89,9 @@ class StatisticsViewModel: ObservableObject {
     private func calculateWeeklyData() -> [WeeklyDataPoint] {
         let calendar = Calendar.current
         let today = Date()
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "ja_JP")
+        dateFormatter.dateFormat = "E"
 
         var dataPoints: [WeeklyDataPoint] = []
 
@@ -101,7 +104,8 @@ class StatisticsViewModel: ObservableObject {
                 calendar.isDate(log.createdAt, inSameDayAs: targetDate)
             }.count
 
-            dataPoints.append(WeeklyDataPoint(date: targetDate, count: count))
+            let weekday = dateFormatter.string(from: targetDate)
+            dataPoints.append(WeeklyDataPoint(date: targetDate, count: count, weekday: weekday))
         }
 
         return dataPoints.sorted { $0.date < $1.date }
@@ -155,6 +159,7 @@ struct WeeklyDataPoint: Identifiable {
     let id = UUID()
     let date: Date
     let count: Int
+    let weekday: String
 }
 
 struct CategoryDataPoint: Identifiable {
