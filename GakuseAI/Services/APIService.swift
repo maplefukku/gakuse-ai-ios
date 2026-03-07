@@ -191,7 +191,12 @@ actor APIService {
 
         // 文脈を考慮したモックレスポンス
         let responses = generateMockResponse(for: text, history: history)
-        return ChatMessageData(content: responses, isUser: false)
+        return ChatMessageData(
+            id: UUID(),
+            content: responses,
+            isUser: false,
+            timestamp: Date()
+        )
     }
     
     private func generateMockResponse(for text: String, history: [ChatMessageData]) -> String {

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// ローカルデータ永続化サービス
 /// SOUL.mdのビジョン「人は入力しない」を実現 - 学習ログを自動保存
@@ -201,16 +202,58 @@ struct UserProfile: Codable {
     }
 }
 
+enum AppTheme: String, Codable, CaseIterable {
+    case system
+    case light
+    case dark
+    case pink
+    case blue
+    case green
+    case orange
+    
+    var displayName: String {
+        switch self {
+        case .system: return "システム"
+        case .light: return "ライト"
+        case .dark: return "ダーク"
+        case .pink: return "ピンク"
+        case .blue: return "ブルー"
+        case .green: return "グリーン"
+        case .orange: return "オレンジ"
+        }
+    }
+    
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .light: return .light
+        case .dark: return .dark
+        default: return nil
+        }
+    }
+}
+
+enum AppLanguage: String, Codable, CaseIterable {
+    case japanese = "ja"
+    case english = "en"
+    
+    var displayName: String {
+        switch self {
+        case .japanese: return "日本語"
+        case .english: return "English"
+        }
+    }
+    
+    var locale: Locale {
+        return Locale(identifier: self.rawValue)
+    }
+}
+
 struct UserSettings: Codable {
     var notificationsEnabled: Bool = true
     var theme: AppTheme = .system
     var autoSaveEnabled: Bool = true
-}
-
-enum AppTheme: String, Codable {
-    case system
-    case light
-    case dark
+    var notificationTime: DateComponents?
+    var language: AppLanguage = .japanese
 }
 
 struct ChatMessageData: Identifiable, Codable {
@@ -218,11 +261,4 @@ struct ChatMessageData: Identifiable, Codable {
     let content: String
     let isUser: Bool
     let timestamp: Date
-    
-    init(content: String, isUser: Bool) {
-        self.id = UUID()
-        self.content = content
-        self.isUser = isUser
-        self.timestamp = Date()
-    }
 }

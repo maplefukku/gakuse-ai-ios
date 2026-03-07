@@ -44,7 +44,12 @@ class AIChatViewModel: ObservableObject {
         guard !text.isEmpty else { return }
         
         // ユーザーメッセージを追加
-        let userMessage = ChatMessageData(content: text, isUser: true)
+        let userMessage = ChatMessageData(
+            id: UUID(),
+            content: text,
+            isUser: true,
+            timestamp: Date()
+        )
         messages.append(userMessage)
         inputText = ""
         
@@ -67,8 +72,10 @@ class AIChatViewModel: ObservableObject {
             errorMessage = "AI応答エラー: \(error.localizedDescription)"
             // エラー時もダミー応答で継続性を保つ
             let fallbackResponse = ChatMessageData(
+                id: UUID(),
                 content: "申し訳ありません。一時的に応答できません。しばらく待ってから再度お試しください。",
-                isUser: false
+                isUser: false,
+                timestamp: Date()
             )
             messages.append(fallbackResponse)
         }

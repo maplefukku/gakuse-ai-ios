@@ -5,6 +5,7 @@ struct ProfileView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @State private var showingEditProfile = false
     @State private var showingThemePicker = false
+    @State private var showingAvatarPicker = false
     @State private var showingLogoutConfirmation = false
     @State private var showingDeleteDataConfirmation = false
     @State private var isDeletingData = false
@@ -17,98 +18,77 @@ struct ProfileView: View {
                     Button {
                         showingEditProfile = true
                     } label: {
-                        HStack {
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [.pink, .purple],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .frame(width: 60, height: 60)
-                                .overlay {
-                                    if let avatarIcon = viewModel.userProfile?.avatarIcon {
-                                        Image(systemName: avatarIcon)
-                                            .font(.title)
-                                            .foregroundColor(.white)
-                                    } else {
-                                        Text(viewModel.userProfile?.name.first?.uppercased() ?? "U")
-                                            .font(.title.bold())
-                                            .foregroundColor(.white)
-                                    }
-                                }
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(viewModel.userProfile?.name ?? "ユーザー")
-                                    .font(.headline)
-                                
-                                if let email = viewModel.userProfile?.email {
-                                    Text(email)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                } else {
-                                    Text("メールアドレス未設定")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.secondary)
-                                .font(.caption)
-                        }
-                        .padding(.vertical, 8)
-                        .foregroundColor(.primary)
+                        ProfileButtonContent(
+                            profile: viewModel.userProfile
+                        )
                     }
                 }
                 
                 // Settings Section
                 Section("設定") {
-                    Toggle("通知", isOn: Binding(
-                        get: { viewModel.userProfile?.settings.notificationsEnabled ?? true },
-                        set: { newValue in
-                            Task {
-                                var settings = viewModel.userProfile?.settings ?? UserSettings()
-                                settings.notificationsEnabled = newValue
-                                await viewModel.updateSettings(settings)
-                            }
-                        }
-                    ))
-                    
-                    Toggle("自動保存", isOn: Binding(
-                        get: { viewModel.userProfile?.settings.autoSaveEnabled ?? true },
-                        set: { newValue in
-                            Task {
-                                var settings = viewModel.userProfile?.settings ?? UserSettings()
-                                settings.autoSaveEnabled = newValue
-                                await viewModel.updateSettings(settings)
-                            }
-                        }
-                    ))
-                    
-                    Button {
-                        showingThemePicker = true
+                    // Notifications
+                    NavigationLink {
+                        NotificationSettingsView(viewModel: viewModel)
                     } label: {
                         HStack {
-                            Text("テーマ")
+                            Image(systemName: "bell.fill")
+                                .foregroundColor(.pink)
+                                .frame(width: 24)
+                            Text("通知")
                             Spacer()
-                            Text(themeName)
-                                .foregroundColor(.secondary)
+                            if viewModel.userProfile?.settings.notificationsEnabled == true {
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.secondary)
+                                    .font(.caption)
+                            }
+                        }
+                    }
+                    
+                    // Appearance
+                    NavigationLink {
+                        AppearanceSettingsView(viewModel: viewModel)
+                    } label: {
+                        HStack {
+                            Image(systemName: "paintbrush.fill")
+                                .foregroundColor(.pink)
+                                .frame(width: 24)
+                            Text("外観")
+                            Spacer()
                             Image(systemName: "chevron.right")
                                 .foregroundColor(.secondary)
                                 .font(.caption)
                         }
                     }
-                    .foregroundColor(.primary)
+                    
+                    // Language
+                    NavigationLink {
+                        LanguageSettingsView(viewModel: viewModel)
+                    } label: {
+                        HStack {
+                            Image(systemName: "globe")
+                                .foregroundColor(.pink)
+                                .frame(width: 24)
+                            Text("言語")
+                            Spacer()
+                            Text(languageDisplayName)
+                                .foregroundColor(.secondary)
+                                .font(.caption)
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                                .font(.caption)
+                        }
+                    }
                 }
                 
                 // Data Section
                 Section("データ") {
-                    NavigationLink("学習ログをエクスポート") {
-                        ExportView()
+                    NavigationLink {
+                        DataExportView(viewModel: viewModel)
+                    } label: {
+                        HStack {
+                            Image(systemName: "square.and.arrow.up")
+                            Text("学習ログをエクスポート")
+                        }
                     }
                     
                     Button(role: .destructive) {
@@ -117,6 +97,7 @@ struct ProfileView: View {
                         HStack {
                             if isDeletingData {
                                 ProgressView()
+                                    .controlSize(.small)
                             }
                             Text("すべてのデータを削除")
                             Spacer()
@@ -148,11 +129,24 @@ struct ProfileView: View {
                 }
             }
             .navigationTitle("設定")
+            .alert("エラー", isPresented: .init(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )) {
+                Button("OK") { viewModel.errorMessage = nil }
+            } message: {
+                if let error = viewModel.errorMessage {
+                    Text(error)
+                }
+            }
             .sheet(isPresented: $showingEditProfile) {
                 EditProfileView(viewModel: viewModel)
             }
             .sheet(isPresented: $showingThemePicker) {
                 ThemePickerView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showingAvatarPicker) {
+                AvatarPickerView(viewModel: viewModel)
             }
             .alert("ログアウトしますか？", isPresented: $showingLogoutConfirmation) {
                 Button("キャンセル", role: .cancel) {}
@@ -175,31 +169,425 @@ struct ProfileView: View {
         }
     }
     
-    private var themeName: String {
-        switch viewModel.userProfile?.settings.theme {
-        case .system:
-            return "システム"
-        case .light:
-            return "ライト"
-        case .dark:
-            return "ダーク"
-        case .none:
-            return "システム"
-        }
-    }
+    // MARK: - Helper Methods
     
     private var appVersion: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-        return "\(version) (\(build))"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+    }
+    
+    private var languageDisplayName: String {
+        viewModel.userProfile?.settings.language.displayName ?? "日本語"
     }
     
     private func deleteAllData() {
         isDeletingData = true
         Task {
-            try? await PersistenceService.shared.deleteAllData()
-            await viewModel.loadProfile()
+            await viewModel.deleteAllData()
             isDeletingData = false
+        }
+    }
+}
+
+// MARK: - Notification Settings View
+
+struct NotificationSettingsView: View {
+    @Environment(\.dismiss) var dismiss
+    @ObservedObject var viewModel: ProfileViewModel
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Toggle("通知を有効にする", isOn: Binding(
+                        get: { viewModel.userProfile?.settings.notificationsEnabled ?? true },
+                        set: { newValue in
+                            Task {
+                                var settings = viewModel.userProfile?.settings ?? UserSettings()
+                                settings.notificationsEnabled = newValue
+                                await viewModel.updateSettings(settings)
+                            }
+                        }
+                    ))
+                }
+                
+                if viewModel.userProfile?.settings.notificationsEnabled == true {
+                    Section("通知時間") {
+                        DatePicker("通知時間", selection: Binding(
+                            get: {
+                                guard let time = viewModel.userProfile?.settings.notificationTime else {
+                                    return Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date()
+                                }
+                                return Calendar.current.date(bySettingHour: time.hour ?? 9, minute: time.minute ?? 0, second: 0, of: Date()) ?? Date()
+                            },
+                            set: { newDate in
+                                Task {
+                                    let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
+                                    await viewModel.updateNotificationTime(components)
+                                }
+                            }
+                        ), displayedComponents: .hourAndMinute)
+                        .datePickerStyle(.compact)
+                    }
+                }
+            }
+            .navigationTitle("通知")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("完了") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Appearance Settings View
+
+struct AppearanceSettingsView: View {
+    @Environment(\.dismiss) var dismiss
+    @ObservedObject var viewModel: ProfileViewModel
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("テーマ") {
+                    Picker("テーマ", selection: Binding(
+                        get: { viewModel.userProfile?.settings.theme ?? .system },
+                        set: { newTheme in
+                            Task {
+                                await viewModel.updateTheme(newTheme)
+                            }
+                        }
+                    )) {
+                        ForEach(AppTheme.allCases, id: \.self) { theme in
+                            Text(theme.displayName).tag(theme)
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                }
+                
+                Section("プレビュー") {
+                    HStack {
+                        Text("現在のテーマ")
+                        Spacer()
+                        Text(currentThemeName)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .navigationTitle("外観")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("完了") { dismiss() }
+                }
+            }
+        }
+    }
+    
+    private var currentThemeName: String {
+        viewModel.userProfile?.settings.theme.displayName ?? "システム"
+    }
+}
+
+// MARK: - Language Settings View
+
+struct LanguageSettingsView: View {
+    @Environment(\.dismiss) var dismiss
+    @ObservedObject var viewModel: ProfileViewModel
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("言語") {
+                    Picker("言語", selection: Binding(
+                        get: { viewModel.userProfile?.settings.language ?? .japanese },
+                        set: { newLanguage in
+                            Task {
+                                await viewModel.updateLanguage(newLanguage)
+                            }
+                        }
+                    )) {
+                        ForEach(AppLanguage.allCases, id: \.self) { language in
+                            Text(language.displayName).tag(language)
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                }
+                
+                Section {
+                    Text("言語設定を変更すると、アプリが再起動されます。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .navigationTitle("言語")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("完了") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Avatar Picker View
+
+struct AvatarPickerView: View {
+    @Environment(\.dismiss) var dismiss
+    @ObservedObject var viewModel: ProfileViewModel
+    
+    let columns = [
+        GridItem(.flexible()),
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 20) {
+                    ForEach(AvatarIcon.allCases, id: \.self) { icon in
+                        Button {
+                            Task {
+                                await viewModel.updateProfile(name: viewModel.userProfile?.name ?? "ユーザー", avatarIcon: icon.rawValue)
+                                dismiss()
+                            }
+                        } label: {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.pink, .purple],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 80, height: 80)
+                                .overlay {
+                                    Image(systemName: icon.rawValue)
+                                        .font(.title)
+                                        .foregroundColor(.white)
+                                }
+                                .overlay(
+                                    Circle()
+                                        .stroke(
+                                            viewModel.userProfile?.avatarIcon == icon.rawValue ? Color.pink : Color.clear,
+                                            lineWidth: 3
+                                        )
+                                )
+                        }
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("アバター選択")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("キャンセル") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+enum AvatarIcon: String, CaseIterable {
+    case person = "person.fill"
+    case star = "star.fill"
+    case heart = "heart.fill"
+    case bolt = "bolt.fill"
+    case flame = "flame.fill"
+    case cloud = "cloud.fill"
+    case sun = "sun.max.fill"
+    case moon = "moon.fill"
+    case sparkle = "sparkles"
+    case trophy = "trophy.fill"
+    case rocket = "rocket.fill"
+    
+    var displayName: String {
+        switch self {
+        case .person: return "デフォルト"
+        case .star: return "スター"
+        case .heart: return "ハート"
+        case .bolt: return "雷"
+        case .flame: return "炎"
+        case .cloud: return "クラウド"
+        case .sun: return "太陽"
+        case .moon: return "月"
+        case .sparkle: return "キラキラ"
+        case .trophy: return "トロフィー"
+        case .rocket: return "ロケット"
+        }
+    }
+}
+
+// MARK: - Data Export View
+
+struct DataExportView: View {
+    @Environment(\.dismiss) var dismiss
+    @ObservedObject var viewModel: ProfileViewModel
+    @State private var isExporting = false
+    @State private var exportedURL: URL?
+    @State private var showingShareSheet = false
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("エクスポート形式") {
+                    Button {
+                        exportToCSV()
+                    } label: {
+                        HStack {
+                            Image(systemName: "doc.text")
+                                .foregroundColor(.pink)
+                            VStack(alignment: .leading) {
+                                Text("CSV形式")
+                                    .font(.headline)
+                                Text("スプレッドシートで開ける形式")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    
+                    Button {
+                        exportToJSON()
+                    } label: {
+                        HStack {
+                            Image(systemName: "doc.text")
+                                .foregroundColor(.pink)
+                            VStack(alignment: .leading) {
+                                Text("JSON形式")
+                                    .font(.headline)
+                                Text("データ形式でエクスポート")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+                
+                Section {
+                    Text("学習ログ、プロファイル、チャット履歴をエクスポートします。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .navigationTitle("データエクスポート")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("キャンセル") { dismiss() }
+                }
+            }
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            if let url = exportedURL {
+                ShareSheet(items: [url])
+            }
+        }
+    }
+    
+    private func exportToCSV() {
+        // TODO: Implement CSV export
+        // For now, just show an alert
+    }
+    
+    private func exportToJSON() {
+        isExporting = true
+        defer { isExporting = false }
+        
+        Task {
+            do {
+                let url = try await viewModel.exportAllData()
+                exportedURL = url
+                showingShareSheet = true
+            } catch {
+                // Handle error
+                print("エクスポートエラー: \(error)")
+            }
+        }
+    }
+}
+
+// MARK: - Helper Views
+
+struct ProfileButtonContent: View {
+    let profile: UserProfile?
+    
+    var body: some View {
+        HStack {
+            AvatarView(avatarIcon: profile?.avatarIcon, name: profile?.name)
+            
+            ProfileInfoView(profile: profile)
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .foregroundColor(.secondary)
+                .font(.caption)
+        }
+        .padding(.vertical, 8)
+        .foregroundColor(.primary)
+    }
+}
+
+struct AvatarView: View {
+    let avatarIcon: String?
+    let name: String?
+    
+    var body: some View {
+        Circle()
+            .fill(
+                LinearGradient(
+                    colors: [.pink, .purple],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .frame(width: 60, height: 60)
+            .overlay {
+                if let icon = avatarIcon {
+                    Image(systemName: icon)
+                        .font(.title)
+                        .foregroundColor(.white)
+                } else {
+                    Text(initialLetter)
+                        .font(.title.bold())
+                        .foregroundColor(.white)
+                }
+            }
+    }
+    
+    private var initialLetter: String {
+        name?.first?.uppercased() ?? "U"
+    }
+}
+
+struct ProfileInfoView: View {
+    let profile: UserProfile?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(displayName)
+                .font(.headline)
+            
+            Text(displayEmail)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+    
+    private var displayName: String {
+        profile?.name ?? "ユーザー"
+    }
+    
+    private var displayEmail: String {
+        if let email = profile?.email {
+            return email
+        } else {
+            return "メールアドレス未設定"
         }
     }
 }
@@ -210,44 +598,61 @@ struct EditProfileView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: ProfileViewModel
     @State private var name = ""
-    @State private var selectedAvatarIndex = 0
-    
-    private let avatars = [
-        "person.fill",
-        "star.fill",
-        "heart.fill",
-        "bolt.fill",
-        "moon.fill",
-        "sun.fill",
-        "cloud.fill",
-        "leaf.fill",
-        "flame.fill",
-        "sparkles"
-    ]
+    @State private var email = ""
     
     var body: some View {
         NavigationStack {
             Form {
                 Section("アバター") {
-                    LazyVGrid(columns: [
-                        GridItem(.adaptive(minimum: 70, maximum: 80))
-                    ], spacing: 16) {
-                        ForEach(0..<avatars.count, id: \.self) { index in
-                            Button {
-                                selectedAvatarIndex = index
-                            } label: {
-                                AvatarButtonView(
-                                    avatarName: avatars[index],
-                                    isSelected: selectedAvatarIndex == index
+                    Button {
+                        // Avatar selection is handled by AvatarPickerView
+                    } label: {
+                        HStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.pink, .purple],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
                                 )
+                                .frame(width: 60, height: 60)
+                                .overlay {
+                                    if let avatarIcon = viewModel.userProfile?.avatarIcon {
+                                        Image(systemName: avatarIcon)
+                                            .font(.title)
+                                            .foregroundColor(.white)
+                                    } else {
+                                        Text(viewModel.userProfile?.name.first?.uppercased() ?? "U")
+                                            .font(.title.bold())
+                                            .foregroundColor(.white)
+                                    }
+                                }
+                            
+                            VStack(alignment: .leading) {
+                                Text("アバター")
+                                Text("アイコンを選択")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                             }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                                .font(.caption)
                         }
                     }
-                    .padding(.vertical)
                 }
                 
                 Section("名前") {
                     TextField("名前", text: $name)
+                }
+                
+                Section("メールアドレス") {
+                    TextField("メールアドレス", text: $email)
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.emailAddress)
                 }
             }
             .navigationTitle("プロフィール編集")
@@ -258,13 +663,11 @@ struct EditProfileView: View {
                         dismiss()
                     }
                 }
+                
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") {
                         Task {
-                            await viewModel.updateProfile(
-                                name: name,
-                                avatarIcon: avatars[selectedAvatarIndex]
-                            )
+                            await viewModel.updateProfile(name: name, email: email.isEmpty ? nil : email)
                             dismiss()
                         }
                     }
@@ -273,10 +676,7 @@ struct EditProfileView: View {
             }
             .onAppear {
                 name = viewModel.userProfile?.name ?? ""
-                if let avatarIcon = viewModel.userProfile?.avatarIcon,
-                   let index = avatars.firstIndex(of: avatarIcon) {
-                    selectedAvatarIndex = index
-                }
+                email = viewModel.userProfile?.email ?? ""
             }
         }
     }
@@ -292,32 +692,39 @@ struct ThemePickerView: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach([AppTheme.system, .light, .dark], id: \.self) { theme in
-                    Button {
-                        selectedTheme = theme
-                        Task {
-                            var settings = viewModel.userProfile?.settings ?? UserSettings()
-                            settings.theme = theme
-                            await viewModel.updateSettings(settings)
-                        }
-                    } label: {
-                        HStack {
-                            Text(themeName(for: theme))
-                            Spacer()
-                            if selectedTheme == theme {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.pink)
+                Section {
+                    ForEach([AppTheme.system, .light, .dark], id: \.self) { theme in
+                        Button {
+                            selectedTheme = theme
+                            Task {
+                                await viewModel.updateTheme(theme)
+                                dismiss()
+                            }
+                        } label: {
+                            HStack {
+                                Text(themeName(for: theme))
+                                Spacer()
+                                if selectedTheme == theme {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.pink)
+                                }
                             }
                         }
+                        .foregroundColor(.primary)
                     }
-                    .foregroundColor(.primary)
+                }
+                
+                Section {
+                    Text("カラフルなテーマは「外観」設定で選択できます。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
             }
             .navigationTitle("テーマ")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("完了") {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("キャンセル") {
                         dismiss()
                     }
                 }
@@ -330,113 +737,10 @@ struct ThemePickerView: View {
     
     private func themeName(for theme: AppTheme) -> String {
         switch theme {
-        case .system:
-            return "システム"
-        case .light:
-            return "ライト"
-        case .dark:
-            return "ダーク"
-        }
-    }
-}
-
-// MARK: - Export View
-
-struct ExportView: View {
-    @State private var isExporting = false
-    @State private var exportURL: URL?
-    @State private var showShareSheet = false
-    @State private var errorMessage: String?
-    @State private var showError = false
-    
-    private let persistence = PersistenceService.shared
-    
-    var body: some View {
-        List {
-            Section {
-                Button {
-                    exportAsJSON()
-                } label: {
-                    HStack {
-                        Image(systemName: "square.and.arrow.up")
-                            .foregroundColor(.pink)
-                        Text("JSONでエクスポート")
-                        Spacer()
-                        if isExporting {
-                            ProgressView()
-                        }
-                    }
-                }
-                .disabled(isExporting)
-                
-                Button {
-                    // PDF形式は将来実装予定
-                } label: {
-                    HStack {
-                        Image(systemName: "doc.text")
-                            .foregroundColor(.gray)
-                        Text("PDFでエクスポート（準備中）")
-                    }
-                }
-                .disabled(true)
-            }
-            
-            Section {
-                Text("学習ログ、プロファイル、チャット履歴をJSON形式でエクスポートします。他のデバイスやサービスへの移行に利用できます。")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        }
-        .navigationTitle("エクスポート")
-        .sheet(isPresented: $showShareSheet) {
-            if let url = exportURL {
-                ShareSheet(activityItems: [url])
-            }
-        }
-        .alert("エラー", isPresented: $showError) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(errorMessage ?? "不明なエラーが発生しました")
-        }
-    }
-    
-    private func exportAsJSON() {
-        isExporting = true
-        Task {
-            do {
-                let url = try await persistence.exportAllData()
-                exportURL = url
-                showShareSheet = true
-            } catch {
-                errorMessage = error.localizedDescription
-                showError = true
-            }
-            isExporting = false
-        }
-    }
-}
-
-// MARK: - Avatar Button View
-
-struct AvatarButtonView: View {
-    let avatarName: String
-    let isSelected: Bool
-    
-    var body: some View {
-        ZStack {
-            if isSelected {
-                Circle()
-                    .fill(LinearGradient(colors: [.pink, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 60, height: 60)
-            } else {
-                Circle()
-                    .fill(Color(.systemGray6))
-                    .frame(width: 60, height: 60)
-            }
-            
-            Image(systemName: avatarName)
-                .font(.title2)
-                .foregroundColor(isSelected ? .white : .primary)
+        case .system: return "システム"
+        case .light: return "ライト"
+        case .dark: return "ダーク"
+        default: return theme.displayName
         }
     }
 }
@@ -444,14 +748,10 @@ struct AvatarButtonView: View {
 // MARK: - Share Sheet
 
 struct ShareSheet: UIViewControllerRepresentable {
-    var activityItems: [Any]
+    let items: [Any]
     
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        let controller = UIActivityViewController(
-            activityItems: activityItems,
-            applicationActivities: nil
-        )
-        return controller
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
     }
     
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
@@ -459,5 +759,4 @@ struct ShareSheet: UIViewControllerRepresentable {
 
 #Preview {
     ProfileView()
-        .environmentObject(AuthViewModel())
 }

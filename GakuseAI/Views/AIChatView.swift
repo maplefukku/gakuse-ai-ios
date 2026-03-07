@@ -76,12 +76,12 @@ struct AIChatView: View {
             }
             .sheet(isPresented: $viewModel.showingShareSheet) {
                 if let text = viewModel.messageToShare {
-                    ShareSheet(activityItems: [text] as [Any])
+                    ShareSheet(items: [text] as [Any])
                 }
             }
             .sheet(isPresented: $viewModel.showingExportSheet) {
                 if let url = viewModel.exportURL {
-                    ShareSheet(activityItems: [url])
+                    ShareSheet(items: [url] as [Any])
                 }
             }
         }
