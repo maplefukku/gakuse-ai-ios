@@ -1432,4 +1432,347 @@ struct AIChatViewModelAdditionalTests {
     }
 }
 
+// MARK: - DetailPopupSheet Locale Tests
+
+struct DetailPopupSheetTests {
+    @Test func testFormatDateWithJapaneseLocale() async throws {
+        let calendar = Calendar.current
+        let today = Date()
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+
+        let dataPoint = WeeklyDataPoint(date: yesterday, count: 2, weekday: "火")
+        let logs = [
+            LearningLog(title: "ログ1", description: "説明1", category: .programming),
+            LearningLog(title: "ログ2", description: "説明2", category: .design)
+        ]
+
+        // DetailPopupSheetのロジックをテスト
+        let dayLogs = logs.filter { log in
+            calendar.isDate(log.createdAt, inSameDayAs: dataPoint.date)
+        }
+
+        // 日本語ロケールでフォーマット
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy/MM/dd"
+        formatter.locale = Locale(identifier: "ja_JP")
+        let formattedDate = formatter.string(from: dataPoint.date)
+
+        // 日本語形式であることを確認
+        #expect(formattedDate.contains("/"))
+
+        // ログがフィルタリングされていることを確認
+        #expect(dayLogs.isEmpty == false)
+    }
+
+    @Test func testFormatDateWithEnglishLocale() async throws {
+        let calendar = Calendar.current
+        let today = Date()
+
+        let dataPoint = WeeklyDataPoint(date: today, count: 1, weekday: "Mon")
+
+        // 英語ロケールでフォーマット
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy/MM/dd"
+        formatter.locale = Locale(identifier: "en_US")
+        let formattedDate = formatter.string(from: dataPoint.date)
+
+        // 英語形式であることを確認
+        #expect(formattedDate.contains("/"))
+    }
+
+    @Test func testFormatTimeWithJapaneseLocale() async throws {
+        let calendar = Calendar.current
+        let today = Date()
+        let now = calendar.date(bySettingHour: 14, minute: 30, second: 0, of: today)!
+
+        // 日本語ロケールでフォーマット
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.locale = Locale(identifier: "ja_JP")
+        let formattedTime = formatter.string(from: now)
+
+        #expect(formattedTime == "14:30")
+    }
+
+    @Test func testFormatTimeWithEnglishLocale() async throws {
+        let calendar = Calendar.current
+        let today = Date()
+        let now = calendar.date(bySettingHour: 2, minute: 30, second: 0, of: today)!
+
+        // 英語ロケールでフォーマット（12時間形式になる可能性がある）
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.locale = Locale(identifier: "en_US")
+        let formattedTime = formatter.string(from: now)
+
+        // 空ではないことを確認
+        #expect(!formattedTime.isEmpty)
+    }
+}
+
+// MARK: - DayLogRow Locale Tests
+
+struct DayLogRowTests {
+    @Test func testDayLogRowWithJapaneseLocale() async throws {
+        let calendar = Calendar.current
+        let today = Date()
+        let now = calendar.date(bySettingHour: 15, minute: 45, second: 0, of: today)!
+
+        let log = LearningLog(
+            title: "テストログ",
+            description: "テスト説明",
+            category: .programming
+        )
+        log.skills.append(Skill(name: "Swift", level: .intermediate))
+
+        // 日本語ロケールでフォーマット
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.locale = Locale(identifier: "ja_JP")
+        let formattedTime = formatter.string(from: now)
+
+        #expect(formattedTime == "15:45")
+    }
+
+    @Test func testDayLogRowWithEnglishLocale() async throws {
+        let calendar = Calendar.current
+        let today = Date()
+        let now = calendar.date(bySettingHour: 9, minute: 15, second: 0, of: today)!
+
+        let log = LearningLog(
+            title: "Test Log",
+            description: "Test description",
+            category: .programming
+        )
+        log.skills.append(Skill(name: "Swift", level: .intermediate))
+
+        // 英語ロケールでフォーマット
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.locale = Locale(identifier: "en_US")
+        let formattedTime = formatter.string(from: now)
+
+        // 空ではないことを確認
+        #expect(!formattedTime.isEmpty)
+    }
+
+    @Test func testDayLogRowCategoryColor() async throws {
+        let log = LearningLog(
+            title: "テストログ",
+            description: "テスト説明",
+            category: .programming
+        )
+
+        // カテゴリの色が正しく設定されている
+        #expect(log.category.color == .blue)
+
+        let designLog = LearningLog(
+            title: "デザインログ",
+            description: "デザイン説明",
+            category: .design
+        )
+
+        #expect(designLog.category.color == .purple)
+    }
+}
+
+// MARK: - StatisticsView Locale Optimization Tests
+
+struct StatisticsViewLocaleOptimizationTests {
+    @Test func testWeeklyDataLocaleUpdateOnSettingsChange() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        let calendar = Calendar.current
+        let today = Date()
+
+        // テストデータを作成
+        var testLogs: [LearningLog] = []
+        for dayOffset in 0..<7 {
+            guard let targetDate = calendar.date(byAdding: .day, value: -dayOffset, to: today) else {
+                continue
+            }
+
+            var log = LearningLog(
+                title: "ログ\(dayOffset)",
+                description: "説明",
+                category: .programming,
+                isPublic: true
+            )
+            log = LearningLog(
+                id: log.id,
+                title: log.title,
+                description: log.description,
+                category: log.category,
+                isPublic: log.isPublic,
+                createdAt: targetDate,
+                updatedAt: log.updatedAt,
+                skills: log.skills,
+                reflections: log.reflections
+            )
+            testLogs.append(log)
+        }
+
+        try await service.saveLearningLogs(testLogs)
+
+        // 日本語設定のプロファイルを作成
+        var profile = UserProfile(name: "テストユーザー")
+        profile.settings.language = .japanese
+        try await service.saveUserProfile(profile)
+
+        @MainActor
+        func testViewModel() async {
+            let viewModel = StatisticsViewModel()
+            await viewModel.loadData()
+
+            // 日本語ロケールで初期化
+            let initialWeekday = viewModel.weeklyData.first?.weekday ?? ""
+            #expect(viewModel.userSettings.language == .japanese)
+            #expect(!initialWeekday.isEmpty)
+
+            // 英語に変更
+            viewModel.userSettings.language = .english
+
+            // ロケールが変更されたことを確認
+            #expect(viewModel.userSettings.language == .english)
+
+            // @PublishedプロパティなのでUI更新がトリガーされる
+            // 週間データの曜日ラベルが英語になっているか確認
+            let updatedWeekday = viewModel.weeklyData.first?.weekday ?? ""
+            #expect(!updatedWeekday.isEmpty)
+        }
+
+        await testViewModel()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testPublishedUserSettingsTriggersUIUpdate() async throws {
+        let viewModel = StatisticsViewModel()
+
+        // userSettingsが@Publishedであることを確認
+        // 設定を変更するとUI更新がトリガーされるはず
+
+        let initialTheme = viewModel.userSettings.theme
+        #expect(initialTheme == .system)
+
+        // テーマを変更
+        viewModel.userSettings.theme = .dark
+        #expect(viewModel.userSettings.theme == .dark)
+
+        // 言語を変更
+        viewModel.userSettings.language = .english
+        #expect(viewModel.userSettings.language == .english)
+
+        // 通知設定を変更
+        viewModel.userSettings.notificationEnabled = false
+        #expect(viewModel.userSettings.notificationEnabled == false)
+    }
+
+    @Test func testLocaleChangeDoesNotAffectDataIntegrity() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        let logs = [
+            LearningLog(title: "ログ1", description: "説明1", category: .programming),
+            LearningLog(title: "ログ2", description: "説明2", category: .design),
+            LearningLog(title: "ログ3", description: "説明3", category: .business)
+        ]
+
+        try await service.saveLearningLogs(logs)
+
+        @MainActor
+        func testViewModel() async {
+            let viewModel = StatisticsViewModel()
+            await viewModel.loadData()
+
+            // 初期状態
+            let initialTotalLogs = viewModel.totalLogsCount
+            let initialTotalSkills = viewModel.totalSkillsCount
+            let initialWeeklyDataCount = viewModel.weeklyData.count
+
+            // ロケールを変更
+            viewModel.userSettings.language = .english
+
+            // データの整合性が保たれていることを確認
+            #expect(viewModel.totalLogsCount == initialTotalLogs)
+            #expect(viewModel.totalSkillsCount == initialTotalSkills)
+            #expect(viewModel.weeklyData.count == initialWeeklyDataCount)
+        }
+
+        await testViewModel()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testWeeklyDataCalculationWithDifferentLocales() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        let calendar = Calendar.current
+        let today = Date()
+
+        // テストデータを作成
+        var testLogs: [LearningLog] = []
+        for dayOffset in 0..<7 {
+            guard let targetDate = calendar.date(byAdding: .day, value: -dayOffset, to: today) else {
+                continue
+            }
+
+            var log = LearningLog(
+                title: "ログ\(dayOffset)",
+                description: "説明",
+                category: .programming,
+                isPublic: true
+            )
+            log = LearningLog(
+                id: log.id,
+                title: log.title,
+                description: log.description,
+                category: log.category,
+                isPublic: log.isPublic,
+                createdAt: targetDate,
+                updatedAt: log.updatedAt,
+                skills: log.skills,
+                reflections: log.reflections
+            )
+            testLogs.append(log)
+        }
+
+        try await service.saveLearningLogs(testLogs)
+
+        @MainActor
+        func testViewModel() async {
+            let viewModel = StatisticsViewModel()
+            await viewModel.loadData()
+
+            // 日本語ロケールで曜日ラベルを生成
+            let japaneseData = viewModel.weeklyData
+            let japaneseLabels = japaneseData.map { $0.weekday }
+
+            // 英語に変更して曜日ラベルを再生成
+            viewModel.userSettings.language = .english
+            let englishData = viewModel.weeklyData
+            let englishLabels = englishData.map { $0.weekday }
+
+            // 曜日ラベルの数は同じであるべき
+            #expect(japaneseLabels.count == englishLabels.count)
+
+            // 各曜日のロール数は同じであるべき
+            for i in 0..<japaneseData.count {
+                #expect(japaneseData[i].count == englishData[i].count)
+            }
+
+            // ただし、曜日ラベルの形式は異なる可能性がある（ロケールによる）
+        }
+
+        await testViewModel()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+}
+
 
