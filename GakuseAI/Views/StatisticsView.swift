@@ -3,8 +3,9 @@ import Charts
 
 struct StatisticsView: View {
     @StateObject private var viewModel = StatisticsViewModel()
+    @State private var selectedDataPoint: WeeklyDataPoint?
     @Environment(\.dismiss) var dismiss
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -121,6 +122,14 @@ struct StatisticsView: View {
                 )
                 .foregroundStyle(.pink)
                 .cornerRadius(4)
+                .opacity(selectedDataPoint?.date == item.date ? 1.0 : 0.7)
+                .annotation(position: .top) {
+                    if item.count > 0 {
+                        Text("\(item.count)")
+                            .font(.caption)
+                            .foregroundColor(.primary)
+                    }
+                }
             }
             .frame(height: 200)
             .chartYAxis {
@@ -132,6 +141,35 @@ struct StatisticsView: View {
                         }
                     }
                 }
+            }
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    Rectangle()
+                        .fill(Color.clear)
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { value in
+                                    let x = value.location.x - geometry[proxy.plotAreaFrame].minX
+                                    if let date: Date = proxy.value(atX: x) {
+                                        selectedDataPoint = viewModel.weeklyData.first { $0.date == date }
+                                    }
+                                }
+                        )
+                }
+            }
+
+            if let selectedDataPoint = selectedDataPoint {
+                HStack {
+                    Text("選択: \(selectedDataPoint.weekday)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("\(selectedDataPoint.count) 件")
+                        .font(.caption.bold())
+                        .foregroundColor(.pink)
+                }
+                .padding(.top, 4)
             }
         }
         .padding()

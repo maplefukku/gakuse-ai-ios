@@ -6,6 +6,7 @@ class StatisticsViewModel: ObservableObject {
     @Published var learningLogs: [LearningLog] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var userSettings: UserSettings = UserSettings()
 
     // 計算プロパティ
     var totalLogsCount: Int {
@@ -51,6 +52,7 @@ class StatisticsViewModel: ObservableObject {
 
         do {
             learningLogs = try await persistenceService.loadLearningLogs()
+            userSettings = try await persistenceService.loadUserSettings()
         } catch {
             errorMessage = "読み込みエラー: \(error.localizedDescription)"
         }
@@ -90,7 +92,7 @@ class StatisticsViewModel: ObservableObject {
         let calendar = Calendar.current
         let today = Date()
         let dateFormatter = DateFormatter()
-        dateFormatter.locale = Locale(identifier: "ja_JP")
+        dateFormatter.locale = userSettings.language.locale
         dateFormatter.dateFormat = "E"
 
         var dataPoints: [WeeklyDataPoint] = []
@@ -113,7 +115,7 @@ class StatisticsViewModel: ObservableObject {
 
     private func calculateCategoryData() -> [CategoryDataPoint] {
         let grouped = Dictionary(grouping: learningLogs, by: { $0.category })
-        let maxCount = grouped.values.map { $0.count }.max() ?? 1
+        let _ = grouped.values.map { $0.count }.max() ?? 1
 
         return LearningCategory.allCases.compactMap { category in
             let count = grouped[category]?.count ?? 0

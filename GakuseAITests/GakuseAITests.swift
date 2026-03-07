@@ -804,7 +804,7 @@ struct LearningLogViewModelSearchOptionsTests {
 // MARK: - StatisticsViewModel Tests
 
 struct StatisticsViewModelTests {
-    
+
     @Test func testWeeklyDataWithWeekdayLabels() async throws {
         let calendar = Calendar.current
         let today = Date()
@@ -865,7 +865,7 @@ struct StatisticsViewModelTests {
         // クリーンアップ
         try await service.deleteAllData()
     }
-    
+
     @Test func testWeeklyDataOrdering() async throws {
         let service = PersistenceService.shared
         try await service.deleteAllData()
@@ -923,6 +923,168 @@ struct StatisticsViewModelTests {
         }
 
         await testViewModel()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testWeeklyDataWithJapaneseLocale() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        let calendar = Calendar.current
+        let today = Date()
+
+        // テストデータを作成
+        var testLogs: [LearningLog] = []
+        for dayOffset in 0..<7 {
+            guard let targetDate = calendar.date(byAdding: .day, value: -dayOffset, to: today) else {
+                continue
+            }
+
+            var log = LearningLog(
+                title: "ログ\(dayOffset)",
+                description: "説明",
+                category: .programming,
+                isPublic: true
+            )
+            log = LearningLog(
+                id: log.id,
+                title: log.title,
+                description: log.description,
+                category: log.category,
+                isPublic: log.isPublic,
+                createdAt: targetDate,
+                updatedAt: log.updatedAt,
+                skills: log.skills,
+                reflections: log.reflections
+            )
+            testLogs.append(log)
+        }
+
+        try await service.saveLearningLogs(testLogs)
+
+        // 日本語ロケールのユーザー設定を作成
+        var profile = UserProfile(name: "テストユーザー")
+        profile.settings.language = .japanese
+        try await service.saveUserProfile(profile)
+
+        @MainActor
+        func testViewModel() async {
+            let viewModel = StatisticsViewModel()
+            await viewModel.loadData()
+
+            // 日本語ロケールが使用されていることを確認
+            #expect(viewModel.userSettings.language == .japanese)
+
+            // 曜日ラベルが日本語であることを確認
+            let weeklyData = viewModel.weeklyData
+            for dataPoint in weeklyData {
+                #expect(!dataPoint.weekday.isEmpty)
+            }
+        }
+
+        await testViewModel()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testWeeklyDataWithEnglishLocale() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        let calendar = Calendar.current
+        let today = Date()
+
+        // テストデータを作成
+        var testLogs: [LearningLog] = []
+        for dayOffset in 0..<7 {
+            guard let targetDate = calendar.date(byAdding: .day, value: -dayOffset, to: today) else {
+                continue
+            }
+
+            var log = LearningLog(
+                title: "ログ\(dayOffset)",
+                description: "説明",
+                category: .programming,
+                isPublic: true
+            )
+            log = LearningLog(
+                id: log.id,
+                title: log.title,
+                description: log.description,
+                category: log.category,
+                isPublic: log.isPublic,
+                createdAt: targetDate,
+                updatedAt: log.updatedAt,
+                skills: log.skills,
+                reflections: log.reflections
+            )
+            testLogs.append(log)
+        }
+
+        try await service.saveLearningLogs(testLogs)
+
+        // 英語ロケールのユーザー設定を作成
+        var profile = UserProfile(name: "Test User")
+        profile.settings.language = .english
+        try await service.saveUserProfile(profile)
+
+        @MainActor
+        func testViewModel() async {
+            let viewModel = StatisticsViewModel()
+            await viewModel.loadData()
+
+            // 英語ロケールが使用されていることを確認
+            #expect(viewModel.userSettings.language == .english)
+
+            // 曜日ラベルが英語であることを確認
+            let weeklyData = viewModel.weeklyData
+            for dataPoint in weeklyData {
+                #expect(!dataPoint.weekday.isEmpty)
+            }
+        }
+
+        await testViewModel()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testUserSettingsLoading() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        // ユーザー設定を保存
+        var profile = UserProfile(name: "テストユーザー")
+        profile.settings.theme = .dark
+        profile.settings.language = .english
+        profile.settings.notificationEnabled = false
+        try await service.saveUserProfile(profile)
+
+        // 設定を読み込み
+        let loadedSettings = try await service.loadUserSettings()
+
+        #expect(loadedSettings.theme == .dark)
+        #expect(loadedSettings.language == .english)
+        #expect(loadedSettings.notificationEnabled == false)
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testUserSettingsDefaultValues() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        // プロファイルがない場合、デフォルト設定が返される
+        let settings = try await service.loadUserSettings()
+
+        #expect(settings.theme == .system)
+        #expect(settings.language == .japanese)
+        #expect(settings.notificationEnabled == true)
+        #expect(settings.autoSaveEnabled == true)
 
         // クリーンアップ
         try await service.deleteAllData()

@@ -89,6 +89,16 @@ actor PersistenceService {
         let data = try Data(contentsOf: userProfileURL)
         return try decoder.decode(UserProfile.self, from: data)
     }
+
+    func loadUserSettings() async throws -> UserSettings {
+        ensureDirectoryExists()
+        guard fileManager.fileExists(atPath: userProfileURL.path) else {
+            return UserSettings()
+        }
+        let data = try Data(contentsOf: userProfileURL)
+        let profile = try decoder.decode(UserProfile.self, from: data)
+        return profile.settings
+    }
     
     // MARK: - Chat History
     
