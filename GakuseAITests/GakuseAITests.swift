@@ -801,4 +801,132 @@ struct LearningLogViewModelSearchOptionsTests {
     }
 }
 
+// MARK: - StatisticsViewModel Tests
+
+struct StatisticsViewModelTests {
+    
+    @Test func testWeeklyDataWithWeekdayLabels() async throws {
+        let calendar = Calendar.current
+        let today = Date()
+
+        // 過去7日間のテストデータを作成
+        var testLogs: [LearningLog] = []
+        for dayOffset in 0..<7 {
+            guard let targetDate = calendar.date(byAdding: .day, value: -dayOffset, to: today) else {
+                continue
+            }
+
+            // 各曜日1つのログを作成
+            var log = LearningLog(
+                title: "ログ\(dayOffset)",
+                description: "説明",
+                category: .programming,
+                isPublic: true
+            )
+            log = LearningLog(
+                id: log.id,
+                title: log.title,
+                description: log.description,
+                category: log.category,
+                isPublic: log.isPublic,
+                createdAt: targetDate,
+                updatedAt: log.updatedAt,
+                skills: log.skills,
+                reflections: log.reflections
+            )
+            testLogs.append(log)
+        }
+
+        // PersistenceServiceをモックしてテストデータを設定
+        let service = PersistenceService.shared
+        try await service.saveLearningLogs(testLogs)
+
+        // StatisticsViewModelを作成
+        @MainActor
+        func testViewModel() async {
+            let viewModel = StatisticsViewModel()
+            await viewModel.loadData()
+
+            // 過去7日間のデータが取得されていることを確認
+            let weeklyData = viewModel.weeklyData
+            let totalCount = weeklyData.reduce(0) { $0 + $1.count }
+
+            // すべての曜日で1つずつ、合計7つのログがあるはず
+            #expect(totalCount == 7)
+
+            // 各データポイントに曜日ラベルがあることを確認
+            for dataPoint in weeklyData {
+                #expect(!dataPoint.weekday.isEmpty)
+            }
+        }
+
+        await testViewModel()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+    
+    @Test func testWeeklyDataOrdering() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        let calendar = Calendar.current
+        let today = Date()
+
+        // 過去7日間のテストデータを作成（データ数を変える）
+        var testLogs: [LearningLog] = []
+        for dayOffset in 0..<7 {
+            guard let targetDate = calendar.date(byAdding: .day, value: -dayOffset, to: today) else {
+                continue
+            }
+
+            // 日付によってデータ数を変える
+            let logCount = (dayOffset % 3) + 1
+            for i in 0..<logCount {
+                var log = LearningLog(
+                    title: "ログ\(dayOffset)-\(i)",
+                    description: "説明",
+                    category: .programming,
+                    isPublic: true
+                )
+                log = LearningLog(
+                    id: log.id,
+                    title: log.title,
+                    description: log.description,
+                    category: log.category,
+                    isPublic: log.isPublic,
+                    createdAt: targetDate,
+                    updatedAt: log.updatedAt,
+                    skills: log.skills,
+                    reflections: log.reflections
+                )
+                testLogs.append(log)
+            }
+        }
+
+        try await service.saveLearningLogs(testLogs)
+
+        @MainActor
+        func testViewModel() async {
+            let viewModel = StatisticsViewModel()
+            await viewModel.loadData()
+
+            let weeklyData = viewModel.weeklyData
+
+            // データが古い順にソートされていることを確認
+            for i in 0..<(weeklyData.count - 1) {
+                #expect(weeklyData[i].date < weeklyData[i + 1].date)
+            }
+
+            // 各曜日ラベルが適切に設定されていることを確認
+            #expect(weeklyData.count == 7)
+        }
+
+        await testViewModel()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+}
+
 
