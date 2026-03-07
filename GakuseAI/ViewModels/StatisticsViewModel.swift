@@ -119,17 +119,7 @@ class StatisticsViewModel: ObservableObject {
         return LearningCategory.allCases.compactMap { category in
             let count = grouped[category]?.count ?? 0
             if count > 0 {
-                let color: Color = {
-                    switch category {
-                    case .programming: return .blue
-                    case .design: return .purple
-                    case .business: return .orange
-                    case .language: return .green
-                    case .creative: return .pink
-                    case .other: return .gray
-                    }
-                }()
-                return CategoryDataPoint(category: category, count: count, color: color)
+                return CategoryDataPoint(category: category, count: count, color: category.color)
             }
             return nil
         }

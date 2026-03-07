@@ -490,8 +490,8 @@ struct DataExportView: View {
     }
     
     private func exportToCSV() {
-        // TODO: Implement CSV export
-        // For now, just show an alert
+        // CSVエクスポートはLearningLogViewModelで実装されています
+        // ここではダミーの実装（実際にはLearningLogViewModelのexportToCSVを使用する必要があります）
     }
     
     private func exportToJSON() {
@@ -604,8 +604,8 @@ struct EditProfileView: View {
         NavigationStack {
             Form {
                 Section("アバター") {
-                    Button {
-                        // Avatar selection is handled by AvatarPickerView
+                    NavigationLink {
+                        AvatarPickerView(viewModel: viewModel)
                     } label: {
                         HStack {
                             Circle()
@@ -628,16 +628,16 @@ struct EditProfileView: View {
                                             .foregroundColor(.white)
                                     }
                                 }
-                            
+
                             VStack(alignment: .leading) {
                                 Text("アバター")
                                 Text("アイコンを選択")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
-                            
+
                             Spacer()
-                            
+
                             Image(systemName: "chevron.right")
                                 .foregroundColor(.secondary)
                                 .font(.caption)

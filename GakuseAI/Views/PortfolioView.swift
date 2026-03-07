@@ -136,16 +136,7 @@ struct PortfolioView: View {
                     }
                 }
             }
-            .chartXAxis {
-                AxisMarks(position: .bottom) { value in
-                    AxisValueLabel {
-                        if let stringValue = value.as(String.self) {
-                            Text(stringValue)
-                                .font(.caption)
-                        }
-                    }
-                }
-            }
+            .chartXAxis(.hidden)
         }
         .padding()
         .background(Color(.systemGray6))

@@ -86,21 +86,9 @@ class PortfolioViewModel: ObservableObject {
         return LearningCategory.allCases.compactMap { category in
             let count = grouped[category]?.count ?? 0
             if count > 0 {
-                return (category: category, count: count, color: categoryColor(for: category))
+                return (category: category, count: count, color: category.color)
             }
             return nil
-        }
-    }
-
-    /// カテゴリの色を取得
-    private func categoryColor(for category: LearningCategory) -> Color {
-        switch category {
-        case .programming: return .blue
-        case .design: return .purple
-        case .business: return .orange
-        case .language: return .green
-        case .creative: return .pink
-        case .other: return .gray
         }
     }
 
