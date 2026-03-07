@@ -203,77 +203,337 @@ actor APIService {
         // SOUL.mdのビジョンに沿った壁打ちスタイルのレスポンス
         let lowercased = text.lowercased()
         
+        // 会話履歴を分析して文脈を取得
+        let context = analyzeConversationContext(history)
+        
+        // ユーザーの入力に基づいて適切なレスポンスを選択
         if lowercased.contains("目標") || lowercased.contains("ゴール") {
-            return """
-            その目標、とても面白いですね！もう少し深掘りさせてください：
-            
-            1. **なぜ**その目標を選んだのですか？
-            2. それを達成したら、**どう変わっていたい**ですか？
-            3. 今、そのための**最初の一歩**は何ですか？
-            
-            小さく始めて、素早く学ぶ。それが大切です。
-            """
+            return generateGoalResponse(text, context: context)
         }
         
         if lowercased.contains("プロジェクト") || lowercased.contains("取り組んで") {
-            return """
-            素晴らしいプロジェクトですね！壁打ちとして質問させてもらいます：
-            
-            - このプロジェクトで**一番学びたいこと**は何ですか？
-            - **誰のために**作っていますか？
-            - **2週間で**どこまで進められそうですか？
-            
-            完璧を目指すより、まずは動くものを。 🙂
-            """
+            return generateProjectResponse(text, context: context)
         }
         
         if lowercased.contains("キャリア") || lowercased.contains("将来") || lowercased.contains("仕事") {
-            return """
-            キャリアの方向性、大事なテーマですね。
-            
-            あなたが**ワクワクすること**は何ですか？
-            
-            逆に、**絶対にやりたくないこと**は？
-            
-            その間に、あなたが得意で、世の中が必要としている何かがあるはずです。
-            """
+            return generateCareerResponse(text, context: context)
         }
         
         if lowercased.contains("学習") || lowercased.contains("勉強") || lowercased.contains("計画") {
-            return """
-            学習計画ですね！いくつかアドバイスさせてください：
-            
-            📚 **パレートの法則**：成果の80%は行動の20%から生まれます
-            🔄 **PDCA**：計画→実行→評価→改善のサイクルを回す
-            🎯 **1日1つの小さな成果**：毎日何かをアウトプットする
-            
-            今週、何をアウトプットしますか？
-            """
+            return generateLearningResponse(text, context: context)
         }
         
         if lowercased.contains("アイデア") || lowercased.contains("考え") {
-            return """
-            そのアイデア、面白いですね！
-            
-            少し視点を変えてみましょう：
-            
-            - **逆**にしたらどうなりますか？
-            - **10倍スケール**したら？
-            - **誰かが既にやってたら**、どう差別化しますか？
-            
-            アイデアは出すだけじゃなく、検証してなんぼです 💡
-            """
+            return generateIdeaResponse(text, context: context)
         }
         
         // デフォルトレスポンス
-        return """
+        return generateDefaultResponse(text, context: context)
+    }
+    
+    // MARK: - Context Analysis
+    
+    private struct ConversationContext {
+        var mentionedTopics: Set<String>
+        var userInterests: Set<String>
+        var recentThemes: [String]
+        var conversationDepth: Int
+        
+        init() {
+            mentionedTopics = []
+            userInterests = []
+            recentThemes = []
+            conversationDepth = 0
+        }
+    }
+    
+    private func analyzeConversationContext(_ history: [ChatMessageData]) -> ConversationContext {
+        var context = ConversationContext()
+        
+        // 直近のユーザーメッセージを分析（最大5件）
+        let recentMessages = history.filter { $0.isUser }.suffix(5)
+        
+        for message in recentMessages {
+            let text = message.content.lowercased()
+            context.conversationDepth += 1
+            
+            // トピック抽出
+            let topics = extractTopics(from: text)
+            context.mentionedTopics.formUnion(topics)
+            
+            // ユーザーの興味推定
+            let interests = extractInterests(from: text)
+            context.userInterests.formUnion(interests)
+            
+            // テーマ抽出
+            if let theme = extractTheme(from: text) {
+                context.recentThemes.append(theme)
+            }
+        }
+        
+        return context
+    }
+    
+    private func extractTopics(from text: String) -> Set<String> {
+        var topics: Set<String> = []
+        
+        let topicKeywords = [
+            ("プログラミング", ["swift", "ios", "コード", "アプリ"]),
+            ("デザイン", ["ui", "ux", "デザイン", "レイアウト"]),
+            ("ビジネス", ["起業", "ビジネス", "マーケティング"]),
+            ("語学", ["英語", "語学", "翻訳"]),
+            ("キャリア", ["仕事", "キャリア", "転職"])
+        ]
+        
+        for (topic, keywords) in topicKeywords {
+            if keywords.contains(where: { text.contains($0) }) {
+                topics.insert(topic)
+            }
+        }
+        
+        return topics
+    }
+    
+    private func extractInterests(from text: String) -> Set<String> {
+        var interests: Set<String> = []
+        
+        let interestKeywords = [
+            ("クリエイティブ", ["クリエイティブ", "創造", "表現"]),
+            ("学習", ["学び", "勉強", "成長"]),
+            ("技術", ["技術", "開発", "プログラム"]),
+            ("人間関係", ["人間関係", "コミュニケーション", "チーム"])
+        ]
+        
+        for (interest, keywords) in interestKeywords {
+            if keywords.contains(where: { text.contains($0) }) {
+                interests.insert(interest)
+            }
+        }
+        
+        return interests
+    }
+    
+    private func extractTheme(from text: String) -> String? {
+        if text.contains("目標") || text.contains("ゴール") {
+            return "目標設定"
+        } else if text.contains("プロジェクト") {
+            return "プロジェクト開発"
+        } else if text.contains("キャリア") {
+            return "キャリア"
+        } else if text.contains("学習") {
+            return "学習"
+        } else if text.contains("アイデア") {
+            return "アイデア出し"
+        }
+        return nil
+    }
+    
+    // MARK: - Response Generators
+    
+    private func generateGoalResponse(_ text: String, context: ConversationContext) -> String {
+        var response = """
+        その目標、とても面白いですね！
+        """
+        
+        if context.conversationDepth > 1 {
+            response += """
+            
+            前回の会話から、\(context.mentionedTopics.joined(separator: "・"))に関心があることが分かりましたね。
+            """
+        }
+        
+        response += """
+        
+        もう少し深掘りさせてください：
+        
+        1. **なぜ**その目標を選んだのですか？
+        2. それを達成したら、**どう変わっていたい**ですか？
+        3. 今、そのための**最初の一歩**は何ですか？
+        """
+        
+        if context.userInterests.contains("クリエイティブ") {
+            response += """
+            
+            ちなみに、あなたのクリエイティブな視点は、この目標の達成に役立ちそうですね！
+            """
+        }
+        
+        response += """
+        
+        小さく始めて、素早く学ぶ。それが大切です。
+        """
+        
+        return response
+    }
+    
+    private func generateProjectResponse(_ text: String, context: ConversationContext) -> String {
+        var response = """
+        素晴らしいプロジェクトですね！壁打ちとして質問させてもらいます：
+        """
+        
+        if !context.mentionedTopics.isEmpty {
+            response += """
+            
+            \(context.mentionedTopics.joined(separator: "・"))の領域で、
+            """
+        }
+        
+        response += """
+        
+        - このプロジェクトで**一番学びたいこと**は何ですか？
+        - **誰のために**作っていますか？
+        - **2週間で**どこまで進められそうですか？
+        
+        完璧を目指すより、まずは動くものを。 🙂
+        """
+        
+        if context.conversationDepth > 2 {
+            response += """
+            
+            これまでの会話から、あなたのスタイルが見えてきましたね。
+            焦らず、一つずつ進めましょう！
+            """
+        }
+        
+        return response
+    }
+    
+    private func generateCareerResponse(_ text: String, context: ConversationContext) -> String {
+        var response = """
+        キャリアの方向性、大事なテーマですね。
+        
+        あなたが**ワクワクすること**は何ですか？
+        
+        逆に、**絶対にやりたくないこと**は？
+        """
+        
+        if context.userInterests.contains("技術") && context.userInterests.contains("人間関係") {
+            response += """
+            
+            技術と人間関係の両方に興味があるんですね。
+            これは大きな強みです！
+            """
+        }
+        
+        response += """
+        
+        その間に、あなたが得意で、世の中が必要としている何かがあるはずです。
+        """
+        
+        if !context.recentThemes.isEmpty {
+            response += """
+            
+            \(context.recentThemes.joined(separator: "、"))を通して、
+            もっと自分自身のことが分かってきたのではないでしょうか？
+            """
+        }
+        
+        return response
+    }
+    
+    private func generateLearningResponse(_ text: String, context: ConversationContext) -> String {
+        var response = """
+        学習計画ですね！いくつかアドバイスさせてください：
+        
+        📚 **パレートの法則**：成果の80%は行動の20%から生まれます
+        🔄 **PDCA**：計画→実行→評価→改善のサイクルを回す
+        🎯 **1日1つの小さな成果**：毎日何かをアウトプットする
+        """
+        
+        if context.conversationDepth > 1 {
+            let learningCount = context.mentionedTopics.filter { ["学習", "勉強", "成長"].contains($0) }.count
+            if learningCount > 1 {
+                response += """
+                
+                継続的に学習に取り組まれているんですね！
+                その姿勢こそが、最大の資産です。
+                """
+            }
+        }
+        
+        response += """
+        
+        今週、何をアウトプットしますか？
+        """
+        
+        if context.userInterests.contains("学習") {
+            response += """
+            
+            学びへの情熱を感じますね！
+            無理せず、楽しんで続けましょう。
+            """
+        }
+        
+        return response
+    }
+    
+    private func generateIdeaResponse(_ text: String, context: ConversationContext) -> String {
+        var response = """
+        そのアイデア、面白いですね！
+        
+        少し視点を変えてみましょう：
+        
+        - **逆**にしたらどうなりますか？
+        - **10倍スケール**したら？
+        - **誰かが既にやってたら**、どう差別化しますか？
+        """
+        
+        if context.conversationDepth > 1 && context.userInterests.contains("クリエイティブ") {
+            response += """
+            
+            あなたのクリエイティブな思考力が活きそうですね！
+            既にいくつかのアイデアを出されているので、
+            今回はそれらを組み合わせてみてはいかがでしょうか？
+            """
+        }
+        
+        response += """
+        
+        アイデアは出すだけじゃなく、検証してなんぼです 💡
+        """
+        
+        if context.recentThemes.contains("プロジェクト開発") {
+            response += """
+            
+            プロジェクトの文脈から考えると、
+            最小限のプロトタイプを作って、
+            早速フィードバックをもらうのが良いかもしれません。
+            """
+        }
+        
+        return response
+    }
+    
+    private func generateDefaultResponse(_ text: String, context: ConversationContext) -> String {
+        var response = """
         そうですね、もう少し教えていただけますか？
         
         - 何を**きっかけ**でその考えに至りましたか？
         - **一番の課題**は何ですか？
         - **今日できること**はありますか？
+        """
+        
+        if context.conversationDepth > 1 {
+            response += """
+            
+            これまでの会話から、\(context.mentionedTopics.prefix(3).joined(separator: "・"))について
+            考えてこられたんですね。
+            """
+        }
+        
+        if !context.userInterests.isEmpty {
+            response += """
+            
+            \(context.userInterests.prefix(2).joined(separator: "・"))に関心があるんですね。
+            その視点を大切にしていきましょう。
+            """
+        }
+        
+        response += """
         
         小さな一歩が、大きな変化を生みます。
         """
+        
+        return response
     }
 }
