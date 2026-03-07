@@ -415,6 +415,81 @@ struct APIServiceTests {
         #expect(response.isUser == false)
         #expect(!response.content.isEmpty)
     }
+    
+    @Test func testChatResponseGoalTopic() async throws {
+        let service = APIService.shared
+        
+        let response = try await service.sendChatMessage("目標を設定したい", history: [])
+        
+        #expect(response.content.contains("目標"))
+        #expect(response.content.contains("なぜ") || response.content.contains("どう"))
+    }
+    
+    @Test func testChatResponseProjectTopic() async throws {
+        let service = APIService.shared
+        
+        let response = try await service.sendChatMessage("プロジェクトを進めたい", history: [])
+        
+        #expect(response.content.contains("プロジェクト"))
+        #expect(response.content.contains("学びたい") || response.content.contains("誰のために"))
+    }
+    
+    @Test func testChatResponseCareerTopic() async throws {
+        let service = APIService.shared
+        
+        let response = try await service.sendChatMessage("キャリアを考えたい", history: [])
+        
+        #expect(response.content.contains("キャリア"))
+        #expect(response.content.contains("ワクワク"))
+    }
+    
+    @Test func testChatResponseLearningTopic() async throws {
+        let service = APIService.shared
+        
+        let response = try await service.sendChatMessage("学習計画を立てたい", history: [])
+        
+        #expect(response.content.contains("学習") || response.content.contains("パレート") || response.content.contains("PDCA"))
+    }
+    
+    @Test func testChatResponseIdeaTopic() async throws {
+        let service = APIService.shared
+        
+        let response = try await service.sendChatMessage("アイデアを出したい", history: [])
+        
+        #expect(response.content.contains("アイデア"))
+        #expect(response.content.contains("視点"))
+    }
+    
+    @Test func testChatResponseWithHistoryDepth() async throws {
+        let service = APIService.shared
+        
+        // 複数回の会話履歴を作成
+        let history = [
+            ChatMessageData(content: "学習を始めたい", isUser: true),
+            ChatMessageData(content: "素晴らしいですね！", isUser: false),
+            ChatMessageData(content: "Swiftを学んでいます", isUser: true),
+            ChatMessageData(content: "良いですね！", isUser: false),
+            ChatMessageData(content: "iOSアプリを作っています", isUser: true),
+        ]
+        
+        let response = try await service.sendChatMessage("次はどうすればいいですか？", history: history)
+        
+        #expect(response.isUser == false)
+        #expect(!response.content.isEmpty)
+    }
+    
+    @Test func testChatResponseWithProgrammingInterest() async throws {
+        let service = APIService.shared
+        
+        let history = [
+            ChatMessageData(content: "プログラミングを学んでいます", isUser: true),
+        ]
+        
+        let response = try await service.sendChatMessage("計画を立てたい", history: history)
+        
+        #expect(response.isUser == false)
+        #expect(!response.content.isEmpty)
+    }
 }
 
 // MARK: - LearningLogViewModel Tests
