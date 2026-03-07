@@ -5,8 +5,6 @@ struct StatisticsView: View {
     @StateObject private var viewModel = StatisticsViewModel()
     @State private var selectedDataPoint: WeeklyDataPoint?
     @State private var showingDetailPopup = false
-    @State private var detailPopupAnchor: UnitPoint = .center
-    @Environment(\.dismiss) var dismiss
 
     var body: some View {
         NavigationStack {
@@ -334,6 +332,7 @@ struct SkillProgressRow: View {
 struct DetailPopupSheet: View {
     let dataPoint: WeeklyDataPoint
     let allLogs: [LearningLog]
+    @Environment(\.locale) var locale
     @Environment(\.dismiss) var dismiss
 
     private var dayLogs: [LearningLog] {
@@ -395,13 +394,21 @@ struct DetailPopupSheet: View {
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy/MM/dd"
-        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.locale = locale
+        return formatter.string(from: date)
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.locale = locale
         return formatter.string(from: date)
     }
 }
 
 struct DayLogRow: View {
     let log: LearningLog
+    @Environment(\.locale) var locale
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -449,7 +456,7 @@ struct DayLogRow: View {
     private func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
-        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.locale = locale
         return formatter.string(from: date)
     }
 }
