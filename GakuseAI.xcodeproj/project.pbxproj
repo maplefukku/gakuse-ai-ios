@@ -290,7 +290,6 @@
 				};
 			};
 			buildConfigurationList = 600039A6412704A48CEA0583 /* Build configuration list for PBXProject "GakuseAI" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -303,6 +302,7 @@
 				628542338580CB6F79CBCC46 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
+			productRefGroup = 88104219A1A9D2C0852FA6A2 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (

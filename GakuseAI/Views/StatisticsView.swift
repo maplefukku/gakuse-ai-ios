@@ -159,7 +159,7 @@ struct StatisticsView: View {
                                 // タップ（短押し）で選択
                                 DragGesture(minimumDistance: 0)
                                     .onChanged { value in
-                                        let x = value.location.x - geometry[proxy.plotAreaFrame].minX
+                                        let x = value.location.x - geometry[proxy.plotFrame!].minX
                                         if let date: Date = proxy.value(atX: x) {
                                             selectedDataPoint = viewModel.weeklyData.first { $0.date == date }
                                         }
@@ -167,7 +167,7 @@ struct StatisticsView: View {
                                 // 長押しで詳細ポップアップ表示
                                 LongPressGesture(minimumDuration: 0.5)
                                     .onEnded { _ in
-                                        if let selectedDataPoint = selectedDataPoint {
+                                        if selectedDataPoint != nil {
                                             showingDetailPopup = true
                                         }
                                     }
