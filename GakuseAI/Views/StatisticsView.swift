@@ -4,6 +4,8 @@ import Charts
 struct StatisticsView: View {
     @StateObject private var viewModel = StatisticsViewModel()
     @State private var selectedDataPoint: WeeklyDataPoint?
+    @State private var showingDetailPopup = false
+    @State private var detailPopupAnchor: UnitPoint = .center
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
@@ -49,6 +51,13 @@ struct StatisticsView: View {
         .onAppear {
             Task {
                 await viewModel.loadData()
+            }
+        }
+        .sheet(isPresented: $showingDetailPopup) {
+            if let dataPoint = selectedDataPoint {
+                DetailPopupSheet(dataPoint: dataPoint, allLogs: viewModel.learningLogs)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
             }
         }
     }
@@ -148,13 +157,23 @@ struct StatisticsView: View {
                         .fill(Color.clear)
                         .contentShape(Rectangle())
                         .gesture(
-                            DragGesture(minimumDistance: 0)
-                                .onChanged { value in
-                                    let x = value.location.x - geometry[proxy.plotAreaFrame].minX
-                                    if let date: Date = proxy.value(atX: x) {
-                                        selectedDataPoint = viewModel.weeklyData.first { $0.date == date }
+                            SimultaneousGesture(
+                                // タップ（短押し）で選択
+                                DragGesture(minimumDistance: 0)
+                                    .onChanged { value in
+                                        let x = value.location.x - geometry[proxy.plotAreaFrame].minX
+                                        if let date: Date = proxy.value(atX: x) {
+                                            selectedDataPoint = viewModel.weeklyData.first { $0.date == date }
+                                        }
+                                    },
+                                // 長押しで詳細ポップアップ表示
+                                LongPressGesture(minimumDuration: 0.5)
+                                    .onEnded { _ in
+                                        if let selectedDataPoint = selectedDataPoint {
+                                            showingDetailPopup = true
+                                        }
                                     }
-                                }
+                            )
                         )
                 }
             }
@@ -308,4 +327,128 @@ struct SkillProgressRow: View {
 
 #Preview {
     StatisticsView()
+}
+
+// MARK: - Detail Popup Sheet
+
+struct DetailPopupSheet: View {
+    let dataPoint: WeeklyDataPoint
+    let allLogs: [LearningLog]
+
+    private var dayLogs: [LearningLog] {
+        let calendar = Calendar.current
+        return allLogs.filter { log in
+            calendar.isDate(log.createdAt, inSameDayAs: dataPoint.date)
+        }.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    // 日付と件数
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(formatDate(dataPoint.date))
+                            .font(.title2.bold())
+                        Text("\(dataPoint.weekday)")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        HStack(spacing: 8) {
+                            Image(systemName: "doc.fill")
+                            Text("\(dataPoint.count) 件の学習ログ")
+                                .font(.headline)
+                                .foregroundColor(.pink)
+                        }
+                    }
+                    .padding(.vertical)
+
+                    Divider()
+
+                    // 学習ログリスト
+                    if dayLogs.isEmpty {
+                        Text("ログがありません")
+                            .foregroundColor(.secondary)
+                    } else {
+                        VStack(spacing: 12) {
+                            ForEach(dayLogs) { log in
+                                DayLogRow(log: log)
+                                Divider()
+                            }
+                        }
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("詳細")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("閉じる") {
+                        // シートを閉じる
+                    }
+                }
+            }
+        }
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy/MM/dd"
+        formatter.locale = Locale(identifier: "ja_JP")
+        return formatter.string(from: date)
+    }
+}
+
+struct DayLogRow: View {
+    let log: LearningLog
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // タイトルとカテゴリ
+            HStack {
+                Text(log.title)
+                    .font(.headline)
+                Spacer()
+                Text(log.category.rawValue)
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(log.category.color.opacity(0.2))
+                    .foregroundColor(log.category.color)
+                    .cornerRadius(8)
+            }
+
+            // 説明
+            Text(log.description)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .lineLimit(2)
+
+            // スキルとメタデータ
+            HStack {
+                if !log.skills.isEmpty {
+                    HStack(spacing: 4) {
+                        Image(systemName: "star.fill")
+                            .font(.caption)
+                        Text(log.skills.map { $0.name }.joined(separator: ", "))
+                            .font(.caption)
+                    }
+                }
+
+                Spacer()
+
+                Text(formatTime(log.createdAt))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.locale = Locale(identifier: "ja_JP")
+        return formatter.string(from: date)
+    }
 }

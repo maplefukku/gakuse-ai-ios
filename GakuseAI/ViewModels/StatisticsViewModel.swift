@@ -6,7 +6,18 @@ class StatisticsViewModel: ObservableObject {
     @Published var learningLogs: [LearningLog] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
-    @Published var userSettings: UserSettings = UserSettings()
+
+    private var _userSettings: UserSettings = UserSettings() {
+        didSet {
+            // 設定変更時に自動的に週間データを再計算
+            objectWillChange.send()
+        }
+    }
+
+    var userSettings: UserSettings {
+        get { _userSettings }
+        set { _userSettings = newValue }
+    }
 
     // 計算プロパティ
     var totalLogsCount: Int {

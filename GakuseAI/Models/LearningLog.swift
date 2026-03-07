@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct LearningLog: Identifiable, Codable, Hashable {
     let id: UUID
@@ -72,7 +73,7 @@ enum LearningCategory: String, Codable, CaseIterable {
     case language = "語学"
     case creative = "クリエイティブ"
     case other = "その他"
-    
+
     var icon: String {
         switch self {
         case .programming: return "chevron.left.forwardslash.chevron.right"
@@ -81,6 +82,17 @@ enum LearningCategory: String, Codable, CaseIterable {
         case .language: return "globe"
         case .creative: return "sparkles"
         case .other: return "star.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .programming: return .blue
+        case .design: return .purple
+        case .business: return .orange
+        case .language: return .green
+        case .creative: return .pink
+        case .other: return .gray
         }
     }
 }

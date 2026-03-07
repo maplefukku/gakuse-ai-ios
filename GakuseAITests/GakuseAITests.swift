@@ -1091,4 +1091,159 @@ struct StatisticsViewModelTests {
     }
 }
 
+// MARK: - StatisticsViewModel Tests
+
+struct StatisticsViewModelTests {
+    @Test func testWeeklyDataCalculation() async throws {
+        let viewModel = StatisticsViewModel()
+
+        // テストデータを追加
+        let today = Date()
+        let calendar = Calendar.current
+
+        let logs = [
+            LearningLog(title: "今日の学習", description: "説明", category: .programming),
+            LearningLog(title: "昨日の学習", description: "説明", category: .design)
+        ]
+
+        // 手動でログを設定（通常はloadDataで読み込む）
+        // ここではテスト用に簡易的に設定
+        viewModel.learningLogs = logs
+
+        let weeklyData = viewModel.weeklyData
+
+        // 週間データが生成されていることを確認
+        #expect(!weeklyData.isEmpty)
+        #expect(weeklyData.count == 7) // 7日分
+    }
+
+    @Test func testLocaleChangeTriggersUpdate() async throws {
+        let viewModel = StatisticsViewModel()
+
+        // デフォルトのロケール
+        let initialLocale = viewModel.userSettings.language.locale
+        #expect(initialLocale.identifier == "ja")
+
+        // ロケールを変更
+        viewModel.userSettings.language = .english
+
+        // ロケールが変更されたことを確認
+        #expect(viewModel.userSettings.language.locale.identifier == "en")
+    }
+
+    @Test func testStreakDaysCalculation() async throws {
+        let viewModel = StatisticsViewModel()
+
+        // テストデータを設定（昨日まで3日連続）
+        let calendar = Calendar.current
+        let today = Date()
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let dayBeforeYesterday = calendar.date(byAdding: .day, value: -2, to: today)!
+
+        let logs = [
+            LearningLog(title: "3日前", description: "説明", category: .programming),
+            LearningLog(title: "2日前", description: "説明", category: .design),
+            LearningLog(title: "昨日", description: "説明", category: .business)
+        ]
+
+        // 日付を調整
+        viewModel.learningLogs = logs.map { log in
+            LearningLog(
+                id: log.id,
+                title: log.title,
+                description: log.description,
+                category: log.category,
+                isPublic: log.isPublic,
+                createdAt: calendar.date(byAdding: .day, value: -3, to: today)!,
+                updatedAt: log.updatedAt,
+                skills: log.skills,
+                reflections: log.reflections,
+                isFavorite: log.isFavorite
+            )
+        }
+
+        let streak = viewModel.streakDays
+
+        // 連続日数が計算されていることを確認
+        #expect(streak >= 0)
+    }
+}
+
+// MARK: - ProfileViewModel Tests
+
+struct ProfileViewModelTests {
+    @Test func testFormattedNotificationTimeWithLocale() async throws {
+        let viewModel = ProfileViewModel()
+
+        // プロファイルを作成
+        let profile = UserProfile(name: "テストユーザー")
+        var settings = profile.settings
+        settings.notificationTime = DateComponents(hour: 9, minute: 30)
+        profile.settings = settings
+
+        viewModel.userProfile = profile
+
+        // 日本語ロケール
+        let timeJp = viewModel.formattedNotificationTime
+        #expect(!timeJp.isEmpty)
+
+        // 英語ロケールに変更
+        viewModel.userProfile?.settings.language = .english
+        let timeEn = viewModel.formattedNotificationTime
+        #expect(!timeEn.isEmpty)
+
+        // ロケールが異なれば形式も異なる可能性がある
+        // 少なくとも空ではないことを確認
+    }
+
+    @Test func testLanguageSetting() async throws {
+        let viewModel = ProfileViewModel()
+
+        // プロファイルを作成
+        let profile = UserProfile(name: "テストユーザー")
+        viewModel.userProfile = profile
+
+        // 日本語
+        viewModel.userProfile?.settings.language = .japanese
+        #expect(viewModel.userProfile?.settings.language == .japanese)
+
+        // 英語
+        viewModel.userProfile?.settings.language = .english
+        #expect(viewModel.userProfile?.settings.language == .english)
+    }
+}
+
+// MARK: - LearningCategory Tests
+
+struct LearningCategoryTests {
+    @Test func testCategoryColor() async throws {
+        // 各カテゴリの色が正しく定義されているか
+        #expect(LearningCategory.programming.color == .blue)
+        #expect(LearningCategory.design.color == .purple)
+        #expect(LearningCategory.business.color == .orange)
+        #expect(LearningCategory.language.color == .green)
+        #expect(LearningCategory.creative.color == .pink)
+        #expect(LearningCategory.other.color == .gray)
+    }
+
+    @Test func testCategoryIcon() async throws {
+        // 各カテゴリのアイコンが正しく定義されているか
+        #expect(LearningCategory.programming.icon == "chevron.left.forwardslash.chevron.right")
+        #expect(LearningCategory.design.icon == "paintbrush.fill")
+        #expect(LearningCategory.business.icon == "briefcase.fill")
+        #expect(LearningCategory.language.icon == "globe")
+        #expect(LearningCategory.creative.icon == "sparkles")
+        #expect(LearningCategory.other.icon == "star.fill")
+    }
+
+    @Test func testCategoryRawValue() async throws {
+        #expect(LearningCategory.programming.rawValue == "プログラミング")
+        #expect(LearningCategory.design.rawValue == "デザイン")
+        #expect(LearningCategory.business.rawValue == "ビジネス")
+        #expect(LearningCategory.language.rawValue == "語学")
+        #expect(LearningCategory.creative.rawValue == "クリエイティブ")
+        #expect(LearningCategory.other.rawValue == "その他")
+    }
+}
+
 

@@ -170,22 +170,25 @@ class ProfileViewModel: ObservableObject {
     }
     
     // MARK: - Helper
-    
+
     var formattedNotificationTime: String {
         guard let time = userProfile?.settings.notificationTime else {
             return "09:00"
         }
-        
+
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
-        formatter.locale = Locale(identifier: "ja_JP")
-        
+        // ユーザーの言語設定からロケールを取得
+        let locale = userProfile?.settings.language.locale ?? Locale(identifier: "ja_JP")
+        formatter.locale = locale
+        formatter.timeStyle = .short
+
         if let hour = time.hour, let minute = time.minute {
             if let date = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: Date()) {
                 return formatter.string(from: date)
             }
         }
-        
+
         return "09:00"
     }
 }
