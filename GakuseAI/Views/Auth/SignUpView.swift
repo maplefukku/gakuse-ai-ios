@@ -3,13 +3,13 @@ import SwiftUI
 struct SignUpView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = AuthViewModel()
-    
+
     @State private var name = ""
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
     @State private var showingTerms = false
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -19,15 +19,15 @@ struct SignUpView: View {
                     endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 24) {
                         // Header
                         headerSection
-                        
+
                         // Form
                         formSection
-                        
+
                         // Actions
                         actionButtons
                     }
@@ -55,55 +55,55 @@ struct SignUpView: View {
             }
         }
     }
-    
+
     // MARK: - Header Section
-    
+
     private var headerSection: some View {
         VStack(spacing: 12) {
             Image(systemName: "person.badge.plus")
                 .font(.system(size: 50))
                 .foregroundColor(.pink)
-            
+
             Text("新規登録")
                 .font(.title2.bold())
-            
+
             Text("学習の旅を始めましょう")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
         }
         .padding(.top)
     }
-    
+
     // MARK: - Form Section
-    
+
     private var formSection: some View {
         VStack(spacing: 16) {
             TextField("名前", text: $name)
                 .textFieldStyle(.roundedBorder)
-            
+
             TextField("メールアドレス", text: $email)
                 .textFieldStyle(.roundedBorder)
                 .keyboardType(.emailAddress)
                 .autocapitalization(.none)
                 .autocorrectionDisabled()
-            
+
             SecureField("パスワード（8文字以上）", text: $password)
                 .textFieldStyle(.roundedBorder)
-            
+
             SecureField("パスワード確認", text: $confirmPassword)
                 .textFieldStyle(.roundedBorder)
-            
+
             // Password strength indicator
             passwordStrengthView
-            
+
             // Terms
             termsView
         }
         .padding(.horizontal)
     }
-    
+
     // MARK: - Password Strength
-    
+
     private var passwordStrengthView: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 4) {
@@ -114,7 +114,7 @@ struct SignUpView: View {
                         .cornerRadius(2)
                 }
             }
-            
+
             Text(passwordStrengthText)
                 .font(.caption2)
                 .foregroundColor(.secondary)
@@ -122,7 +122,7 @@ struct SignUpView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
     }
-    
+
     private func passwordStrengthColor(for index: Int) -> Color {
         let strength = passwordStrength
         if index < strength {
@@ -136,7 +136,7 @@ struct SignUpView: View {
         }
         return .gray.opacity(0.3)
     }
-    
+
     private var passwordStrength: Int {
         guard !password.isEmpty else { return 0 }
         var score = 0
@@ -146,7 +146,7 @@ struct SignUpView: View {
         if password.contains(where: { !$0.isLetter && !$0.isNumber }) { score += 1 }
         return score
     }
-    
+
     private var passwordStrengthText: String {
         switch passwordStrength {
         case 0: return ""
@@ -157,15 +157,15 @@ struct SignUpView: View {
         default: return ""
         }
     }
-    
+
     // MARK: - Terms View
-    
+
     private var termsView: some View {
         VStack(spacing: 8) {
             Text("アカウントを作成することで、以下に同意したことになります：")
                 .font(.caption)
                 .foregroundColor(.secondary)
-            
+
             HStack(spacing: 4) {
                 Button {
                     showingTerms = true
@@ -175,11 +175,11 @@ struct SignUpView: View {
                         .underline()
                         .foregroundColor(.pink)
                 }
-                
+
                 Text("と")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                
+
                 Button {
                     showingTerms = true
                 } label: {
@@ -192,9 +192,9 @@ struct SignUpView: View {
         }
         .padding(.top, 8)
     }
-    
+
     // MARK: - Action Buttons
-    
+
     private var actionButtons: some View {
         VStack(spacing: 16) {
             Button {
@@ -204,7 +204,7 @@ struct SignUpView: View {
                         password: password,
                         name: name
                     )
-                    
+
                     if viewModel.isAuthenticated {
                         dismiss()
                     }
@@ -224,14 +224,22 @@ struct SignUpView: View {
         }
         .padding(.horizontal)
     }
-    
+
     // MARK: - Validation
-    
+
     private var isFormValid: Bool {
         !name.isEmpty &&
         !email.isEmpty &&
         password.count >= 8 &&
-        password == confirmPassword
+        !confirmPassword.isEmpty &&
+        password == confirmPassword &&
+        isValidEmail(email)
+    }
+    
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        return emailPredicate.evaluate(with: email)
     }
 }
 

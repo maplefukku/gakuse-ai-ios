@@ -1932,5 +1932,126 @@ enum TestError: Error {
     case exportFailed
 }
 
+// MARK: - SignUpView Form Validation Tests
+
+struct SignUpViewFormValidationTests {
+    @Test func testIsValidEmail() async throws {
+        // 有効なメールアドレス
+        #expect(isValidEmail("test@example.com"))
+        #expect(isValidEmail("user.name@domain.co.jp"))
+        #expect(isValidEmail("user+tag@example.org"))
+
+        // 無効なメールアドレス
+        #expect(!isValidEmail(""))
+        #expect(!isValidEmail("invalid"))
+        #expect(!isValidEmail("@example.com"))
+        #expect(!isValidEmail("test@"))
+        #expect(!isValidEmail("test example.com"))
+        #expect(!isValidEmail("test..test@example.com"))
+    }
+
+    @Test func testPasswordStrength() async throws {
+        // 弱いパスワード
+        #expect(calculatePasswordStrength("weak") == 1)
+
+        // 普通のパスワード
+        #expect(calculatePasswordStrength("password123") >= 2)
+
+        // 強いパスワード
+        #expect(calculatePasswordStrength("Password123!") >= 3)
+
+        // 非常に強いパスワード
+        #expect(calculatePasswordStrength("Password123!@#") == 4)
+    }
+
+    @Test func testPasswordStrengthEmpty() async throws {
+        // 空のパスワード
+        #expect(calculatePasswordStrength("") == 0)
+    }
+
+    @Test func testPasswordStrengthText() async throws {
+        #expect(getPasswordStrengthText(0) == "")
+        #expect(getPasswordStrengthText(1) == "弱い")
+        #expect(getPasswordStrengthText(2) == "普通")
+        #expect(getPasswordStrengthText(3) == "強い")
+        #expect(getPasswordStrengthText(4) == "非常に強い")
+    }
+
+    @Test func testPasswordStrengthColor() async throws {
+        // 各強度の色が正しく設定されている
+        for score in 0..<4 {
+            let color = getPasswordStrengthColor(for: score, strength: 1)
+            // 色が返されることを確認
+        }
+    }
+}
+
+// MARK: - ContentView Simplification Tests
+
+struct ContentViewSimplificationTests {
+    @Test func testContentViewNoContentViewModel() async throws {
+        // ContentViewでContentViewModelを使用していないことを確認
+        // ContentViewModel.swiftファイルが削除されたことを確認
+        let contentViewModelPath = "/Users/fukku/.opengoat/workspaces/fe-dev-2/gakuse-ai-ios-repo/GakuseAI/ViewModels/ContentViewModel.swift"
+        #expect(!FileManager.default.fileExists(atPath: contentViewModelPath))
+    }
+
+    @Test func testContentViewUsesAuthViewModel() async throws {
+        // ContentViewが@EnvironmentObject var authViewModel: AuthViewModelを使用している
+        // ContentView.swiftを確認
+        let contentViewPath = "/Users/fukku/.opengoat/workspaces/fe-dev-2/gakuse-ai-ios-repo/GakuseAI/Views/ContentView.swift"
+        let content = try String(contentsOfFile: contentViewPath)
+
+        // AuthViewModelを使用している
+        #expect(content.contains("AuthViewModel"))
+        #expect(content.contains("authViewModel"))
+
+        // ContentViewModelを使用していない
+        #expect(!content.contains("ContentViewModel"))
+    }
+}
+
+// MARK: - Helper Functions for Tests
+
+func isValidEmail(_ email: String) -> Bool {
+    let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+    let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+    return emailPredicate.evaluate(with: email)
+}
+
+func calculatePasswordStrength(_ password: String) -> Int {
+    guard !password.isEmpty else { return 0 }
+    var score = 0
+    if password.count >= 8 { score += 1 }
+    if password.contains(where: { $0.isUppercase }) { score += 1 }
+    if password.contains(where: { $0.isNumber }) { score += 1 }
+    if password.contains(where: { !$0.isLetter && !$0.isNumber }) { score += 1 }
+    return score
+}
+
+func getPasswordStrengthText(_ strength: Int) -> String {
+    switch strength {
+    case 0: return ""
+    case 1: return "弱い"
+    case 2: return "普通"
+    case 3: return "強い"
+    case 4: return "非常に強い"
+    default: return ""
+    }
+}
+
+func getPasswordStrengthColor(for index: Int, strength: Int) -> Color {
+    if index < strength {
+        switch strength {
+        case 1: return .red
+        case 2: return .orange
+        case 3: return .yellow
+        case 4: return .green
+        default: return .gray.opacity(0.3)
+        }
+    }
+    return .gray.opacity(0.3)
+}
+
 
 

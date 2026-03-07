@@ -1,9 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var viewModel = ContentViewModel()
     @EnvironmentObject var authViewModel: AuthViewModel
-    @State private var showingStatistics = false
 
     var body: some View {
         TabView {

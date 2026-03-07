@@ -11,7 +11,6 @@
 		1423BBE626BD081307155131 /* GakuseAITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D11FD95DB1D5284F512FDDC /* GakuseAITests.swift */; };
 		15216031CC94FE9EBB7134A3 /* GakuseAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97AB956D99D86A2AF02B1F6 /* GakuseAIApp.swift */; };
 		15E3914B295CD47C3D1CABA9 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = C0BD5802D7F3FAC688360BBB /* Supabase */; };
-		1685C582B73390FD75098449 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D0A47CA6A7368476E0929B1 /* ContentViewModel.swift */; };
 		1B73D813FDE281C2604ED21D /* StatisticsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7DDD866C105A41B44DD6918 /* StatisticsViewModel.swift */; };
 		216FE832731D9C856F36FFC2 /* LearningLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5681FA8DA8115D2FF252EBDE /* LearningLogView.swift */; };
 		253256EF9DBCB6C11929A845 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB502C42F43DEEEE83ACEF5 /* AuthService.swift */; };
@@ -54,7 +53,6 @@
 		02FDDB329E65417CE061EAC1 /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
 		03206AAD21390FE19A6216AF /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		0CADDCDEF00F749794E8D9E2 /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
-		0D0A47CA6A7368476E0929B1 /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
 		0D11FD95DB1D5284F512FDDC /* GakuseAITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GakuseAITests.swift; sourceTree = "<group>"; };
 		1F9EBDF5DBC6014B5B29B1D5 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		49011EAEC6702F3EB9B8D3D7 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
@@ -98,7 +96,6 @@
 			children = (
 				53B0235B676D4A39676D821E /* AIChatViewModel.swift */,
 				1F9EBDF5DBC6014B5B29B1D5 /* AuthViewModel.swift */,
-				0D0A47CA6A7368476E0929B1 /* ContentViewModel.swift */,
 				F7C6F3AFE662B318F5C8D812 /* LearningLogViewModel.swift */,
 				63CADAE9B697F008E7FFF5E9 /* PortfolioViewModel.swift */,
 				02FDDB329E65417CE061EAC1 /* ProfileViewModel.swift */,
@@ -332,7 +329,6 @@
 				253256EF9DBCB6C11929A845 /* AuthService.swift in Sources */,
 				D36E3888D994216B6491ECDD /* AuthViewModel.swift in Sources */,
 				B20AF944DF87A6269AE698EB /* ContentView.swift in Sources */,
-				1685C582B73390FD75098449 /* ContentViewModel.swift in Sources */,
 				15216031CC94FE9EBB7134A3 /* GakuseAIApp.swift in Sources */,
 				E23B5E32C95E452462D1AE4B /* LearningLog.swift in Sources */,
 				216FE832731D9C856F36FFC2 /* LearningLogView.swift in Sources */,

@@ -143,6 +143,7 @@ struct PasswordResetView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = AuthViewModel()
     @State private var email = ""
+    @State private var showingSuccess = false
     
     var body: some View {
         NavigationStack {
@@ -158,7 +159,9 @@ struct PasswordResetView: View {
                     Button("リセットメールを送信") {
                         Task {
                             await viewModel.resetPassword(email: email)
-                            dismiss()
+                            if viewModel.errorMessage == nil {
+                                showingSuccess = true
+                            }
                         }
                     }
                     .disabled(email.isEmpty || viewModel.isLoading)
@@ -172,6 +175,23 @@ struct PasswordResetView: View {
                         dismiss()
                     }
                 }
+            }
+            .alert("エラー", isPresented: .init(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )) {
+                Button("OK") { viewModel.errorMessage = nil }
+            } message: {
+                if let error = viewModel.errorMessage {
+                    Text(error)
+                }
+            }
+            .alert("パスワードリセット", isPresented: $showingSuccess) {
+                Button("OK") {
+                    dismiss()
+                }
+            } message: {
+                Text("パスワードリセットメールを送信しました。\nメールをご確認ください。")
             }
         }
     }
