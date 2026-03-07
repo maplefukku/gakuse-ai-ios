@@ -15,6 +15,7 @@ struct AIChatView: View {
                 inputBar
             }
             .navigationTitle("AI壁打ち")
+            .searchable(text: $viewModel.messageSearchText, prompt: "メッセージを検索...")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
@@ -26,9 +27,24 @@ struct AIChatView: View {
                             Label("履歴をクリア", systemImage: "trash")
                         }
                         
-                        Button {
-                            Task {
-                                await viewModel.exportChatHistory()
+                        Menu {
+                            Button {
+                                Task {
+                                    await viewModel.exportChatHistory()
+                                }
+                            } label: {
+                                Label("JSON形式", systemImage: "doc.text")
+                            }
+                            
+                            Button {
+                                Task {
+                                    if let url = await viewModel.exportChatHistoryToMarkdown() {
+                                        viewModel.exportURL = url
+                                        viewModel.showingExportSheet = true
+                                    }
+                                }
+                            } label: {
+                                Label("Markdown形式", systemImage: "doc.text")
                             }
                         } label: {
                             Label("履歴をエクスポート", systemImage: "square.and.arrow.up")
@@ -91,7 +107,7 @@ struct AIChatView: View {
             
             VStack(spacing: 12) {
                 HStack {
-                    Text("お勧めのトピック")
+                    Text("おすすめのトピック")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
@@ -108,9 +124,23 @@ struct AIChatView: View {
                 }
                 .padding(.horizontal)
                 
-                ForEach(viewModel.suggestedPrompts, id: \.self) { prompt in
+                // カテゴリフィルター
+                if !viewModel.filteredPrompts.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            AllPromptsButton(viewModel: viewModel)
+                            ForEach(PromptCategory.allCases, id: \.self) { category in
+                                CategoryFilterButton(category: category, viewModel: viewModel)
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                }
+                
+                // プロンプト一覧
+                ForEach(viewModel.filteredPrompts) { prompt in
                     SuggestedPromptButton(prompt: prompt) {
-                        viewModel.useSuggestedPrompt(prompt)
+                        viewModel.useSuggestedPromptItem(prompt)
                     }
                 }
             }
@@ -122,37 +152,81 @@ struct AIChatView: View {
     // MARK: - Chat List
     
     private var chatListView: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 16) {
-                    ForEach(viewModel.messages) { message in
-                        MessageBubble(message: message, viewModel: viewModel)
-                            .id(message.id)
-                    }
-                    
-                    if viewModel.isLoading {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                                .padding()
-                            Spacer()
+        Group {
+            if viewModel.messageSearchText.isEmpty {
+                // 日付セクションでのグループ化
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 24) {
+                            ForEach(viewModel.groupedMessages) { group in
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text(group.date.formatted(.dateTime.day().month().weekday().year()))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .padding(.horizontal)
+                                    
+                                    ForEach(group.messages) { message in
+                                        MessageBubble(message: message, viewModel: viewModel)
+                                            .id(message.id)
+                                    }
+                                }
+                                
+                                if viewModel.isLoading {
+                                    HStack {
+                                        Spacer()
+                                        ProgressView()
+                                            .padding()
+                                        Spacer()
+                                    }
+                                    .id("loading")
+                                }
+                            }
                         }
-                        .id("loading")
+                        .padding()
+                    }
+                    .onChange(of: viewModel.messages.count) {
+                        if let lastMessage = viewModel.messages.last {
+                            withAnimation {
+                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                            }
+                        }
+                    }
+                    .onChange(of: viewModel.isLoading) {
+                        if viewModel.isLoading {
+                            withAnimation {
+                                proxy.scrollTo("loading", anchor: .bottom)
+                            }
+                        }
                     }
                 }
-                .padding()
-            }
-            .onChange(of: viewModel.messages.count) {
-                if let lastMessage = viewModel.messages.last {
-                    withAnimation {
-                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
+            } else {
+                // 検索モード（日付グループ化なし）
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 16) {
+                            ForEach(viewModel.filteredMessages) { message in
+                                MessageBubble(message: message, viewModel: viewModel)
+                                    .id(message.id)
+                            }
+                            
+                            if viewModel.isLoading {
+                                HStack {
+                                    Spacer()
+                                    ProgressView()
+                                        .padding()
+                                    Spacer()
+                                }
+                                .id("loading")
+                            }
+                        }
+                        .padding()
                     }
-                }
-            }
-            .onChange(of: viewModel.isLoading) {
-                if viewModel.isLoading {
-                    withAnimation {
-                        proxy.scrollTo("loading", anchor: .bottom)
+                    .onChange(of: viewModel.filteredMessages.count) {
+                        if let lastMessage = viewModel.filteredMessages.last {
+                            withAnimation {
+                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                            }
+                        }
                     }
                 }
             }
@@ -163,6 +237,16 @@ struct AIChatView: View {
     
     private var inputBar: some View {
         HStack(spacing: 12) {
+            // 検索ボタン
+            Button {
+                // 検索モードの切り替え
+                viewModel.messageSearchText = viewModel.messageSearchText.isEmpty ? " " : ""
+            } label: {
+                Image(systemName: viewModel.messageSearchText.isEmpty ? "magnifyingglass" : "xmark.circle.fill")
+                    .foregroundColor(viewModel.messageSearchText.isEmpty ? .secondary : .pink)
+            }
+            .buttonStyle(.plain)
+            
             TextField("メッセージを入力...", text: $viewModel.inputText, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
                 .lineLimit(1...5)
@@ -186,8 +270,8 @@ struct AIChatView: View {
                         .padding(8)
                         .background(
                             viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            ? Color.gray
-                            : Color.pink
+                                ? Color.gray
+                                : Color.pink
                         )
                         .cornerRadius(8)
                 }
@@ -197,6 +281,59 @@ struct AIChatView: View {
         .padding()
         .background(Color(.systemBackground))
         .shadow(color: Color.black.opacity(0.05), radius: 5, y: -2)
+    }
+}
+
+// MARK: - Category Filter Button
+
+struct CategoryFilterButton: View {
+    let category: PromptCategory
+    @ObservedObject var viewModel: AIChatViewModel
+    
+    var body: some View {
+        Button {
+            withAnimation {
+                viewModel.selectedPromptCategory = viewModel.selectedPromptCategory == category ? nil : category
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: category.icon)
+                    .font(.caption)
+                Text(category.rawValue)
+                    .font(.caption)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(viewModel.selectedPromptCategory == category ? Color.pink : Color(.systemGray5))
+            .foregroundColor(viewModel.selectedPromptCategory == category ? .white : .primary)
+            .cornerRadius(16)
+        }
+    }
+}
+
+// MARK: - All Prompts Button
+
+struct AllPromptsButton: View {
+    @ObservedObject var viewModel: AIChatViewModel
+    
+    var body: some View {
+        Button {
+            withAnimation {
+                viewModel.selectedPromptCategory = nil
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+                    .font(.caption)
+                Text("すべて")
+                    .font(.caption)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(viewModel.selectedPromptCategory == nil ? Color.pink : Color(.systemGray5))
+            .foregroundColor(viewModel.selectedPromptCategory == nil ? .white : .primary)
+            .cornerRadius(16)
+        }
     }
 }
 
@@ -215,7 +352,7 @@ struct MessageBubble: View {
                 Text(message.content)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                    .background(message.isUser ? Color.pink : Color(.systemGray5))
+                    .background(message.isUser ? Color.pink : Color(.systemGray6))
                     .foregroundColor(message.isUser ? .white : .primary)
                     .cornerRadius(16)
                     .contextMenu {
@@ -229,6 +366,16 @@ struct MessageBubble: View {
                             viewModel.shareMessage(message)
                         } label: {
                             Label("共有", systemImage: "square.and.arrow.up")
+                        }
+                        
+                        if !message.isUser {
+                            Button {
+                                Task {
+                                    await viewModel.regenerateResponse(for: message)
+                                }
+                            } label: {
+                                Label("再生成", systemImage: "arrow.clockwise")
+                            }
                         }
                         
                         Divider()
@@ -253,20 +400,19 @@ struct MessageBubble: View {
 // MARK: - Suggested Prompt Button
 
 struct SuggestedPromptButton: View {
-    let prompt: String
+    let prompt: SuggestedPrompt
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
             HStack {
-                Image(systemName: "lightbulb.fill")
+                Image(systemName: prompt.icon)
                     .foregroundColor(.pink)
-                Text(prompt)
+                    .frame(width: 20)
+                Text(prompt.text)
                     .font(.subheadline)
                     .multilineTextAlignment(.leading)
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundColor(.secondary)
             }
             .padding()
             .background(Color(.systemGray6))
