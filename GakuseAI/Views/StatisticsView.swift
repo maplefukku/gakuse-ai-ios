@@ -334,6 +334,7 @@ struct SkillProgressRow: View {
 struct DetailPopupSheet: View {
     let dataPoint: WeeklyDataPoint
     let allLogs: [LearningLog]
+    @Environment(\.dismiss) var dismiss
 
     private var dayLogs: [LearningLog] {
         let calendar = Calendar.current
@@ -384,7 +385,7 @@ struct DetailPopupSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("閉じる") {
-                        // シートを閉じる
+                        dismiss()
                     }
                 }
             }

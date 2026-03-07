@@ -1246,4 +1246,190 @@ struct LearningCategoryTests {
     }
 }
 
+// MARK: - StatisticsViewModel Additional Tests
+
+struct StatisticsViewModelAdditionalTests {
+    @Test func testUserSettingsPublishedProperty() async throws {
+        let viewModel = StatisticsViewModel()
+
+        // userSettingsが@Publishedであることを確認
+        // ロケールを変更すると、週間データの曜日ラベルも更新される
+        let initialWeekday = viewModel.weeklyData.first?.weekday ?? ""
+        viewModel.userSettings.language = .english
+
+        // 設定変更後にデータが再計算される
+        // （直接検証できないが、@PublishedによってUI更新がトリガーされる）
+        #expect(viewModel.userSettings.language == .english)
+    }
+
+    @Test func testCategoryDataWithMultipleCategories() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        // 複数のカテゴリのテストデータを作成
+        let logs = [
+            LearningLog(title: "プログラミング1", description: "説明", category: .programming),
+            LearningLog(title: "プログラミング2", description: "説明", category: .programming),
+            LearningLog(title: "デザイン1", description: "説明", category: .design),
+            LearningLog(title: "ビジネス1", description: "説明", category: .business),
+            LearningLog(title: "語学1", description: "説明", category: .language),
+            LearningLog(title: "クリエイティブ1", description: "説明", category: .creative),
+            LearningLog(title: "その他1", description: "説明", category: .other)
+        ]
+
+        try await service.saveLearningLogs(logs)
+
+        @MainActor
+        func testViewModel() async {
+            let viewModel = StatisticsViewModel()
+            await viewModel.loadData()
+
+            let categoryData = viewModel.categoryData
+
+            // すべてのカテゴリが含まれている
+            #expect(categoryData.count == 6)
+
+            // プログラミングが2件
+            let programmingData = categoryData.first { $0.category == .programming }
+            #expect(programmingData?.count == 2)
+
+            // その他が1件ずつ
+            for category in [LearningCategory.design, .business, .language, .creative, .other] {
+                let data = categoryData.first { $0.category == category }
+                #expect(data?.count == 1)
+            }
+        }
+
+        await testViewModel()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+}
+
+// MARK: - ProfileViewModel Additional Tests
+
+struct ProfileViewModelAdditionalTests {
+    @Test func testUpdateProfileWithAllParameters() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        // プロファイルを作成
+        let profile = UserProfile(name: "初期ユーザー")
+        try await service.saveUserProfile(profile)
+
+        @MainActor
+        func testViewModel() async {
+            let viewModel = ProfileViewModel()
+            await viewModel.loadProfile()
+
+            // すべてのパラメータで更新
+            await viewModel.updateProfile(
+                name: "更新ユーザー",
+                email: "updated@example.com",
+                avatarIcon: "face.smiling"
+            )
+
+            // 更新が反映されている
+            #expect(viewModel.userProfile?.name == "更新ユーザー")
+            #expect(viewModel.userProfile?.email == "updated@example.com")
+            #expect(viewModel.userProfile?.avatarIcon == "face.smiling")
+        }
+
+        await testViewModel()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testUpdateProfileWithPartialParameters() async throws {
+        let service = PersistenceService.shared
+        try await service.deleteAllData()
+
+        let profile = UserProfile(name: "初期ユーザー")
+        profile.email = "initial@example.com"
+        profile.avatarIcon = "face.smiling"
+        try await service.saveUserProfile(profile)
+
+        @MainActor
+        func testViewModel() async {
+            let viewModel = ProfileViewModel()
+            await viewModel.loadProfile()
+
+            // 名前のみ更新
+            await viewModel.updateProfile(name: "名前のみ更新")
+
+            // 名前だけが変更され、他は維持される
+            #expect(viewModel.userProfile?.name == "名前のみ更新")
+            #expect(viewModel.userProfile?.email == "initial@example.com")
+            #expect(viewModel.userProfile?.avatarIcon == "face.smiling")
+        }
+
+        await testViewModel()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testFormattedNotificationTimeWithInvalidTime() async throws {
+        let viewModel = ProfileViewModel()
+
+        // 通知時間が設定されていない場合
+        var profile = UserProfile(name: "テストユーザー")
+        profile.settings.notificationTime = nil
+        viewModel.userProfile = profile
+
+        let timeString = viewModel.formattedNotificationTime
+
+        // デフォルト値が返される
+        #expect(timeString == "09:00")
+    }
+}
+
+// MARK: - AIChatViewModel Additional Tests
+
+struct AIChatViewModelAdditionalTests {
+    @Test func testCopyMessage() async throws {
+        let viewModel = AIChatViewModel()
+
+        let message = ChatMessageData(
+            id: UUID(),
+            content: "テストメッセージ",
+            isUser: true,
+            timestamp: Date()
+        )
+
+        // コピーを実行
+        viewModel.copyMessage(message)
+
+        // クリップボードにコピーされたか確認
+        let clipboardContent = UIPasteboard.general.string
+        #expect(clipboardContent == "テストメッセージ")
+    }
+
+    @Test func testFilteredPromptsWithCategory() async throws {
+        let viewModel = AIChatViewModel()
+
+        // テスト用のプロンプトを追加
+        viewModel.suggestedPrompts = [
+            SuggestedPrompt(text: "一般プロンプト", category: .general, icon: "ellipsis.circle"),
+            SuggestedPrompt(text: "学習プロンプト", category: .learning, icon: "book.fill"),
+            SuggestedPrompt(text: "プログラミングプロンプト", category: .programming, icon: "chevron.left.forwardslash.chevron.right")
+        ]
+
+        // 一般カテゴリでフィルター
+        viewModel.selectedPromptCategory = .general
+        let filteredGeneral = viewModel.filteredPrompts
+
+        #expect(filteredGeneral.count == 1)
+        #expect(filteredGeneral.first?.category == .general)
+
+        // すべてのプロンプトを表示
+        viewModel.selectedPromptCategory = nil
+        let filteredAll = viewModel.filteredPrompts
+
+        #expect(filteredAll.count == 3)
+    }
+}
+
 

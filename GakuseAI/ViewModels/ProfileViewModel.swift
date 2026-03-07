@@ -36,41 +36,17 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
-    func updateProfile(name: String) async {
+    func updateProfile(name: String, email: String? = nil, avatarIcon: String? = nil) async {
         guard var profile = userProfile else { return }
-        
+
         profile.name = name
-        
-        do {
-            try await persistenceService.saveUserProfile(profile)
-            userProfile = profile
-        } catch {
-            errorMessage = "プロファイル保存エラー: \(error.localizedDescription)"
-            print("プロファイル保存エラー: \(error)")
+        if let email = email {
+            profile.email = email
         }
-    }
-    
-    func updateProfile(name: String, email: String?) async {
-        guard var profile = userProfile else { return }
-        
-        profile.name = name
-        profile.email = email
-        
-        do {
-            try await persistenceService.saveUserProfile(profile)
-            userProfile = profile
-        } catch {
-            errorMessage = "プロファイル保存エラー: \(error.localizedDescription)"
-            print("プロファイル保存エラー: \(error)")
+        if let avatarIcon = avatarIcon {
+            profile.avatarIcon = avatarIcon
         }
-    }
-    
-    func updateProfile(name: String, avatarIcon: String) async {
-        guard var profile = userProfile else { return }
-        
-        profile.name = name
-        profile.avatarIcon = avatarIcon
-        
+
         do {
             try await persistenceService.saveUserProfile(profile)
             userProfile = profile
@@ -172,23 +148,17 @@ class ProfileViewModel: ObservableObject {
     // MARK: - Helper
 
     var formattedNotificationTime: String {
-        guard let time = userProfile?.settings.notificationTime else {
+        guard let time = userProfile?.settings.notificationTime,
+              let hour = time.hour,
+              let minute = time.minute,
+              let date = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: Date()) else {
             return "09:00"
         }
 
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        // ユーザーの言語設定からロケールを取得
-        let locale = userProfile?.settings.language.locale ?? Locale(identifier: "ja_JP")
-        formatter.locale = locale
+        formatter.locale = userProfile?.settings.language.locale ?? Locale(identifier: "ja_JP")
         formatter.timeStyle = .short
 
-        if let hour = time.hour, let minute = time.minute {
-            if let date = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: Date()) {
-                return formatter.string(from: date)
-            }
-        }
-
-        return "09:00"
+        return formatter.string(from: date)
     }
 }

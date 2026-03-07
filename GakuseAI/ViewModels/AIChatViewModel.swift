@@ -242,11 +242,7 @@ class AIChatViewModel: ObservableObject {
     // MARK: - Message Actions
     
     func copyMessage(_ message: ChatMessageData) {
-        #if os(iOS)
         UIPasteboard.general.string = message.content
-        #elseif os(macOS)
-        NSPasteboard.general.setString(message.content, forType: .string)
-        #endif
     }
     
     func prepareDeleteMessage(_ message: ChatMessageData) {

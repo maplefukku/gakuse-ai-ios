@@ -6,18 +6,7 @@ class StatisticsViewModel: ObservableObject {
     @Published var learningLogs: [LearningLog] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
-
-    private var _userSettings: UserSettings = UserSettings() {
-        didSet {
-            // 設定変更時に自動的に週間データを再計算
-            objectWillChange.send()
-        }
-    }
-
-    var userSettings: UserSettings {
-        get { _userSettings }
-        set { _userSettings = newValue }
-    }
+    @Published var userSettings: UserSettings = UserSettings()
 
     // 計算プロパティ
     var totalLogsCount: Int {
@@ -126,7 +115,6 @@ class StatisticsViewModel: ObservableObject {
 
     private func calculateCategoryData() -> [CategoryDataPoint] {
         let grouped = Dictionary(grouping: learningLogs, by: { $0.category })
-        let _ = grouped.values.map { $0.count }.max() ?? 1
 
         return LearningCategory.allCases.compactMap { category in
             let count = grouped[category]?.count ?? 0
