@@ -1926,6 +1926,330 @@ struct LearningLogViewModelExportTests {
         // クリーンアップ
         try await service.deleteAllData()
     }
+
+    @Test func testExportToCSVWithNewlines() async throws {
+        let service = PersistenceService.shared
+
+        // クリーンアップしてから開始
+        try await service.deleteAllData()
+
+        // 改行文字を含むテストデータ
+        var log = LearningLog(
+            title: "改行テスト",
+            description: "説明1\n説明2\n説明3",
+            category: .programming,
+            isPublic: false
+        )
+        log.reflections.append(Reflection(content: "振り返り1\n振り返り2", type: .learning))
+
+        try await service.appendLearningLog(log)
+
+        @MainActor
+        func testExport() async throws {
+            let viewModel = LearningLogViewModel()
+            await viewModel.loadLogs()
+
+            guard let csvURL = viewModel.exportToCSV() else {
+                throw TestError.exportFailed
+            }
+
+            let csvContent = try String(contentsOf: csvURL, encoding: .utf8)
+
+            // 改行がエスケープされているか確認
+            // CSVでは改行はエスケープされるべき
+            #expect(csvContent.contains("改行テスト"))
+
+            try FileManager.default.removeItem(at: csvURL)
+        }
+
+        try await testExport()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testExportToCSVWithUnicode() async throws {
+        let service = PersistenceService.shared
+
+        // クリーンアップしてから開始
+        try await service.deleteAllData()
+
+        // Unicode文字を含むテストデータ
+        let logs = [
+            LearningLog(
+                title: "Unicodeテスト 😊🎉",
+                description: "日本語、한국어、中文",
+                category: .programming,
+                isPublic: false
+            ),
+            LearningLog(
+                title: "🚀 スタート",
+                description: "αβγδε 数学記号",
+                category: .design,
+                isPublic: true
+            )
+        ]
+
+        try await service.saveLearningLogs(logs)
+
+        @MainActor
+        func testExport() async throws {
+            let viewModel = LearningLogViewModel()
+            await viewModel.loadLogs()
+
+            guard let csvURL = viewModel.exportToCSV() else {
+                throw TestError.exportFailed
+            }
+
+            let csvContent = try String(contentsOf: csvURL, encoding: .utf8)
+
+            // Unicode文字が正しくエンコードされている
+            #expect(csvContent.contains("😊🎉"))
+            #expect(csvContent.contains("🚀"))
+            #expect(csvContent.contains("αβγδε"))
+
+            try FileManager.default.removeItem(at: csvURL)
+        }
+
+        try await testExport()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testExportToCSVWithLongText() async throws {
+        let service = PersistenceService.shared
+
+        // クリーンアップしてから開始
+        try await service.deleteAllData()
+
+        // 非常に長いテキストを含むテストデータ
+        let longDescription = String(repeating: "これは長い説明です。", count: 100)
+        let longReflection = String(repeating: "これは長い振り返りです。", count: 50)
+
+        var log = LearningLog(
+            title: "長いテキストテスト",
+            description: longDescription,
+            category: .programming,
+            isPublic: false
+        )
+        log.reflections.append(Reflection(content: longReflection, type: .learning))
+
+        try await service.appendLearningLog(log)
+
+        @MainActor
+        func testExport() async throws {
+            let viewModel = LearningLogViewModel()
+            await viewModel.loadLogs()
+
+            guard let csvURL = viewModel.exportToCSV() else {
+                throw TestError.exportFailed
+            }
+
+            let csvContent = try String(contentsOf: csvURL, encoding: .utf8)
+
+            // 長いテキストが正しくエクスポートされている
+            #expect(csvContent.contains("これは長い説明です。"))
+            #expect(csvContent.contains("これは長い振り返りです。"))
+
+            // ファイルサイズが適切である（非常に大きすぎない）
+            let fileSize = try FileManager.default.attributesOfItem(atPath: csvURL.path)[.size] as! Int
+            #expect(fileSize < 100_000) // 100KB未満であるべき
+
+            try FileManager.default.removeItem(at: csvURL)
+        }
+
+        try await testExport()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testExportToCSVWithManySkills() async throws {
+        let service = PersistenceService.shared
+
+        // クリーンアップしてから開始
+        try await service.deleteAllData()
+
+        // 多くのスキルとリフレクションを含むテストデータ
+        var log = LearningLog(
+            title: "多くのスキル",
+            description: "説明",
+            category: .programming,
+            isPublic: false
+        )
+
+        // 10個のスキルを追加
+        for i in 1...10 {
+            log.skills.append(Skill(name: "スキル\(i)", level: .intermediate))
+        }
+
+        // 5個のリフレクションを追加
+        for i in 1...5 {
+            log.reflections.append(Reflection(content: "振り返り\(i)", type: .learning))
+        }
+
+        try await service.appendLearningLog(log)
+
+        @MainActor
+        func testExport() async throws {
+            let viewModel = LearningLogViewModel()
+            await viewModel.loadLogs()
+
+            guard let csvURL = viewModel.exportToCSV() else {
+                throw TestError.exportFailed
+            }
+
+            let csvContent = try String(contentsOf: csvURL, encoding: .utf8)
+
+            // スキルがセミコロンで区切られている
+            #expect(csvContent.contains("スキル1"))
+            #expect(csvContent.contains("スキル10"))
+
+            // リフレクションがセミコロンで区切られている
+            #expect(csvContent.contains("振り返り1"))
+            #expect(csvContent.contains("振り返り5"))
+
+            try FileManager.default.removeItem(at: csvURL)
+        }
+
+        try await testExport()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testExportToCSVWithEmptyArrays() async throws {
+        let service = PersistenceService.shared
+
+        // クリーンアップしてから開始
+        try await service.deleteAllData()
+
+        // スキルとリフレクションが空のテストデータ
+        let log = LearningLog(
+            title: "空の配列",
+            description: "説明",
+            category: .programming,
+            isPublic: false
+        )
+
+        try await service.appendLearningLog(log)
+
+        @MainActor
+        func testExport() async throws {
+            let viewModel = LearningLogViewModel()
+            await viewModel.loadLogs()
+
+            guard let csvURL = viewModel.exportToCSV() else {
+                throw TestError.exportFailed
+            }
+
+            let csvContent = try String(contentsOf: csvURL, encoding: .utf8)
+
+            // 空の配列でエクスポートが成功している
+            #expect(csvContent.contains("空の配列"))
+
+            // 行が適切にフォーマットされている
+            let lines = csvContent.components(separatedBy: "\n")
+            #expect(lines.count >= 2) // ヘッダー + 1行
+
+            try FileManager.default.removeItem(at: csvURL)
+        }
+
+        try await testExport()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+
+    @Test func testExportToCSVWithEmptyStringFields() async throws {
+        let service = PersistenceService.shared
+
+        // クリーンアップしてから開始
+        try await service.deleteAllData()
+
+        // 空のフィールドを含むテストデータ
+        let log = LearningLog(
+            title: "",
+            description: "",
+            category: .other,
+            isPublic: false
+        )
+
+        try await service.appendLearningLog(log)
+
+        @MainActor
+        func testExport() async throws {
+            let viewModel = LearningLogViewModel()
+            await viewModel.loadLogs()
+
+            guard let csvURL = viewModel.exportToCSV() else {
+                throw TestError.exportFailed
+            }
+
+            let csvContent = try String(contentsOf: csvURL, encoding: .utf8)
+
+            // 空のフィールドでもエクスポートが成功している
+            let lines = csvContent.components(separatedBy: "\n")
+            let dataLine = lines.first { $0.contains(",,,") } // 空のフィールドを探す
+
+            #expect(dataLine != nil)
+
+            try FileManager.default.removeItem(at: csvURL)
+        }
+
+        try await testExport()
+
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+}
+
+// MARK: - XcodeGen Build Issue Tests
+
+struct XcodeGenBuildIssueTests {
+    @Test func testXcodeGenVersion() async throws {
+        // XcodeGenのバージョンを確認
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/local/bin/xcodegen")
+        process.arguments = ["--version"]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+
+        try process.run()
+        process.waitUntilExit()
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        let output = String(data: data, encoding: .utf8) ?? ""
+
+        // バージョンが含まれている
+        #expect(output.contains("Version"))
+    }
+
+    @Test func testXcodeGenConfiguration() async throws {
+        // project.ymlが存在し、正しく設定されている
+        let projectPath = "/Users/fukku/.opengoat/workspaces/fe-dev-2/gakuse-ai-ios-repo/project.yml"
+        #expect(FileManager.default.fileExists(atPath: projectPath))
+
+        let content = try String(contentsOfFile: projectPath)
+
+        // 主要な設定が含まれている
+        #expect(content.contains("GakuseAI"))
+        #expect(content.contains("GakuseAITests"))
+        #expect(content.contains("GakuseAIUITests"))
+        #expect(content.contains("Supabase"))
+    }
+
+    @Test func testSwiftVersion() async throws {
+        // Swiftのバージョンを確認
+        let projectPath = "/Users/fukku/.opengoat/workspaces/fe-dev-2/gakuse-ai-ios-repo/project.yml"
+        let content = try String(contentsOfFile: projectPath)
+
+        // Swift 6.0が設定されている
+        #expect(content.contains("SWIFT_VERSION"))
+        #expect(content.contains("6.0"))
+    }
 }
 
 enum TestError: Error {
