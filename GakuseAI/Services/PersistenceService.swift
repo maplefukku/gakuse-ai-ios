@@ -26,6 +26,10 @@ actor PersistenceService {
         appSupportURL.appendingPathComponent("chat_history.json")
     }
     
+    private var navigationStateURL: URL {
+        appSupportURL.appendingPathComponent("navigation_state.json")
+    }
+    
     init() {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
@@ -178,7 +182,48 @@ actor PersistenceService {
         try? fileManager.removeItem(at: learningLogsURL)
         try? fileManager.removeItem(at: userProfileURL)
         try? fileManager.removeItem(at: chatHistoryURL)
+        try? fileManager.removeItem(at: navigationStateURL)
     }
+    
+    // MARK: - Navigation State
+    
+    func saveNavigationState(_ state: NavigationState) async throws {
+        ensureDirectoryExists()
+        let data = try encoder.encode(state)
+        try data.write(to: navigationStateURL)
+    }
+    
+    func loadNavigationState() async throws -> NavigationState {
+        ensureDirectoryExists()
+        guard fileManager.fileExists(atPath: navigationStateURL.path) else {
+            return NavigationState()
+        }
+        let data = try Data(contentsOf: navigationStateURL)
+        return try decoder.decode(NavigationState.self, from: data)
+    }
+}
+
+// MARK: - Navigation State
+
+struct NavigationState: Codable {
+    var selectedTab: Int = 0
+    var lastUpdateTime: Date = Date()
+    
+    /// 各タブのナビゲーション状態を管理（将来的な拡張用）
+    var tabStates: [Int: TabState] = [:]
+    
+    init(selectedTab: Int = 0) {
+        self.selectedTab = selectedTab
+        self.lastUpdateTime = Date()
+    }
+}
+
+struct TabState: Codable {
+    var navigationPath: [String] = []
+    var scrollPosition: Double = 0
+    var selectedItemId: String?
+    
+    init() {}
 }
 
 // MARK: - Export Data Structure

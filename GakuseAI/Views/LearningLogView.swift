@@ -179,6 +179,10 @@ struct LearningLogView: View {
             ForEach(viewModel.filteredLogs) { log in
                 NavigationLink(value: log) {
                     LearningLogRow(log: log, viewModel: viewModel)
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.9).combined(with: .opacity),
+                            removal: .scale(scale: 0.9).combined(with: .opacity)
+                        ))
                 }
             }
             .onDelete { offsets in
@@ -193,6 +197,7 @@ struct LearningLogView: View {
                 }
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.filteredLogs.count)
         .navigationDestination(for: LearningLog.self) { log in
             LearningLogDetailView(log: log, viewModel: viewModel)
         }
@@ -229,6 +234,8 @@ struct LearningLogRow: View {
                     Image(systemName: log.isFavorite ? "star.fill" : "star")
                         .foregroundColor(log.isFavorite ? .yellow : .gray)
                         .font(.caption)
+                        .symbolEffect(.bounce, value: log.isFavorite)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: log.isFavorite)
                 }
                 .buttonStyle(.plain)
             }
@@ -538,12 +545,16 @@ struct LearningLogDetailView: View {
                     .padding(.horizontal, 12)
                     .background(Color(.systemGray6))
                     .cornerRadius(8)
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.9).combined(with: .opacity),
+                        removal: .scale(scale: 0.9).combined(with: .opacity)
+                    ))
                 }
             }
         }
         .padding()
     }
-    
+
     private var reflectionsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -589,6 +600,10 @@ struct LearningLogDetailView: View {
                     .padding()
                     .background(Color(.systemGray6))
                     .cornerRadius(8)
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.9).combined(with: .opacity),
+                        removal: .scale(scale: 0.9).combined(with: .opacity)
+                    ))
                 }
             }
         }

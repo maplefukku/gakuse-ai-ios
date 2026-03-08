@@ -95,21 +95,24 @@ struct PortfolioView: View {
                 title: "学習ログ",
                 value: "\(viewModel.totalLogsCount)",
                 icon: "book.fill",
-                color: .pink
+                color: .pink,
+                delay: 0.0
             )
-            
+
             StatCard(
                 title: "スキル",
                 value: "\(viewModel.totalSkills)",
                 icon: "star.fill",
-                color: .yellow
+                color: .yellow,
+                delay: 0.1
             )
-            
+
             StatCard(
                 title: "継続日数",
                 value: "\(viewModel.streakDays)",
                 icon: "flame.fill",
-                color: .orange
+                color: .orange,
+                delay: 0.2
             )
         }
     }
@@ -120,7 +123,7 @@ struct PortfolioView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("週間学習ログ")
                 .font(.headline)
-            
+
             Chart(viewModel.weeklyData, id: \.weekday) { item in
                 BarMark(
                     x: .value("曜日", item.weekday),
@@ -141,19 +144,20 @@ struct PortfolioView: View {
                 }
             }
             .chartXAxis(.hidden)
+            .animation(.easeInOut(duration: 0.8), value: viewModel.weeklyData.count)
         }
         .padding()
         .background(Color(.systemGray6))
         .cornerRadius(12)
     }
-    
+
     // MARK: - Category Chart
 
     private var categoryChartSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("カテゴリ別分布")
                 .font(.headline)
-            
+
             Chart(viewModel.categoryChartData, id: \.category) { item in
                 SectorMark(
                     angle: .value("数", item.count),
@@ -163,6 +167,7 @@ struct PortfolioView: View {
                 .foregroundStyle(item.color)
             }
             .frame(height: 200)
+            .animation(.easeInOut(duration: 1.0), value: viewModel.categoryChartData.count)
             .chartBackground { _ in
                 VStack {
                     Text("\(viewModel.totalLogsCount)")
@@ -250,15 +255,22 @@ struct StatCard: View {
     let value: String
     let icon: String
     let color: Color
+    let delay: Double
+    @State private var isVisible = false
 
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.title2)
                 .foregroundColor(color)
+                .scaleEffect(isVisible ? 1.0 : 0.8)
+                .animation(.spring(response: 0.5, dampingFraction: 0.6).delay(delay), value: isVisible)
 
             Text(value)
                 .font(.title.bold())
+                .opacity(isVisible ? 1.0 : 0.0)
+                .offset(y: isVisible ? 0 : 10)
+                .animation(.spring(response: 0.5, dampingFraction: 0.6).delay(delay + 0.1), value: isVisible)
 
             Text(title)
                 .font(.caption)
@@ -268,6 +280,14 @@ struct StatCard: View {
         .padding(.vertical, 16)
         .background(Color(.systemGray6))
         .cornerRadius(12)
+        .scaleEffect(isVisible ? 1.0 : 0.9)
+        .opacity(isVisible ? 1.0 : 0.0)
+        .animation(.spring(response: 0.5, dampingFraction: 0.6).delay(delay), value: isVisible)
+        .onAppear {
+            withAnimation {
+                isVisible = true
+            }
+        }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(value)")
     }
@@ -277,6 +297,7 @@ struct StatCard: View {
 
 struct PortfolioLogCard: View {
     let log: LearningLog
+    @State private var isPressed = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -306,9 +327,16 @@ struct PortfolioLogCard: View {
         .padding()
         .background(Color(.systemGray6))
         .cornerRadius(12)
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(log.title)、\(log.category.rawValue)")
         .accessibilityHint("詳細を表示")
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
     }
 }
 

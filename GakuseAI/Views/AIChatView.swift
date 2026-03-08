@@ -172,6 +172,10 @@ struct AIChatView: View {
                                     ForEach(group.messages) { message in
                                         MessageBubble(message: message, viewModel: viewModel)
                                             .id(message.id)
+                                            .transition(.asymmetric(
+                                                insertion: .move(edge: .bottom).combined(with: .opacity),
+                                                removal: .scale(scale: 0.9).combined(with: .opacity)
+                                            ))
                                     }
                                 }
                                 
@@ -211,6 +215,10 @@ struct AIChatView: View {
                             ForEach(viewModel.filteredMessages) { message in
                                 MessageBubble(message: message, viewModel: viewModel)
                                     .id(message.id)
+                                    .transition(.asymmetric(
+                                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                                        removal: .scale(scale: 0.9).combined(with: .opacity)
+                                    ))
                             }
                             
                             if viewModel.isLoading {
@@ -278,6 +286,8 @@ struct AIChatView: View {
                                 : Color.pink
                         )
                         .cornerRadius(8)
+                        .scaleEffect(viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 1.0 : 1.1)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: viewModel.inputText)
                 }
             }
             .disabled(viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isLoading)
@@ -351,7 +361,7 @@ struct MessageBubble: View {
     var body: some View {
         HStack {
             if message.isUser { Spacer() }
-            
+
             VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
                 Text(message.content)
                     .padding(.horizontal, 16)
@@ -359,19 +369,21 @@ struct MessageBubble: View {
                     .background(message.isUser ? Color.pink : Color(.systemGray6))
                     .foregroundColor(message.isUser ? .white : .primary)
                     .cornerRadius(16)
+                    .scaleEffect(showingMenu ? 1.05 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showingMenu)
                     .contextMenu {
                         Button {
                             viewModel.copyMessage(message)
                         } label: {
                             Label("コピー", systemImage: "doc.on.doc")
                         }
-                        
+
                         Button {
                             viewModel.shareMessage(message)
                         } label: {
                             Label("共有", systemImage: "square.and.arrow.up")
                         }
-                        
+
                         if !message.isUser {
                             Button {
                                 Task {
@@ -381,21 +393,21 @@ struct MessageBubble: View {
                                 Label("再生成", systemImage: "arrow.clockwise")
                             }
                         }
-                        
+
                         Divider()
-                        
+
                         Button(role: .destructive) {
                             viewModel.prepareDeleteMessage(message)
                         } label: {
                             Label("削除", systemImage: "trash")
                         }
                     }
-                
+
                 Text(message.timestamp.formatted(date: .omitted, time: .shortened))
                     .font(.caption2)
                     .foregroundColor(.secondary)
             }
-            
+
             if !message.isUser { Spacer() }
         }
     }
@@ -406,7 +418,8 @@ struct MessageBubble: View {
 struct SuggestedPromptButton: View {
     let prompt: SuggestedPrompt
     let action: () -> Void
-    
+    @State private var isPressed = false
+
     var body: some View {
         Button(action: action) {
             HStack {
@@ -421,8 +434,16 @@ struct SuggestedPromptButton: View {
             .padding()
             .background(Color(.systemGray6))
             .cornerRadius(12)
+            .scaleEffect(isPressed ? 0.98 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
         }
         .foregroundColor(.primary)
+        .buttonStyle(.plain)
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
     }
 }
 
