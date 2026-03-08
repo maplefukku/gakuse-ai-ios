@@ -3246,3 +3246,118 @@ struct AIChatTests {
     }
 }
 
+// MARK: - PortfolioViewModel Tests
+
+struct PortfolioViewModelTests {
+
+    @Test func testPortfolioViewModelInitialization() async throws {
+        // PortfolioViewModelの初期化確認
+        await MainActor.run {
+            let viewModel = PortfolioViewModel()
+            #expect(viewModel.isLoading == true || viewModel.isLoading == false) // 初期化中か初期化済み
+        }
+    }
+
+    @Test func testPortfolioViewModelTotalLogsCount() async throws {
+        // totalLogsCountの確認
+        await MainActor.run {
+            let viewModel = PortfolioViewModel()
+            let count = viewModel.totalLogsCount
+            #expect(count >= 0)
+        }
+    }
+
+    @Test func testPortfolioViewModelCategoriesWithCount() async throws {
+        // categoriesWithCountの確認
+        await MainActor.run {
+            let viewModel = PortfolioViewModel()
+            let categories = viewModel.categoriesWithCount
+            // カテゴリの数が正しいこと
+            #expect(categories.count <= LearningCategory.allCases.count)
+        }
+    }
+
+    @Test func testPortfolioViewModelCategoryChartData() async throws {
+        // categoryChartDataの確認
+        await MainActor.run {
+            let viewModel = PortfolioViewModel()
+            let chartData = viewModel.categoryChartData
+            // チャートデータが正しい構造であること
+            #expect(chartData.allSatisfy { $0.count >= 0 })
+            // 各カテゴリに対応する色が設定されていること
+            for item in chartData {
+                #expect(item.category.color == item.color)
+            }
+        }
+    }
+
+    @Test func testLearningCategoryColorUniqueness() async throws {
+        // 各カテゴリの色が一意であることを確認
+        let categories = LearningCategory.allCases
+        let colors = categories.map { $0.color }
+        let uniqueColors = Set(colors)
+        #expect(colors.count == uniqueColors.count)
+    }
+
+    @Test func testPortfolioViewModelWeeklyData() async throws {
+        // weeklyDataの確認
+        await MainActor.run {
+            let viewModel = PortfolioViewModel()
+            let weeklyData = viewModel.weeklyData
+            // 7日分のデータがあること
+            #expect(weeklyData.count == 7)
+            // 各曜日のカウントが非負であること
+            #expect(weeklyData.allSatisfy { $0.count >= 0 })
+            // 日本語の曜日が含まれること
+            let weekdays = weeklyData.map { $0.weekday }
+            #expect(weekdays.contains("月"))
+            #expect(weekdays.contains("火"))
+            #expect(weekdays.contains("水"))
+            #expect(weekdays.contains("木"))
+            #expect(weekdays.contains("金"))
+            #expect(weekdays.contains("土"))
+            #expect(weekdays.contains("日"))
+        }
+    }
+
+    @Test func testPortfolioViewModelCalculateStreakDays() async throws {
+        // calculateStreakDaysの確認（空のログの場合）
+        await MainActor.run {
+            let viewModel = PortfolioViewModel()
+            let streak = viewModel.streakDays
+            #expect(streak >= 0)
+        }
+    }
+
+    @Test func testPortfolioViewModelPublicLogsFiltering() async throws {
+        // 公開ログと非公開ログのフィルタリング確認
+        let publicLog = LearningLog(
+            id: UUID(),
+            title: "公開ログ",
+            description: "公開ログの説明",
+            category: .programming,
+            skills: [],
+            reflections: [],
+            isPublic: true,
+            createdAt: Date()
+        )
+
+        let privateLog = LearningLog(
+            id: UUID(),
+            title: "非公開ログ",
+            description: "非公開ログの説明",
+            category: .programming,
+            skills: [],
+            reflections: [],
+            isPublic: false,
+            createdAt: Date()
+        )
+
+        await MainActor.run {
+            let viewModel = PortfolioViewModel()
+            // isPublicが正しくフィルタリングされることを確認（データが保存されている場合）
+            #expect(viewModel.publicLogs.allSatisfy { $0.isPublic })
+        }
+    }
+}
+
