@@ -6,6 +6,9 @@ struct LoginView: View {
     @State private var password = ""
     @State private var showingSignUp = false
     @State private var showingPasswordReset = false
+    @State private var isLoginButtonPressed = false
+    @State private var isSignUpButtonPressed = false
+    @State private var isPasswordResetPressed = false
     
     var body: some View {
         NavigationStack {
@@ -100,6 +103,13 @@ struct LoginView: View {
                     .font(.caption)
                     .foregroundColor(.pink)
             }
+            .scaleEffect(isPasswordResetPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPasswordResetPressed)
+            .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+                withAnimation {
+                    isPasswordResetPressed = pressing
+                }
+            }, perform: {})
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.horizontal)
@@ -125,13 +135,27 @@ struct LoginView: View {
             .buttonStyle(.borderedProminent)
             .tint(.pink)
             .disabled(email.isEmpty || password.isEmpty || viewModel.isLoading)
-            
+            .scaleEffect(isLoginButtonPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isLoginButtonPressed)
+            .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+                withAnimation {
+                    isLoginButtonPressed = pressing
+                }
+            }, perform: {})
+
             Button {
                 showingSignUp = true
             } label: {
                 Text("アカウントを作成")
                     .foregroundColor(.pink)
             }
+            .scaleEffect(isSignUpButtonPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isSignUpButtonPressed)
+            .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+                withAnimation {
+                    isSignUpButtonPressed = pressing
+                }
+            }, perform: {})
         }
         .padding(.horizontal)
     }
@@ -144,7 +168,8 @@ struct PasswordResetView: View {
     @StateObject private var viewModel = AuthViewModel()
     @State private var email = ""
     @State private var showingSuccess = false
-    
+    @State private var isResetButtonPressed = false
+
     var body: some View {
         NavigationStack {
             Form {
@@ -165,6 +190,13 @@ struct PasswordResetView: View {
                         }
                     }
                     .disabled(email.isEmpty || viewModel.isLoading)
+                    .scaleEffect(isResetButtonPressed ? 0.95 : 1.0)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isResetButtonPressed)
+                    .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+                        withAnimation {
+                            isResetButtonPressed = pressing
+                        }
+                    }, perform: {})
                 }
             }
             .navigationTitle("パスワードリセット")

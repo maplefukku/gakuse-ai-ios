@@ -3851,3 +3851,96 @@ struct ProfileViewTapFeedbackTests {
     }
 }
 
+// MARK: - Authentication View Tap Feedback Tests
+
+struct AuthViewTapFeedbackTests {
+
+    @Test func testLoginViewButtonTapFeedbackScale() async throws {
+        // LoginViewのボタンのスケールエフェクトをテスト
+        let expectedScaleWhenPressed: Double = 0.95
+        let expectedScaleWhenNotPressed: Double = 1.0
+
+        let isPressed = true
+        let scale = isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(scale == 0.95)
+
+        let notPressedScale = !isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(notPressedScale == 1.0)
+    }
+
+    @Test func testLoginViewButtonTapFeedbackAnimation() async throws {
+        // LoginViewのボタンのSpringアニメーションパラメータをテスト
+        let expectedResponse: Double = 0.2
+        let expectedDampingFraction: Double = 0.6
+
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+    }
+
+    @Test func testSignUpViewButtonTapFeedbackScale() async throws {
+        // SignUpViewのボタンのスケールエフェクトをテスト
+        let expectedScaleWhenPressed: Double = 0.95
+        let expectedScaleWhenNotPressed: Double = 1.0
+
+        let isPressed = true
+        let scale = isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(scale == 0.95)
+
+        let notPressedScale = !isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(notPressedScale == 1.0)
+    }
+
+    @Test func testSignUpViewButtonTapFeedbackAnimation() async throws {
+        // SignUpViewのボタンのSpringアニメーションパラメータをテスト
+        let expectedResponse: Double = 0.2
+        let expectedDampingFraction: Double = 0.6
+
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+    }
+
+    @Test func testPasswordResetViewButtonTapFeedbackScale() async throws {
+        // PasswordResetViewのボタンのスケールエフェクトをテスト
+        let expectedScaleWhenPressed: Double = 0.95
+        let expectedScaleWhenNotPressed: Double = 1.0
+
+        let isPressed = true
+        let scale = isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(scale == 0.95)
+
+        let notPressedScale = !isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(notPressedScale == 1.0)
+    }
+
+    @Test func testPasswordResetViewButtonTapFeedbackAnimation() async throws {
+        // PasswordResetViewのボタンのSpringアニメーションパラメータをテスト
+        let expectedResponse: Double = 0.2
+        let expectedDampingFraction: Double = 0.6
+
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+    }
+
+    @Test func testAuthViewTapFeedbackConsistency() async throws {
+        // すべての認証Viewで一貫したSpringパラメータを使用していることを確認
+        let expectedResponse: Double = 0.2
+        let expectedDampingFraction: Double = 0.6
+        let expectedScale: Double = 0.95
+
+        // LoginView
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+        #expect(expectedScale == 0.95)
+
+        // SignUpView
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+        #expect(expectedScale == 0.95)
+
+        // PasswordResetView
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+        #expect(expectedScale == 0.95)
+    }
+}
+

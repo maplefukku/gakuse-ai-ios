@@ -9,6 +9,8 @@ struct SignUpView: View {
     @State private var password = ""
     @State private var confirmPassword = ""
     @State private var showingTerms = false
+    @State private var isSignUpButtonPressed = false
+    @State private var isTermsButtonPressed = false
 
     var body: some View {
         NavigationStack {
@@ -175,6 +177,13 @@ struct SignUpView: View {
                         .underline()
                         .foregroundColor(.pink)
                 }
+                .scaleEffect(isTermsButtonPressed ? 0.95 : 1.0)
+                .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isTermsButtonPressed)
+                .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+                    withAnimation {
+                        isTermsButtonPressed = pressing
+                    }
+                }, perform: {})
 
                 Text("と")
                     .font(.caption)
@@ -188,6 +197,13 @@ struct SignUpView: View {
                         .underline()
                         .foregroundColor(.pink)
                 }
+                .scaleEffect(isTermsButtonPressed ? 0.95 : 1.0)
+                .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isTermsButtonPressed)
+                .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+                    withAnimation {
+                        isTermsButtonPressed = pressing
+                    }
+                }, perform: {})
             }
         }
         .padding(.top, 8)
@@ -221,6 +237,13 @@ struct SignUpView: View {
             .buttonStyle(.borderedProminent)
             .tint(.pink)
             .disabled(!isFormValid || viewModel.isLoading)
+            .scaleEffect(isSignUpButtonPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isSignUpButtonPressed)
+            .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+                withAnimation {
+                    isSignUpButtonPressed = pressing
+                }
+            }, perform: {})
         }
         .padding(.horizontal)
     }
