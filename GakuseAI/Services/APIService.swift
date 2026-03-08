@@ -83,6 +83,66 @@ actor APIService {
         let session = try await supabase.currentSession
         return session?.accessToken
     }
+
+    // MARK: - Retry Logic
+
+    private func performWithRetry<T>(
+        maxRetries: Int = 3,
+        baseDelay: TimeInterval = 1.0,
+        operation: () async throws -> T
+    ) async throws -> T {
+        var lastError: Error?
+
+        for attempt in 0..<maxRetries {
+            do {
+                return try await operation()
+            } catch {
+                lastError = error
+
+                // リトライすべきエラーか判断
+                guard shouldRetry(error: error) else {
+                    throw error
+                }
+
+                // 最後の試行であれば待機しない
+                guard attempt < maxRetries - 1 else {
+                    break
+                }
+
+                // 指数バックオフで待機
+                let delay = baseDelay * pow(2.0, Double(attempt))
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            }
+        }
+
+        throw lastError ?? APIError.unknown
+    }
+
+    private func shouldRetry(error: Error) -> Bool {
+        if let apiError = error as? APIError {
+            switch apiError {
+            case .networkError, .timeout:
+                return true
+            case .httpError(let statusCode):
+                // 5xxエラーの場合はリトライ
+                return statusCode >= 500
+            default:
+                return false
+            }
+        }
+
+        // URLErrorの場合
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .timedOut, .notConnectedToInternet, .networkConnectionLost, .dnsLookupFailed:
+                return true
+            default:
+                return false
+            }
+        }
+
+        return false
+    }
     
     // MARK: - Learning Logs
 
@@ -95,19 +155,19 @@ actor APIService {
             }
             throw APIError.offline
         }
-        
-        // Supabase REST APIを使用して学習ログを取得
-        do {
-            guard let token = try await getAuthToken() else {
+
+        // リトライロジックを適用して学習ログを取得
+        let logs: [LearningLog] = try await performWithRetry {
+            guard let token = try await self.getAuthToken() else {
                 throw APIError.unauthenticated
             }
 
-            var request = URLRequest(url: URL(string: "\(baseURL)/learning-logs")!)
+            var request = URLRequest(url: URL(string: "\(self.baseURL)/learning-logs")!)
             request.httpMethod = "GET"
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await self.session.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw APIError.invalidResponse
@@ -120,103 +180,105 @@ actor APIService {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
 
-            let logs = try decoder.decode([LearningLog].self, from: data)
-            
+            let decodedLogs = try decoder.decode([LearningLog].self, from: data)
+
             // キャッシュに保存
-            try? await cache.cacheLearningLogs(logs)
-            
-            return logs
-        } catch {
-            // ネットワークエラーの場合、キャッシュされたデータを返す
-            if let apiError = error as? APIError, case .networkError = apiError {
-                if let cachedLogs = try await cache.getCachedLearningLogs() {
-                    return cachedLogs
-                }
-            }
-            throw error
+            try? await self.cache.cacheLearningLogs(decodedLogs)
+
+            return decodedLogs
         }
+
+        return logs
     }
 
     func createLearningLog(_ log: LearningLog) async throws -> LearningLog {
-        // Supabase REST APIを使用して学習ログを作成
-        guard let token = try await getAuthToken() else {
-            throw APIError.unauthenticated
+        // リトライロジックを適用して学習ログを作成
+        return try await performWithRetry {
+            guard let token = try await self.getAuthToken() else {
+                throw APIError.unauthenticated
+            }
+
+            var request = URLRequest(url: URL(string: "\(self.baseURL)/learning-logs")!)
+            request.httpMethod = "POST"
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            request.httpBody = try encoder.encode(log)
+
+            let (data, response) = try await self.session.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
+
+            guard httpResponse.statusCode == 201 else {
+                throw APIError.httpError(statusCode: httpResponse.statusCode)
+            }
+
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+
+            let createdLog = try decoder.decode(LearningLog.self, from: data)
+            return createdLog
         }
-
-        var request = URLRequest(url: URL(string: "\(baseURL)/learning-logs")!)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        request.httpBody = try encoder.encode(log)
-
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
-        }
-
-        guard httpResponse.statusCode == 201 else {
-            throw APIError.httpError(statusCode: httpResponse.statusCode)
-        }
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let createdLog = try decoder.decode(LearningLog.self, from: data)
-        return createdLog
     }
 
     func updateLearningLog(_ log: LearningLog) async throws -> LearningLog {
-        guard let token = try await getAuthToken() else {
-            throw APIError.unauthenticated
+        // リトライロジックを適用して学習ログを更新
+        return try await performWithRetry {
+            guard let token = try await self.getAuthToken() else {
+                throw APIError.unauthenticated
+            }
+
+            var request = URLRequest(url: URL(string: "\(self.baseURL)/learning-logs/\(log.id.uuidString)")!)
+            request.httpMethod = "PUT"
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            request.httpBody = try encoder.encode(log)
+
+            let (data, response) = try await self.session.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
+
+            guard httpResponse.statusCode == 200 else {
+                throw APIError.httpError(statusCode: httpResponse.statusCode)
+            }
+
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+
+            let updatedLog = try decoder.decode(LearningLog.self, from: data)
+            return updatedLog
         }
-
-        var request = URLRequest(url: URL(string: "\(baseURL)/learning-logs/\(log.id.uuidString)")!)
-        request.httpMethod = "PUT"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        request.httpBody = try encoder.encode(log)
-
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
-        }
-
-        guard httpResponse.statusCode == 200 else {
-            throw APIError.httpError(statusCode: httpResponse.statusCode)
-        }
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let updatedLog = try decoder.decode(LearningLog.self, from: data)
-        return updatedLog
     }
 
     func deleteLearningLog(id: UUID) async throws {
-        guard let token = try await getAuthToken() else {
-            throw APIError.unauthenticated
-        }
+        // リトライロジックを適用して学習ログを削除
+        try await performWithRetry {
+            guard let token = try await self.getAuthToken() else {
+                throw APIError.unauthenticated
+            }
 
-        var request = URLRequest(url: URL(string: "\(baseURL)/learning-logs/\(id.uuidString)")!)
-        request.httpMethod = "DELETE"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            var request = URLRequest(url: URL(string: "\(self.baseURL)/learning-logs/\(id.uuidString)")!)
+            request.httpMethod = "DELETE"
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
-        let (_, response) = try await session.data(for: request)
+            let (_, response) = try await self.session.data(for: request)
 
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
-        }
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
 
-        guard httpResponse.statusCode == 204 else {
-            throw APIError.httpError(statusCode: httpResponse.statusCode)
+            guard httpResponse.statusCode == 204 else {
+                throw APIError.httpError(statusCode: httpResponse.statusCode)
+            }
         }
     }
     
@@ -254,9 +316,9 @@ actor APIService {
             )
         }
 
-        // AI APIを呼び出す
-        do {
-            guard let token = try await getAuthToken() else {
+        // リトライロジックを適用してAI APIを呼び出す
+        let aiResponse: ChatMessageData = try await performWithRetry {
+            guard let token = try await self.getAuthToken() else {
                 throw APIError.unauthenticated
             }
 
@@ -271,9 +333,9 @@ actor APIService {
             ]
             request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-            let (data, response) = try await session.data(for: request)
+            let (data, urlResponse) = try await self.session.data(for: request)
 
-            guard let httpResponse = response as? HTTPURLResponse else {
+            guard let httpResponse = urlResponse as? HTTPURLResponse else {
                 throw APIError.invalidResponse
             }
 
@@ -284,26 +346,15 @@ actor APIService {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
 
-            let aiResponse = try decoder.decode(ChatMessageData.self, from: data)
-            
+            let response = try decoder.decode(ChatMessageData.self, from: data)
+
             // キャッシュに保存
-            try? await cache.cacheChatHistory(history + [aiResponse])
-            
-            return aiResponse
-        } catch {
-            // ネットワークエラーの場合はモックレスポンスを返す
-            if let apiError = error as? APIError, case .networkError = apiError {
-                try await Task.sleep(nanoseconds: 1_000_000_000) // 1秒待機
-                let responses = generateMockResponse(for: text, history: history)
-                return ChatMessageData(
-                    id: UUID(),
-                    content: responses,
-                    isUser: false,
-                    timestamp: Date()
-                )
-            }
-            throw error
+            try? await self.cache.cacheChatHistory(history + [response])
+
+            return response
         }
+
+        return aiResponse
     }
     
     private func generateMockResponse(for text: String, history: [ChatMessageData]) -> String {
