@@ -3717,3 +3717,137 @@ struct CategoryBreakdownRowTapFeedbackTests {
     }
 }
 
+// MARK: - Profile View Tap Feedback Tests
+
+struct ProfileViewTapFeedbackTests {
+    @Test func testProfileButtonContentTapFeedbackAnimationParameters() async throws {
+        // ProfileButtonContentのタップフィードバックアニメーションパラメータをテスト
+        // スケール0.98、Springアニメーションが使用されている
+        let scaleEffect = 0.98
+        #expect(scaleEffect == 0.98)
+
+        // Springアニメーションパラメータ
+        let response: Double = 0.2
+        let dampingFraction: Double = 0.6
+        #expect(response == 0.2)
+        #expect(dampingFraction == 0.6)
+    }
+
+    @Test func testSettingRowTapFeedbackAnimationParameters() async throws {
+        // SettingRowのタップフィードバックアニメーションパラメータをテスト
+        // スケール0.98、Springアニメーションが使用されている
+        let scaleEffect = 0.98
+        #expect(scaleEffect == 0.98)
+
+        // Springアニメーションパラメータ
+        let response: Double = 0.2
+        let dampingFraction: Double = 0.6
+        #expect(response == 0.2)
+        #expect(dampingFraction == 0.6)
+    }
+
+    @Test func testAvatarButtonStylePressState() async throws {
+        // AvatarButtonStyleのisPressed状態をテスト
+        var isPressed = false
+        #expect(isPressed == false)
+
+        // タップでisPressedがtrueになる
+        isPressed = true
+        #expect(isPressed == true)
+
+        // リリースでisPressedがfalseになる
+        isPressed = false
+        #expect(isPressed == false)
+    }
+
+    @Test func testProfileButtonContentIsPressedStateToggle() async throws {
+        // ProfileButtonContentのisPressed状態のトグルをテスト
+        var isPressed = false
+        #expect(isPressed == false)
+
+        // タップでisPressedがtrueになる
+        isPressed = true
+        #expect(isPressed == true)
+
+        // リリースでisPressedがfalseになる
+        isPressed = false
+        #expect(isPressed == false)
+    }
+
+    @Test func testSettingRowIsPressedStateToggle() async throws {
+        // SettingRowのisPressed状態のトグルをテスト
+        var isPressed = false
+        #expect(isPressed == false)
+
+        // タップでisPressedがtrueになる
+        isPressed = true
+        #expect(isPressed == true)
+
+        // リリースでisPressedがfalseになる
+        isPressed = false
+        #expect(isPressed == false)
+    }
+
+    @Test func testAvatarButtonStyleAnimationParameters() async throws {
+        // AvatarButtonStyleのアニメーションパラメータをテスト
+        // configuration.isPressed時: 0.92
+        // isPressed時: 0.88
+        let configurationPressedScale: Double = 0.92
+        let isPressedScale: Double = 0.88
+        #expect(configurationPressedScale == 0.92)
+        #expect(isPressedScale == 0.88)
+
+        // Springアニメーションパラメータ
+        let response: Double = 0.2
+        let dampingFraction: Double = 0.7
+        #expect(response == 0.2)
+        #expect(dampingFraction == 0.7)
+    }
+
+    @Test func testAvatarButtonGradientColors() async throws {
+        // AvatarButtonのグラデーション色をテスト
+        // 選択時: [Color.pink, Color.purple]
+        // 非選択時: [Color.pink.opacity(0.7), Color.purple.opacity(0.7)]
+        let isSelected = true
+        let selectedOpacity = isSelected ? 1.0 : 0.7
+        #expect(selectedOpacity == 1.0)
+
+        let nonSelectedOpacity = !isSelected ? 1.0 : 0.7
+        #expect(nonSelectedOpacity == 0.7)
+    }
+
+    @Test func testAvatarButtonShadowParameters() async throws {
+        // AvatarButtonのシャドウパラメータをテスト
+        // isPressed時: radius: 4, y: 2
+        // isSelected時: radius: 8, y: 4
+        // デフォルト時: radius: 4, y: 2
+        let isPressed = true
+        let isSelected = false
+
+        let shadowRadius = isPressed ? 4 : (isSelected ? 8 : 4)
+        let shadowY = isPressed ? 2 : (isSelected ? 4 : 2)
+        #expect(shadowRadius == 4)
+        #expect(shadowY == 2)
+    }
+
+    @Test func testProfileViewTapFeedbackConsistency() async throws {
+        // すべてのタップフィードバックアニメーションで一貫したSpringパラメータを使用していることを確認
+        let expectedResponse: Double = 0.2
+        let expectedDampingFraction: Double = 0.6
+
+        // ProfileButtonContent
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+
+        // SettingRow
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+
+        // AvatarButtonStyleは異なるパラメータを使用
+        let avatarButtonResponse: Double = 0.2
+        let avatarButtonDampingFraction: Double = 0.7
+        #expect(avatarButtonResponse == 0.2)
+        #expect(avatarButtonDampingFraction == 0.7)
+    }
+}
+

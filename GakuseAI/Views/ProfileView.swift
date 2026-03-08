@@ -25,26 +25,20 @@ struct ProfileView: View {
                     .accessibilityIdentifier("profileEditButton")
                     .accessibilityLabel("プロフィール編集")
                     .accessibilityHint("プロフィール情報を編集できます")
+                    .buttonStyle(PlainButtonStyle())
                 }
-                
+
                 // Settings Section
                 Section("設定") {
                     // Notifications
                     NavigationLink {
                         NotificationSettingsView(viewModel: viewModel)
                     } label: {
-                        HStack {
-                            Image(systemName: "bell.fill")
-                                .foregroundColor(.pink)
-                                .frame(width: 24)
-                            Text("通知")
-                            Spacer()
-                            if viewModel.userProfile?.settings.notificationsEnabled == true {
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.secondary)
-                                    .font(.caption)
-                            }
-                        }
+                        SettingRow(
+                            icon: "bell.fill",
+                            title: "通知",
+                            showChevron: viewModel.userProfile?.settings.notificationsEnabled == true
+                        )
                     }
                     .accessibilityIdentifier("notificationsSetting")
                     .accessibilityLabel("通知設定")
@@ -53,16 +47,11 @@ struct ProfileView: View {
                     NavigationLink {
                         AppearanceSettingsView(viewModel: viewModel)
                     } label: {
-                        HStack {
-                            Image(systemName: "paintbrush.fill")
-                                .foregroundColor(.pink)
-                                .frame(width: 24)
-                            Text("外観")
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.secondary)
-                                .font(.caption)
-                        }
+                        SettingRow(
+                            icon: "paintbrush.fill",
+                            title: "外観",
+                            showChevron: true
+                        )
                     }
                     .accessibilityIdentifier("appearanceSetting")
                     .accessibilityLabel("外観設定")
@@ -88,16 +77,17 @@ struct ProfileView: View {
                     .accessibilityIdentifier("languageSetting")
                     .accessibilityLabel("言語設定")
                 }
-                
+
                 // Data Section
                 Section("データ") {
                     NavigationLink {
                         DataExportView(viewModel: viewModel)
                     } label: {
-                        HStack {
-                            Image(systemName: "square.and.arrow.up")
-                            Text("学習ログをエクスポート")
-                        }
+                        SettingRow(
+                            icon: "square.and.arrow.up",
+                            title: "学習ログをエクスポート",
+                            showChevron: true
+                        )
                     }
                     .accessibilityIdentifier("exportDataButton")
                     .accessibilityLabel("学習ログをエクスポート")
@@ -121,7 +111,7 @@ struct ProfileView: View {
                     .accessibilityLabel("すべてのデータを削除")
                     .accessibilityHint("すべての学習データが削除されます")
                 }
-                
+
                 // About Section
                 Section("その他") {
                     Link("利用規約", destination: URL(string: "https://gakuse.ai/terms")!)
@@ -196,17 +186,17 @@ struct ProfileView: View {
             }
         }
     }
-    
+
     // MARK: - Helper Methods
-    
+
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
     }
-    
+
     private var languageDisplayName: String {
         viewModel.userProfile?.settings.language.displayName ?? "日本語"
     }
-    
+
     private func deleteAllData() {
         isDeletingData = true
         Task {
@@ -216,12 +206,44 @@ struct ProfileView: View {
     }
 }
 
+// MARK: - Setting Row
+
+struct SettingRow: View {
+    let icon: String
+    let title: String
+    var showChevron: Bool = false
+    @State private var isPressed = false
+
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(.pink)
+                .frame(width: 24)
+            Text(title)
+            Spacer()
+            if showChevron {
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+            }
+        }
+        .contentShape(Rectangle())
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
+}
+
 // MARK: - Notification Settings View
 
 struct NotificationSettingsView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: ProfileViewModel
-    
+
     var body: some View {
         NavigationStack {
             Form {
@@ -237,7 +259,7 @@ struct NotificationSettingsView: View {
                         }
                     ))
                 }
-                
+
                 if viewModel.userProfile?.settings.notificationsEnabled == true {
                     Section("通知時間") {
                         DatePicker("通知時間", selection: Binding(
@@ -274,7 +296,7 @@ struct NotificationSettingsView: View {
 struct AppearanceSettingsView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: ProfileViewModel
-    
+
     var body: some View {
         NavigationStack {
             Form {
@@ -293,7 +315,7 @@ struct AppearanceSettingsView: View {
                     }
                     .pickerStyle(.navigationLink)
                 }
-                
+
                 Section("プレビュー") {
                     HStack {
                         Text("現在のテーマ")
@@ -312,7 +334,7 @@ struct AppearanceSettingsView: View {
             }
         }
     }
-    
+
     private var currentThemeName: String {
         viewModel.userProfile?.settings.theme.displayName ?? "システム"
     }
@@ -323,7 +345,7 @@ struct AppearanceSettingsView: View {
 struct LanguageSettingsView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: ProfileViewModel
-    
+
     var body: some View {
         NavigationStack {
             Form {
@@ -342,7 +364,7 @@ struct LanguageSettingsView: View {
                     }
                     .pickerStyle(.navigationLink)
                 }
-                
+
                 Section {
                     Text("言語設定を変更すると、アプリが再起動されます。")
                         .font(.caption)
@@ -372,7 +394,7 @@ struct AvatarPickerView: View {
         GridItem(.flexible()),
         GridItem(.flexible())
     ]
-    
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -404,7 +426,7 @@ struct AvatarPickerView: View {
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.7), value: viewModel.userProfile?.avatarIcon)
     }
-    
+
     private func selectAvatar(_ icon: AvatarIcon) async {
         await viewModel.updateProfile(name: viewModel.userProfile?.name ?? "ユーザー", avatarIcon: icon.rawValue)
         dismiss()
@@ -418,9 +440,9 @@ struct AvatarButton: View {
     let isSelected: Bool
     let namespace: Namespace.ID
     let action: () async -> Void
-    
+
     @State private var isPressed = false
-    
+
     var body: some View {
         Button {
             Task {
@@ -444,20 +466,20 @@ struct AvatarButton: View {
                         x: 0,
                         y: isPressed ? 2 : (isSelected ? 4 : 2)
                     )
-                
+
                 // アイコン
                 Image(systemName: icon.rawValue)
                     .font(.title)
                     .fontWeight(.medium)
                     .foregroundColor(.white)
-                
+
                 // 選択時のチェックマーク
                 if isSelected {
                     ZStack {
                         Circle()
                             .fill(.white)
                             .frame(width: 28, height: 28)
-                        
+
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(checkmarkColor)
                             .font(.title3)
@@ -470,7 +492,7 @@ struct AvatarButton: View {
         .buttonStyle(AvatarButtonStyle(isPressed: $isPressed))
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
     }
-    
+
     private var gradientColors: [Color] {
         if isSelected {
             return [Color.pink, Color.purple]
@@ -478,11 +500,11 @@ struct AvatarButton: View {
             return [Color.pink.opacity(0.7), Color.purple.opacity(0.7)]
         }
     }
-    
+
     private var shadowColor: Color {
         Color.primary.opacity(0.2)
     }
-    
+
     private var checkmarkColor: Color {
         Color.pink
     }
@@ -492,7 +514,7 @@ struct AvatarButton: View {
 
 struct AvatarButtonStyle: ButtonStyle {
     @Binding var isPressed: Bool
-    
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.92 : (isPressed ? 0.88 : 1.0))
@@ -515,7 +537,7 @@ enum AvatarIcon: String, CaseIterable {
     case sparkle = "sparkles"
     case trophy = "trophy.fill"
     case rocket = "rocket.fill"
-    
+
     var displayName: String {
         switch self {
         case .person: return "デフォルト"
@@ -541,7 +563,7 @@ struct DataExportView: View {
     @State private var isExporting = false
     @State private var exportedURL: URL?
     @State private var showingShareSheet = false
-    
+
     var body: some View {
         NavigationStack {
             List {
@@ -561,7 +583,7 @@ struct DataExportView: View {
                             }
                         }
                     }
-                    
+
                     Button {
                         exportToJSON()
                     } label: {
@@ -578,7 +600,7 @@ struct DataExportView: View {
                         }
                     }
                 }
-                
+
                 Section {
                     Text("学習ログ、プロファイル、チャット履歴をエクスポートします。")
                         .font(.caption)
@@ -599,7 +621,7 @@ struct DataExportView: View {
             }
         }
     }
-    
+
     private func exportToCSV() {
         isExporting = true
         defer { isExporting = false }
@@ -617,11 +639,11 @@ struct DataExportView: View {
             }
         }
     }
-    
+
     private func exportToJSON() {
         isExporting = true
         defer { isExporting = false }
-        
+
         Task {
             do {
                 let url = try await viewModel.exportAllData()
@@ -639,28 +661,36 @@ struct DataExportView: View {
 
 struct ProfileButtonContent: View {
     let profile: UserProfile?
-    
+    @State private var isPressed = false
+
     var body: some View {
         HStack {
             AvatarView(avatarIcon: profile?.avatarIcon, name: profile?.name)
-            
+
             ProfileInfoView(profile: profile)
-            
+
             Spacer()
-            
+
             Image(systemName: "chevron.right")
                 .foregroundColor(.secondary)
                 .font(.caption)
         }
         .padding(.vertical, 8)
         .foregroundColor(.primary)
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
     }
 }
 
 struct AvatarView: View {
     let avatarIcon: String?
     let name: String?
-    
+
     var body: some View {
         Circle()
             .fill(
@@ -683,7 +713,7 @@ struct AvatarView: View {
                 }
             }
     }
-    
+
     private var initialLetter: String {
         name?.first?.uppercased() ?? "U"
     }
@@ -691,22 +721,22 @@ struct AvatarView: View {
 
 struct ProfileInfoView: View {
     let profile: UserProfile?
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(displayName)
                 .font(.headline)
-            
+
             Text(displayEmail)
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
     }
-    
+
     private var displayName: String {
         profile?.name ?? "ユーザー"
     }
-    
+
     private var displayEmail: String {
         if let email = profile?.email {
             return email
@@ -723,7 +753,7 @@ struct EditProfileView: View {
     @ObservedObject var viewModel: ProfileViewModel
     @State private var name = ""
     @State private var email = ""
-    
+
     var body: some View {
         NavigationStack {
             Form {
@@ -768,11 +798,11 @@ struct EditProfileView: View {
                         }
                     }
                 }
-                
+
                 Section("名前") {
                     TextField("名前", text: $name)
                 }
-                
+
                 Section("メールアドレス") {
                     TextField("メールアドレス", text: $email)
                         .textInputAutocapitalization(.never)
@@ -787,7 +817,7 @@ struct EditProfileView: View {
                         dismiss()
                     }
                 }
-                
+
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") {
                         Task {
@@ -812,7 +842,7 @@ struct ThemePickerView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: ProfileViewModel
     @State private var selectedTheme: AppTheme = .system
-    
+
     var body: some View {
         NavigationStack {
             List {
@@ -837,7 +867,7 @@ struct ThemePickerView: View {
                         .foregroundColor(.primary)
                     }
                 }
-                
+
                 Section {
                     Text("カラフルなテーマは「外観」設定で選択できます。")
                         .font(.caption)
@@ -858,7 +888,7 @@ struct ThemePickerView: View {
             }
         }
     }
-    
+
     private func themeName(for theme: AppTheme) -> String {
         switch theme {
         case .system: return "システム"
@@ -873,11 +903,11 @@ struct ThemePickerView: View {
 
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
-    
+
     func makeUIViewController(context: Context) -> UIActivityViewController {
         UIActivityViewController(activityItems: items, applicationActivities: nil)
     }
-    
+
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
