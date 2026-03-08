@@ -228,20 +228,7 @@ struct StatisticsView: View {
             // カテゴリ一覧
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(viewModel.categoryData, id: \.category) { item in
-                    HStack {
-                        Circle()
-                            .fill(item.color)
-                            .frame(width: 12, height: 12)
-
-                        Text(item.category.rawValue)
-                            .font(.subheadline)
-
-                        Spacer()
-
-                        Text("\(item.count)")
-                            .font(.headline)
-                            .foregroundColor(.pink)
-                    }
+                    CategoryStatRow(item: item)
                 }
             }
         }
@@ -275,6 +262,37 @@ struct StatisticsView: View {
     }
 }
 
+// MARK: - Category Stat Row
+
+struct CategoryStatRow: View {
+    let item: CategoryDataPoint
+    @State private var isPressed = false
+
+    var body: some View {
+        HStack {
+            Circle()
+                .fill(item.color)
+                .frame(width: 12, height: 12)
+
+            Text(item.category.rawValue)
+                .font(.subheadline)
+
+            Spacer()
+
+            Text("\(item.count)")
+                .font(.headline)
+                .foregroundColor(.pink)
+        }
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
+}
+
 // MARK: - Stat Card
 
 struct StatisticsStatCard: View {
@@ -282,6 +300,7 @@ struct StatisticsStatCard: View {
     let value: String
     let icon: String
     let color: Color
+    @State private var isPressed = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -301,6 +320,13 @@ struct StatisticsStatCard: View {
         .padding()
         .background(Color(.systemBackground))
         .cornerRadius(12)
+        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(value)")
     }

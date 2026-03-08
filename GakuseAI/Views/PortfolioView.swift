@@ -191,24 +191,7 @@ struct PortfolioView: View {
                 .font(.headline)
 
             ForEach(viewModel.categoriesWithCount, id: \.0) { category, count in
-                HStack {
-                    Image(systemName: category.icon)
-                        .foregroundColor(.pink)
-                        .frame(width: 24)
-
-                    Text(category.rawValue)
-                        .font(.subheadline)
-
-                    Spacer()
-
-                    Text("\(count)")
-                        .font(.headline)
-                        .foregroundColor(.pink)
-                }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 12)
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
+                CategoryBreakdownRow(category: category, count: count)
             }
         }
     }
@@ -248,6 +231,42 @@ struct PortfolioView: View {
     }
 }
 
+// MARK: - Category Breakdown Row
+
+struct CategoryBreakdownRow: View {
+    let category: LearningCategory
+    let count: Int
+    @State private var isPressed = false
+
+    var body: some View {
+        HStack {
+            Image(systemName: category.icon)
+                .foregroundColor(.pink)
+                .frame(width: 24)
+
+            Text(category.rawValue)
+                .font(.subheadline)
+
+            Spacer()
+
+            Text("\(count)")
+                .font(.headline)
+                .foregroundColor(.pink)
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(Color(.systemGray6))
+        .cornerRadius(8)
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
+}
+
 // MARK: - Stat Card
 
 struct StatCard: View {
@@ -257,6 +276,7 @@ struct StatCard: View {
     let color: Color
     let delay: Double
     @State private var isVisible = false
+    @State private var isPressed = false
 
     var body: some View {
         VStack(spacing: 8) {
@@ -281,13 +301,20 @@ struct StatCard: View {
         .background(Color(.systemGray6))
         .cornerRadius(12)
         .scaleEffect(isVisible ? 1.0 : 0.9)
+        .scaleEffect(isPressed ? 0.95 : (isVisible ? 1.0 : 0.9))
         .opacity(isVisible ? 1.0 : 0.0)
         .animation(.spring(response: 0.5, dampingFraction: 0.6).delay(delay), value: isVisible)
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
         .onAppear {
             withAnimation {
                 isVisible = true
             }
         }
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(value)")
     }
