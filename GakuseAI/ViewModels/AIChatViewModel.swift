@@ -69,7 +69,7 @@ class AIChatViewModel: ObservableObject {
             let response = try await apiService.sendChatMessage(text, history: messages)
             messages.append(response)
             try await persistenceService.appendChatMessage(response)
-            HapticFeedback.success() // AI応答受信
+            HapticFeedback.notification(.success) // AI応答受信
         } catch {
             errorMessage = "AI応答エラー: \(error.localizedDescription)"
             HapticFeedback.error() // エラー時
@@ -88,7 +88,7 @@ class AIChatViewModel: ObservableObject {
         do {
             try await persistenceService.clearChatHistory()
             messages = []
-            HapticFeedback.success() // 履歴クリア成功
+            HapticFeedback.notification(.success) // 履歴クリア成功
         } catch {
             errorMessage = "履歴削除エラー: \(error.localizedDescription)"
             HapticFeedback.error() // エラー時

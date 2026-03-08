@@ -50,7 +50,7 @@ class ProfileViewModel: ObservableObject {
         do {
             try await persistenceService.saveUserProfile(profile)
             userProfile = profile
-            HapticFeedback.success() // プロファイル更新成功
+            HapticFeedback.notification(.success) // プロファイル更新成功
         } catch {
             errorMessage = "プロファイル保存エラー: \(error.localizedDescription)"
             print("プロファイル保存エラー: \(error)")
@@ -100,7 +100,7 @@ class ProfileViewModel: ObservableObject {
         do {
             try await persistenceService.saveUserProfile(profile)
             userProfile = profile
-            HapticFeedback.success() // 通知時間更新成功
+            HapticFeedback.notification(.success) // 通知時間更新成功
         } catch {
             errorMessage = "通知時間保存エラー: \(error.localizedDescription)"
             print("通知時間保存エラー: \(error)")
@@ -116,7 +116,7 @@ class ProfileViewModel: ObservableObject {
         do {
             try await persistenceService.saveUserProfile(profile)
             userProfile = profile
-            HapticFeedback.success() // 言語設定更新成功
+            HapticFeedback.notification(.success) // 言語設定更新成功
         } catch {
             errorMessage = "言語設定保存エラー: \(error.localizedDescription)"
             print("言語設定保存エラー: \(error)")

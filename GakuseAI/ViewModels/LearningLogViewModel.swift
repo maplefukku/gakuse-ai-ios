@@ -131,7 +131,7 @@ class LearningLogViewModel: ObservableObject {
         do {
             try await persistenceService.appendLearningLog(newLog)
             logs.insert(newLog, at: 0) // 先頭に追加
-            HapticFeedback.success() // ログ作成成功
+            HapticFeedback.notification(.success) // ログ作成成功
         } catch {
             errorMessage = "保存エラー: \(error.localizedDescription)"
             HapticFeedback.error() // エラー時
@@ -172,7 +172,7 @@ class LearningLogViewModel: ObservableObject {
         var updatedLog = log
         updatedLog.isFavorite.toggle()
         await updateLog(updatedLog)
-        HapticFeedback.success() // お気に入り切替
+        HapticFeedback.notification(.success) // お気に入り切替
     }
     
     func addSkill(to log: LearningLog, name: String, level: SkillLevel) async {

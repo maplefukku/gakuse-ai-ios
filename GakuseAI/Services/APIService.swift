@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import Network
 
 // MARK: - API Error
 
@@ -11,6 +12,8 @@ enum APIError: LocalizedError {
     case encodingError(Error)
     case networkError(Error)
     case unknown
+    case offline
+    case timeout
 
     var errorDescription: String? {
         switch self {
@@ -26,6 +29,10 @@ enum APIError: LocalizedError {
             return "エンコードエラー: \(error.localizedDescription)"
         case .networkError(let error):
             return "ネットワークエラー: \(error.localizedDescription)"
+        case .offline:
+            return "オフラインです"
+        case .timeout:
+            return "タイムアウトしました"
         case .unknown:
             return "不明なエラー"
         }
@@ -38,6 +45,9 @@ actor APIService {
     private let baseURL: URL
     private let supabase = SupabaseManager.shared
     private let session: URLSession
+    private let cache = CacheService.shared
+    private let networkMonitor = NWPathMonitor()
+    private nonisolated(unsafe) var isOnline = true
 
     init() {
         // Info.plistからAPI Base URLを取得
@@ -52,6 +62,19 @@ actor APIService {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         self.session = URLSession(configuration: config)
+        
+        // ネットワーク監視を初期化
+        let queue = DispatchQueue(label: "NetworkMonitor")
+        networkMonitor.pathUpdateHandler = { [weak self] path in
+            self?.isOnline = path.status == .satisfied
+        }
+        networkMonitor.start(queue: queue)
+    }
+    
+    // MARK: - Network Monitoring
+    
+    var isConnected: Bool {
+        isOnline
     }
     
     // MARK: - Helper
@@ -64,31 +87,54 @@ actor APIService {
     // MARK: - Learning Logs
 
     func fetchLearningLogs() async throws -> [LearningLog] {
+        // オフラインチェック
+        if !isConnected {
+            // キャッシュされたデータを返す
+            if let cachedLogs = try await cache.getCachedLearningLogs() {
+                return cachedLogs
+            }
+            throw APIError.offline
+        }
+        
         // Supabase REST APIを使用して学習ログを取得
-        guard let token = try await getAuthToken() else {
-            throw APIError.unauthenticated
+        do {
+            guard let token = try await getAuthToken() else {
+                throw APIError.unauthenticated
+            }
+
+            var request = URLRequest(url: URL(string: "\(baseURL)/learning-logs")!)
+            request.httpMethod = "GET"
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let (data, response) = try await session.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
+
+            guard httpResponse.statusCode == 200 else {
+                throw APIError.httpError(statusCode: httpResponse.statusCode)
+            }
+
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+
+            let logs = try decoder.decode([LearningLog].self, from: data)
+            
+            // キャッシュに保存
+            try? await cache.cacheLearningLogs(logs)
+            
+            return logs
+        } catch {
+            // ネットワークエラーの場合、キャッシュされたデータを返す
+            if let apiError = error as? APIError, case .networkError = apiError {
+                if let cachedLogs = try await cache.getCachedLearningLogs() {
+                    return cachedLogs
+                }
+            }
+            throw error
         }
-
-        var request = URLRequest(url: URL(string: "\(baseURL)/learning-logs")!)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
-        }
-
-        guard httpResponse.statusCode == 200 else {
-            throw APIError.httpError(statusCode: httpResponse.statusCode)
-        }
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let logs = try decoder.decode([LearningLog].self, from: data)
-        return logs
     }
 
     func createLearningLog(_ log: LearningLog) async throws -> LearningLog {
@@ -195,37 +241,69 @@ actor APIService {
             )
         }
 
+        // オフラインチェック
+        if !isConnected {
+            // オフラインの場合はモックレスポンスを返す
+            try await Task.sleep(nanoseconds: 1_000_000_000) // 1秒待機
+            let responses = generateMockResponse(for: text, history: history)
+            return ChatMessageData(
+                id: UUID(),
+                content: responses,
+                isUser: false,
+                timestamp: Date()
+            )
+        }
+
         // AI APIを呼び出す
-        guard let token = try await getAuthToken() else {
-            throw APIError.unauthenticated
+        do {
+            guard let token = try await getAuthToken() else {
+                throw APIError.unauthenticated
+            }
+
+            var request = URLRequest(url: endpointURL)
+            request.httpMethod = "POST"
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let requestBody: [String: Any] = [
+                "message": text,
+                "history": history.map { ["id": $0.id.uuidString, "content": $0.content, "isUser": $0.isUser] }
+            ]
+            request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+
+            let (data, response) = try await session.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
+
+            guard httpResponse.statusCode == 200 else {
+                throw APIError.httpError(statusCode: httpResponse.statusCode)
+            }
+
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+
+            let aiResponse = try decoder.decode(ChatMessageData.self, from: data)
+            
+            // キャッシュに保存
+            try? await cache.cacheChatHistory(history + [aiResponse])
+            
+            return aiResponse
+        } catch {
+            // ネットワークエラーの場合はモックレスポンスを返す
+            if let apiError = error as? APIError, case .networkError = apiError {
+                try await Task.sleep(nanoseconds: 1_000_000_000) // 1秒待機
+                let responses = generateMockResponse(for: text, history: history)
+                return ChatMessageData(
+                    id: UUID(),
+                    content: responses,
+                    isUser: false,
+                    timestamp: Date()
+                )
+            }
+            throw error
         }
-
-        var request = URLRequest(url: endpointURL)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let requestBody: [String: Any] = [
-            "message": text,
-            "history": history.map { ["id": $0.id.uuidString, "content": $0.content, "isUser": $0.isUser] }
-        ]
-        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
-
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
-        }
-
-        guard httpResponse.statusCode == 200 else {
-            throw APIError.httpError(statusCode: httpResponse.statusCode)
-        }
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let aiResponse = try decoder.decode(ChatMessageData.self, from: data)
-        return aiResponse
     }
     
     private func generateMockResponse(for text: String, history: [ChatMessageData]) -> String {

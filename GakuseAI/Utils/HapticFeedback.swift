@@ -1,78 +1,55 @@
 import UIKit
-import SwiftUI
 
-/// Haptic Feedback（触覚フィードバック）の拡張
-enum HapticFeedback {
-    /// 軽いフィードバック（選択、タップなど）
+/// Haptic Feedbackユーティリティ
+/// SOUL.mdのビジョン「学習ログを資産化」を実現 - UX向上のための触覚フィードバック
+struct HapticFeedback {
+    
+    /// 軽い触覚フィードバック
+    @MainActor
     static func light() {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
     }
     
-    /// 中程度のフィードバック（ボタンクリック、操作完了など）
+    /// 中程度の触覚フィードバック
+    @MainActor
     static func medium() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
     }
     
-    /// 強いフィードバック（重要な操作、エラーなど）
+    /// 強い触覚フィードバック
+    @MainActor
     static func heavy() {
         let generator = UIImpactFeedbackGenerator(style: .heavy)
         generator.impactOccurred()
     }
     
-    /// 成功フィードバック（保存完了、成功操作など）
-    static func success() {
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
+    /// 選択時の触覚フィードバック
+    @MainActor
+    static func selection() {
+        let generator = UISelectionFeedbackGenerator()
+        generator.selectionChanged()
     }
     
-    /// 警告フィードバック（確認が必要な操作など）
+    /// 通知時の触覚フィードバック（成功）
+    @MainActor
+    static func notification(_ type: UINotificationFeedbackGenerator.FeedbackType = .success) {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(type)
+    }
+    
+    /// 通知時の触覚フィードバック（警告）
+    @MainActor
     static func warning() {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.warning)
     }
     
-    /// エラーフィードバック（失敗操作など）
+    /// 通知時の触覚フィードバック（エラー）
+    @MainActor
     static func error() {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.error)
-    }
-}
-
-/// ViewModifierによるHaptic Feedbackの追加
-struct HapticTapModifier: ViewModifier {
-    let feedback: () -> Void
-    
-    func body(content: Content) -> some View {
-        content
-            .simultaneousGesture(
-                TapGesture()
-                    .onEnded { _ in
-                        feedback()
-                    }
-            )
-    }
-}
-
-extension View {
-    /// タップ時にHaptic Feedbackを実行
-    func hapticTap(_ feedback: @escaping () -> Void = { HapticFeedback.light() }) -> some View {
-        self.modifier(HapticTapModifier(feedback: feedback))
-    }
-    
-    /// 軽いHaptic Feedbackをタップ時に実行
-    func hapticLightTap() -> some View {
-        hapticTap { HapticFeedback.light() }
-    }
-    
-    /// 中程度のHaptic Feedbackをタップ時に実行
-    func hapticMediumTap() -> some View {
-        hapticTap { HapticFeedback.medium() }
-    }
-    
-    /// 強いHaptic Feedbackをタップ時に実行
-    func hapticHeavyTap() -> some View {
-        hapticTap { HapticFeedback.heavy() }
     }
 }
