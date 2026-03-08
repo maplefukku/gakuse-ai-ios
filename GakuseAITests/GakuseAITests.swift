@@ -3171,4 +3171,78 @@ struct APIServiceRetryTests {
     }
 }
 
+// MARK: - AIChatView and AIChatViewModel Tests
+
+struct AIChatTests {
+
+    @Test func testSuggestedPromptCreation() async throws {
+        // SuggestedPromptの作成確認
+        let prompt = SuggestedPrompt(
+            text: "テストプロンプト",
+            category: .goal,
+            icon: "target"
+        )
+
+        #expect(prompt.text == "テストプロンプト")
+        #expect(prompt.category == .goal)
+        #expect(prompt.icon == "target")
+    }
+
+    @Test func testPromptCategoryValues() async throws {
+        // PromptCategoryの全ケース確認
+        let categories = PromptCategory.allCases
+
+        #expect(categories.count > 0)
+        #expect(categories.contains(.goal))
+        #expect(categories.contains(.project))
+        #expect(categories.contains(.career))
+        #expect(categories.contains(.learning))
+        #expect(categories.contains(.idea))
+        #expect(categories.contains(.daily))
+        #expect(categories.contains(.weekly))
+        #expect(categories.contains(.skill))
+    }
+
+    @Test func testPromptCategoryIcons() async throws {
+        // PromptCategoryのアイコン確認
+        let goalIcon = PromptCategory.goal.icon
+        let projectIcon = PromptCategory.project.icon
+
+        #expect(goalIcon == "target")
+        #expect(projectIcon == "hammer")
+    }
+
+    @Test func testChatMessageDataCreation() async throws {
+        // ChatMessageDataの作成確認
+        let message = ChatMessageData(
+            id: UUID(),
+            content: "テストメッセージ",
+            isUser: true,
+            timestamp: Date()
+        )
+
+        #expect(message.content == "テストメッセージ")
+        #expect(message.isUser == true)
+        #expect(message.timestamp != nil)
+    }
+
+    @Test func testChatMessageDataEquatable() async throws {
+        // ChatMessageDataのEquatable確認
+        let id = UUID()
+        let message1 = ChatMessageData(
+            id: id,
+            content: "テストメッセージ",
+            isUser: true,
+            timestamp: Date()
+        )
+        let message2 = ChatMessageData(
+            id: id,
+            content: "テストメッセージ",
+            isUser: true,
+            timestamp: Date()
+        )
+
+        #expect(message1.id == message2.id)
+    }
+}
 

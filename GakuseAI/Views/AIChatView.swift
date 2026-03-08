@@ -303,10 +303,11 @@ struct AIChatView: View {
 struct CategoryFilterButton: View {
     let category: PromptCategory
     @ObservedObject var viewModel: AIChatViewModel
-    
+    @State private var isPressed = false
+
     var body: some View {
         Button {
-            withAnimation {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 viewModel.selectedPromptCategory = viewModel.selectedPromptCategory == category ? nil : category
             }
         } label: {
@@ -318,10 +319,26 @@ struct CategoryFilterButton: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(viewModel.selectedPromptCategory == category ? Color.pink : Color(.systemGray5))
-            .foregroundColor(viewModel.selectedPromptCategory == category ? .white : .primary)
+            .background(
+                viewModel.selectedPromptCategory == category
+                    ? Color.pink
+                    : Color(.systemGray5)
+            )
+            .foregroundColor(
+                viewModel.selectedPromptCategory == category
+                    ? .white
+                    : .primary
+            )
             .cornerRadius(16)
+            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
         }
+        .buttonStyle(.plain)
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
     }
 }
 
@@ -329,10 +346,11 @@ struct CategoryFilterButton: View {
 
 struct AllPromptsButton: View {
     @ObservedObject var viewModel: AIChatViewModel
-    
+    @State private var isPressed = false
+
     var body: some View {
         Button {
-            withAnimation {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 viewModel.selectedPromptCategory = nil
             }
         } label: {
@@ -344,10 +362,26 @@ struct AllPromptsButton: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(viewModel.selectedPromptCategory == nil ? Color.pink : Color(.systemGray5))
-            .foregroundColor(viewModel.selectedPromptCategory == nil ? .white : .primary)
+            .background(
+                viewModel.selectedPromptCategory == nil
+                    ? Color.pink
+                    : Color(.systemGray5)
+            )
+            .foregroundColor(
+                viewModel.selectedPromptCategory == nil
+                    ? .white
+                    : .primary
+            )
             .cornerRadius(16)
+            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
         }
+        .buttonStyle(.plain)
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
     }
 }
 
@@ -434,7 +468,13 @@ struct SuggestedPromptButton: View {
             .padding()
             .background(Color(.systemGray6))
             .cornerRadius(12)
-            .scaleEffect(isPressed ? 0.98 : 1.0)
+            .scaleEffect(isPressed ? 0.97 : 1.0)
+            .shadow(
+                color: isPressed ? .clear : .black.opacity(0.05),
+                radius: 4,
+                x: 0,
+                y: 2
+            )
             .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
         }
         .foregroundColor(.primary)
