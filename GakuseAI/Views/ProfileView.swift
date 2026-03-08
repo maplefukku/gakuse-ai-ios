@@ -13,9 +13,6 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             List {
-            }
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel("設定画面")
                 // Profile Section
                 Section {
                     Button {
@@ -157,6 +154,8 @@ struct ProfileView: View {
                     .accessibilityHint("アカウントからログアウトします")
                 }
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("設定画面")
             .navigationTitle("設定")
             .alert("エラー", isPresented: .init(
                 get: { viewModel.errorMessage != nil },

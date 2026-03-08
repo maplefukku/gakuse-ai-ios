@@ -11,6 +11,7 @@ struct StatisticsView: View {
             ZStack {
                 if viewModel.isLoading {
                     ProgressView("統計データを読み込み中...")
+                        .accessibilityLabel("統計データを読み込み中")
                 } else if viewModel.learningLogs.isEmpty {
                     emptyStateView
                 } else {
@@ -43,6 +44,8 @@ struct StatisticsView: View {
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
+                    .accessibilityLabel("統計を更新")
+                    .accessibilityHint("最新の学習データを再取得します")
                 }
             }
         }
@@ -51,6 +54,8 @@ struct StatisticsView: View {
                 await viewModel.loadData()
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("統計画面")
         .sheet(isPresented: $showingDetailPopup) {
             if let dataPoint = selectedDataPoint {
                 DetailPopupSheet(dataPoint: dataPoint, allLogs: viewModel.learningLogs)
@@ -296,6 +301,8 @@ struct StatisticsStatCard: View {
         .padding()
         .background(Color(.systemBackground))
         .cornerRadius(12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(value)")
     }
 }
 
@@ -320,6 +327,9 @@ struct SkillProgressRow: View {
             ProgressView(value: skill.progress)
                 .tint(.pink)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(skill.name): \(skill.count)回")
+        .accessibilityValue("\(Int(skill.progress * 100))%")
     }
 }
 
@@ -386,9 +396,12 @@ struct DetailPopupSheet: View {
                     Button("閉じる") {
                         dismiss()
                     }
+                    .accessibilityLabel("詳細を閉じる")
                 }
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(formatDate(dataPoint.date))の学習ログ詳細")
     }
 
     private func formatDate(_ date: Date) -> String {
@@ -451,6 +464,9 @@ struct DayLogRow: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(log.title)、\(log.category.rawValue)")
+        .accessibilityHint("学習ログの詳細")
     }
 
     private func formatTime(_ date: Date) -> String {
