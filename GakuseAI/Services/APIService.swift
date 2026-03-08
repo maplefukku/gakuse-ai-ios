@@ -34,12 +34,21 @@ enum APIError: LocalizedError {
 
 actor APIService {
     static let shared = APIService()
-    
-    private let baseURL = "https://api.gakuse.ai" // TODO: Configure actual API URL
+
+    private let baseURL: URL
     private let supabase = SupabaseManager.shared
     private let session: URLSession
-    
+
     init() {
+        // Info.plistからAPI Base URLを取得
+        guard let apiBaseURLString = Bundle.main.object(forInfoDictionaryKey: "APIBaseURL") as? String,
+              let apiBaseURL = URL(string: apiBaseURLString),
+              !apiBaseURLString.isEmpty else {
+            fatalError("API Base URL must be set in Info.plist")
+        }
+
+        self.baseURL = apiBaseURL
+
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         self.session = URLSession(configuration: config)
@@ -168,35 +177,55 @@ actor APIService {
     // MARK: - AI Chat
 
     func sendChatMessage(_ text: String, history: [ChatMessageData]) async throws -> ChatMessageData {
-        // 実際のAI APIと連携（TODO: OpenAI APIや自社APIを使用）
-        // 現在はモックレスポンスを返す
+        // AI APIエンドポイントが設定されている場合は実際のAPIを呼び出し、
+        // 設定されていない場合はモックレスポンスを返す
+        guard let aiAPIEndpoint = Bundle.main.object(forInfoDictionaryKey: "AIAPIEndpoint") as? String,
+              !aiAPIEndpoint.isEmpty,
+              let endpointURL = URL(string: aiAPIEndpoint) else {
+            // AI APIエンドポイントが設定されていない場合はモックを使用
+            try await Task.sleep(nanoseconds: 1_000_000_000) // 1秒待機
 
-        // TODO: 将来的には以下のようなAPI呼び出しを実装
-        // guard let token = try await getAuthToken() else {
-        //     throw APIError.unauthenticated
-        // }
-        //
-        // var request = URLRequest(url: URL(string: "\(baseURL)/ai/chat")!)
-        // request.httpMethod = "POST"
-        // request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        // request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        //
-        // let requestBody = ["message": text, "history": history.map { $0.toDictionary() }]
-        // request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
-        //
-        // let (data, response) = try await session.data(for: request)
-        // ...
+            // 文脈を考慮したモックレスポンス
+            let responses = generateMockResponse(for: text, history: history)
+            return ChatMessageData(
+                id: UUID(),
+                content: responses,
+                isUser: false,
+                timestamp: Date()
+            )
+        }
 
-        try await Task.sleep(nanoseconds: 1_000_000_000) // 1秒待機
+        // AI APIを呼び出す
+        guard let token = try await getAuthToken() else {
+            throw APIError.unauthenticated
+        }
 
-        // 文脈を考慮したモックレスポンス
-        let responses = generateMockResponse(for: text, history: history)
-        return ChatMessageData(
-            id: UUID(),
-            content: responses,
-            isUser: false,
-            timestamp: Date()
-        )
+        var request = URLRequest(url: endpointURL)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let requestBody: [String: Any] = [
+            "message": text,
+            "history": history.map { ["id": $0.id.uuidString, "content": $0.content, "isUser": $0.isUser] }
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            throw APIError.httpError(statusCode: httpResponse.statusCode)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let aiResponse = try decoder.decode(ChatMessageData.self, from: data)
+        return aiResponse
     }
     
     private func generateMockResponse(for text: String, history: [ChatMessageData]) -> String {

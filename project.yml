@@ -36,6 +36,10 @@ targets:
         CODE_SIGN_ENTITLEMENTS: GakuseAI/GakuseAI.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SUPABASE_URL: https://YOUR_PROJECT.supabase.co
+        SUPABASE_ANON_KEY: YOUR_ANON_KEY
+        API_BASE_URL: https://api.gakuse.ai
+        AI_API_ENDPOINT: ""
     info:
       path: GakuseAI/Info.plist
       properties:

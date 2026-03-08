@@ -9,10 +9,15 @@ actor SupabaseManager {
     private(set) var client: SupabaseClient!
     
     private init() {
-        // TODO: 環境変数から取得するように変更
-        let supabaseURL = URL(string: "https://YOUR_PROJECT.supabase.co")!
-        let supabaseKey = "YOUR_ANON_KEY"
-        
+        // Info.plistからSupabase URLとKeyを取得
+        guard let supabaseURLString = Bundle.main.object(forInfoDictionaryKey: "SupabaseURL") as? String,
+              let supabaseURL = URL(string: supabaseURLString),
+              let supabaseKey = Bundle.main.object(forInfoDictionaryKey: "SupabaseAnonKey") as? String,
+              !supabaseURLString.isEmpty,
+              !supabaseKey.isEmpty else {
+            fatalError("Supabase URL and Anon Key must be set in Info.plist")
+        }
+
         client = SupabaseClient(
             supabaseURL: supabaseURL,
             supabaseKey: supabaseKey
