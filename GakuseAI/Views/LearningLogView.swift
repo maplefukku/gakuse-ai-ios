@@ -513,11 +513,8 @@ struct LearningLogDetailView: View {
                 Text("スキル")
                     .font(.headline)
                 Spacer()
-                Button {
+                SkillAddButton {
                     showingAddSkill = true
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundColor(.pink)
                 }
             }
             
@@ -540,13 +537,10 @@ struct LearningLogDetailView: View {
                             .padding(.vertical, 4)
                             .background(Color.pink.opacity(0.2))
                             .cornerRadius(8)
-                        Button {
+                        DeleteButton {
                             Task {
                                 await viewModel.removeSkill(at: IndexSet(integer: index), from: currentLog)
                             }
-                        } label: {
-                            Image(systemName: "trash")
-                                .foregroundColor(.red)
                         }
                     }
                     .padding(.vertical, 8)
@@ -569,11 +563,8 @@ struct LearningLogDetailView: View {
                 Text("振り返り")
                     .font(.headline)
                 Spacer()
-                Button {
+                SkillAddButton {
                     showingAddReflection = true
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundColor(.pink)
                 }
             }
             
@@ -596,13 +587,10 @@ struct LearningLogDetailView: View {
                                 .font(.body)
                         }
                         Spacer()
-                        Button {
+                        DeleteButton {
                             Task {
                                 await viewModel.removeReflection(at: IndexSet(integer: index), from: currentLog)
                             }
-                        } label: {
-                            Image(systemName: "trash")
-                                .foregroundColor(.red)
                         }
                     }
                     .padding()
@@ -837,4 +825,48 @@ struct ActivityViewController: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+// MARK: - Skill Add Button
+
+struct SkillAddButton: View {
+    let action: () -> Void
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "plus.circle.fill")
+                .foregroundColor(.pink)
+        }
+        .buttonStyle(.plain)
+        .scaleEffect(isPressed ? 0.9 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
+}
+
+// MARK: - Delete Button
+
+struct DeleteButton: View {
+    let action: () -> Void
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "trash")
+                .foregroundColor(.red)
+        }
+        .buttonStyle(.plain)
+        .scaleEffect(isPressed ? 0.9 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
 }

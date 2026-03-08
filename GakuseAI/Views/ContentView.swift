@@ -63,27 +63,15 @@ struct ContentView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button(role: .destructive) {
+                ToolbarMenuButton(
+                    profile: authViewModel.profile,
+                    selectedTab: navigationViewModel.selectedTab,
+                    onSignOut: {
                         Task {
                             await authViewModel.signOut()
                         }
-                    } label: {
-                        Label("ログアウト", systemImage: "rectangle.portrait.and.arrow.right")
                     }
-                } label: {
-                    if let profile = authViewModel.profile, let avatarIcon = profile.avatarIcon {
-                        Image(systemName: avatarIcon)
-                            .foregroundColor(.pink)
-                            .symbolEffect(.bounce, value: navigationViewModel.selectedTab)
-                    } else {
-                        Image(systemName: "person.circle.fill")
-                            .foregroundColor(.pink)
-                            .symbolEffect(.bounce, value: navigationViewModel.selectedTab)
-                    }
-                }
-                .accessibilityLabel("ユーザーメニュー")
-                .accessibilityHint("ログアウトなどの操作ができます")
+                )
             }
         }
     }
@@ -92,4 +80,42 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .environmentObject(AuthViewModel())
+}
+
+// MARK: - Toolbar Menu Button
+
+struct ToolbarMenuButton: View {
+    let profile: UserProfile?
+    let selectedTab: Int
+    let onSignOut: () -> Void
+    @State private var isPressed = false
+
+    var body: some View {
+        Menu {
+            Button(role: .destructive) {
+                onSignOut()
+            } label: {
+                Label("ログアウト", systemImage: "rectangle.portrait.and.arrow.right")
+            }
+        } label: {
+            if let profile = profile, let avatarIcon = profile.avatarIcon {
+                Image(systemName: avatarIcon)
+                    .foregroundColor(.pink)
+                    .symbolEffect(.bounce, value: selectedTab)
+            } else {
+                Image(systemName: "person.circle.fill")
+                    .foregroundColor(.pink)
+                    .symbolEffect(.bounce, value: selectedTab)
+            }
+        }
+        .scaleEffect(isPressed ? 0.9 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
+        .accessibilityLabel("ユーザーメニュー")
+        .accessibilityHint("ログアウトなどの操作ができます")
+    }
 }

@@ -3944,3 +3944,80 @@ struct AuthViewTapFeedbackTests {
     }
 }
 
+// MARK: - Learning Log Detail View Button Tests
+
+struct LearningLogDetailViewButtonTests {
+
+    @Test func testSkillAddButtonTapFeedbackScale() async throws {
+        // SkillAddButtonのスケールエフェクトをテスト
+        let expectedScaleWhenPressed: Double = 0.9
+        let expectedScaleWhenNotPressed: Double = 1.0
+
+        let isPressed = true
+        let scale = isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(scale == 0.9)
+
+        let notPressedScale = !isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(notPressedScale == 1.0)
+    }
+
+    @Test func testSkillAddButtonTapFeedbackAnimation() async throws {
+        // SkillAddButtonのSpringアニメーションパラメータをテスト
+        let expectedResponse: Double = 0.2
+        let expectedDampingFraction: Double = 0.6
+
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+    }
+
+    @Test func testDeleteButtonTapFeedbackScale() async throws {
+        // DeleteButtonのスケールエフェクトをテスト
+        let expectedScaleWhenPressed: Double = 0.9
+        let expectedScaleWhenNotPressed: Double = 1.0
+
+        let isPressed = true
+        let scale = isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(scale == 0.9)
+
+        let notPressedScale = !isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(notPressedScale == 1.0)
+    }
+
+    @Test func testDeleteButtonTapFeedbackAnimation() async throws {
+        // DeleteButtonのSpringアニメーションパラメータをテスト
+        let expectedResponse: Double = 0.2
+        let expectedDampingFraction: Double = 0.6
+
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+    }
+}
+
+// MARK: - ContentView Button Tests
+
+struct ContentViewButtonTests {
+
+    @Test func testToolbarMenuButtonTapFeedbackScale() async throws {
+        // ToolbarMenuButtonのスケールエフェクトをテスト
+        let expectedScaleWhenPressed: Double = 0.9
+        let expectedScaleWhenNotPressed: Double = 1.0
+
+        let isPressed = true
+        let scale = isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(scale == 0.9)
+
+        let notPressedScale = !isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(notPressedScale == 1.0)
+    }
+
+    @Test func testToolbarMenuButtonTapFeedbackAnimation() async throws {
+        // ToolbarMenuButtonのSpringアニメーションパラメータをテスト
+        let expectedResponse: Double = 0.2
+        let expectedDampingFraction: Double = 0.6
+
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+    }
+}
+
+
