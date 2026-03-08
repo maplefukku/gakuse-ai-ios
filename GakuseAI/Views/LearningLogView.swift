@@ -2,7 +2,7 @@ import SwiftUI
 
 struct LearningLogView: View {
     @StateObject private var viewModel = LearningLogViewModel()
-    
+
     var body: some View {
         NavigationStack {
             Group {
@@ -20,6 +20,8 @@ struct LearningLogView: View {
             }
             .navigationTitle("学習ログ")
             .searchable(text: $viewModel.searchText, prompt: "ログを検索...")
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("学習ログ一覧")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {

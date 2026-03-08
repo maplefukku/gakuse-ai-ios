@@ -9,23 +9,29 @@ struct ContentView: View {
                 .tabItem {
                     Label("学習ログ", systemImage: "book.fill")
                 }
+                .accessibilityIdentifier("learningLogTab")
 
             PortfolioView()
                 .tabItem {
                     Label("ポートフォリオ", systemImage: "person.fill")
                 }
+                .accessibilityIdentifier("portfolioTab")
 
             AIChatView()
                 .tabItem {
                     Label("AI壁打ち", systemImage: "bubble.left.and.bubble.right.fill")
                 }
+                .accessibilityIdentifier("aiChatTab")
 
             ProfileView()
                 .tabItem {
                     Label("プロフィール", systemImage: "gearshape.fill")
                 }
+                .accessibilityIdentifier("profileTab")
         }
         .tint(.pink)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("メインナビゲーション")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -45,6 +51,8 @@ struct ContentView: View {
                             .foregroundColor(.pink)
                     }
                 }
+                .accessibilityLabel("ユーザーメニュー")
+                .accessibilityHint("ログアウトなどの操作ができます")
             }
         }
     }

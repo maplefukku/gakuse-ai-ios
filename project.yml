@@ -59,6 +59,10 @@ targets:
           - CFBundleTypeRole: Editor
             CFBundleURLSchemes:
               - ai.gakuse.app
+        SupabaseURL: $(SUPABASE_URL)
+        SupabaseAnonKey: $(SUPABASE_ANON_KEY)
+        APIBaseURL: $(API_BASE_URL)
+        AIAPIEndpoint: $(AI_API_ENDPOINT)
 
   GakuseAITests:
     type: bundle.unit-test

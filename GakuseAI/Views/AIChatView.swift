@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AIChatView: View {
     @StateObject private var viewModel = AIChatViewModel()
-    
+
     var body: some View {
         NavigationStack {
             VStack {
@@ -11,11 +11,13 @@ struct AIChatView: View {
                 } else {
                     chatListView
                 }
-                
+
                 inputBar
             }
             .navigationTitle("AI壁打ち")
             .searchable(text: $viewModel.messageSearchText, prompt: "メッセージを検索...")
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("AI壁打ちチャット")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
@@ -26,7 +28,7 @@ struct AIChatView: View {
                         } label: {
                             Label("履歴をクリア", systemImage: "trash")
                         }
-                        
+
                         Menu {
                             Button {
                                 Task {
@@ -35,7 +37,7 @@ struct AIChatView: View {
                             } label: {
                                 Label("JSON形式", systemImage: "doc.text")
                             }
-                            
+
                             Button {
                                 Task {
                                     if let url = await viewModel.exportChatHistoryToMarkdown() {
@@ -52,6 +54,8 @@ struct AIChatView: View {
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
+                    .accessibilityLabel("メニューボタン")
+                    .accessibilityHint("履歴のクリアやエクスポートができます")
                 }
             }
             .alert("エラー", isPresented: .init(
