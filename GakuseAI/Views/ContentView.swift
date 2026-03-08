@@ -2,16 +2,11 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
-    @State private var selectedTab = 0
-    @State private var isNavigationRestoring = false
+    @StateObject private var navigationViewModel = NavigationViewModel.shared
     @Namespace private var animation
-    
-    init() {
-        _selectedTab = State(initialValue: 0)
-    }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $navigationViewModel.selectedTab) {
             LearningLogView()
                 .tabItem {
                     Label("学習ログ", systemImage: "book.fill")
@@ -40,43 +35,28 @@ struct ContentView: View {
                 .tag(3)
                 .accessibilityIdentifier("profileTab")
         }
-        .animation(.easeInOut(duration: 0.25), value: selectedTab)
-        .onChange(of: selectedTab) { oldValue, newValue in
+        .animation(.easeInOut(duration: 0.25), value: navigationViewModel.selectedTab)
+        .onChange(of: navigationViewModel.selectedTab) { oldValue, newValue in
             HapticFeedback.light() // タブ切替
-            
-            // ナビゲーション状態を保存
-            Task {
-                let state = NavigationState(selectedTab: newValue)
-                do {
-                    try await PersistenceService.shared.saveNavigationState(state)
-                } catch {
-                    print("Failed to save navigation state: \(error)")
-                }
-            }
         }
         .onAppear {
             // ナビゲーション状態を復元
             Task {
-                isNavigationRestoring = true
-                do {
-                    let state = try await PersistenceService.shared.loadNavigationState()
-                    await MainActor.run {
-                        selectedTab = state.selectedTab
-                    }
-                } catch {
-                    print("Failed to load navigation state: \(error)")
-                }
-                await MainActor.run {
-                    isNavigationRestoring = false
-                }
+                await navigationViewModel.restoreNavigationState()
+            }
+        }
+        .onDisappear {
+            // アプリがバックグラウンドに移行する前に状態を保存
+            Task {
+                await navigationViewModel.saveNavigationStateImmediately()
             }
         }
         .tint(.pink)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("メインナビゲーション")
-        .disabled(isNavigationRestoring)
+        .disabled(navigationViewModel.isNavigationRestoring)
         .overlay {
-            if isNavigationRestoring {
+            if navigationViewModel.isNavigationRestoring {
                 LoadingView(message: "復元中...")
                     .background(Color(UIColor.systemBackground))
             }
@@ -95,11 +75,11 @@ struct ContentView: View {
                     if let profile = authViewModel.profile, let avatarIcon = profile.avatarIcon {
                         Image(systemName: avatarIcon)
                             .foregroundColor(.pink)
-                            .symbolEffect(.bounce, value: selectedTab)
+                            .symbolEffect(.bounce, value: navigationViewModel.selectedTab)
                     } else {
                         Image(systemName: "person.circle.fill")
                             .foregroundColor(.pink)
-                            .symbolEffect(.bounce, value: selectedTab)
+                            .symbolEffect(.bounce, value: navigationViewModel.selectedTab)
                     }
                 }
                 .accessibilityLabel("ユーザーメニュー")

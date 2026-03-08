@@ -5,8 +5,15 @@ import SwiftUI
 struct ErrorView: View {
     let error: Error
     let onRetry: (() -> Void)?
+    let onUseCachedData: (() -> Void)?
     
     @Environment(\.colorScheme) var colorScheme
+    
+    init(error: Error, onRetry: (() -> Void)? = nil, onUseCachedData: (() -> Void)? = nil) {
+        self.error = error
+        self.onRetry = onRetry
+        self.onUseCachedData = onUseCachedData
+    }
     
     var body: some View {
         VStack(spacing: 24) {
@@ -14,6 +21,7 @@ struct ErrorView: View {
             Image(systemName: errorIcon)
                 .font(.system(size: 64))
                 .foregroundColor(.pink)
+                .symbolEffect(.pulse, options: .repeating)
             
             // エラータイトル
             Text("エラーが発生しました")
@@ -43,17 +51,24 @@ struct ErrorView: View {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color.pink)
                     )
+                    .shadow(color: Color.pink.opacity(0.3), radius: 5, x: 0, y: 2)
                 }
                 .padding(.horizontal)
+                .buttonStyle(ScaleButtonStyle())
             }
             
             // キャッシュされたデータを使用するボタン
-            Button(action: {
-                // キャッシュされたデータを使用する処理
-            }) {
-                Text("オフラインデータを使用")
+            if let onUseCachedData = onUseCachedData, canUseCachedData {
+                Button(action: onUseCachedData) {
+                    HStack {
+                        Image(systemName: "arrow.down.doc")
+                        Text("オフラインデータを使用")
+                    }
                     .font(.subheadline)
                     .foregroundColor(.pink)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(ScaleButtonStyle())
             }
             
             Spacer()
@@ -66,28 +81,49 @@ struct ErrorView: View {
     private var errorIcon: String {
         if let apiError = error as? APIError {
             switch apiError {
-            case .networkError:
+            case .networkError, .offline:
                 return "wifi.exclamationmark"
             case .unauthenticated:
                 return "person.badge.exclamationmark"
             case .httpError:
                 return "exclamationmark.triangle"
+            case .timeout:
+                return "hourglass"
             default:
                 return "exclamationmark.circle"
             }
         }
         return "exclamationmark.circle"
     }
+    
+    private var canUseCachedData: Bool {
+        if let apiError = error as? APIError {
+            switch apiError {
+            case .networkError, .offline, .timeout:
+                return true
+            default:
+                return false
+            }
+        }
+        return false
+    }
 }
 
 /// ネットワークエラー用のコンポーネント
 struct NetworkErrorView: View {
     let onRetry: () -> Void
+    let onUseCachedData: (() -> Void)?
+    
+    init(onRetry: @escaping () -> Void, onUseCachedData: (() -> Void)? = nil) {
+        self.onRetry = onRetry
+        self.onUseCachedData = onUseCachedData
+    }
     
     var body: some View {
         ErrorView(
             error: APIError.networkError(URLError(.notConnectedToInternet)),
-            onRetry: onRetry
+            onRetry: onRetry,
+            onUseCachedData: onUseCachedData
         )
     }
 }
@@ -189,15 +225,44 @@ struct EmptyStateView: View {
     }
 }
 
-#Preview("Error View") {
+// MARK: - Button Styles
+
+/// スケールアニメーション付きのボタンスタイル
+struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+#Preview("Error View - Network Error") {
     ErrorView(
         error: APIError.networkError(URLError(.notConnectedToInternet)),
+        onRetry: {},
+        onUseCachedData: {}
+    )
+}
+
+#Preview("Error View - Timeout") {
+    ErrorView(
+        error: APIError.timeout,
+        onRetry: {}
+    )
+}
+
+#Preview("Error View - Unauthenticated") {
+    ErrorView(
+        error: APIError.unauthenticated,
         onRetry: {}
     )
 }
 
 #Preview("Network Error View") {
-    NetworkErrorView(onRetry: {})
+    NetworkErrorView(
+        onRetry: {},
+        onUseCachedData: {}
+    )
 }
 
 #Preview("Authentication Error View") {

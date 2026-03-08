@@ -22,6 +22,7 @@
 		60DDB753739A49C18C47B620 /* AIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F8675F6C3F20E29CC87A601 /* AIChatView.swift */; };
 		6CF1D5A75C1BAC7AFCA7C1AF /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02FDDB329E65417CE061EAC1 /* ProfileViewModel.swift */; };
 		741BE9B9B93612081D296324 /* PortfolioViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CADAE9B697F008E7FFF5E9 /* PortfolioViewModel.swift */; };
+		76603D500C12A0AD31F989B7 /* NavigationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2518DA4C8E518B1E7AFEBA10 /* NavigationViewModel.swift */; };
 		86F0AF325A154931B84405DE /* CacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D412C02FC7F22F4E61E0ED06 /* CacheService.swift */; };
 		8F1A7B58ED6EC3B2D25524CC /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 610AA9BE696443C992014FFE /* SignUpView.swift */; };
 		B20AF944DF87A6269AE698EB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0025900B49CB1206333D40 /* ContentView.swift */; };
@@ -59,6 +60,7 @@
 		0CADDCDEF00F749794E8D9E2 /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
 		0D11FD95DB1D5284F512FDDC /* GakuseAITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GakuseAITests.swift; sourceTree = "<group>"; };
 		1F9EBDF5DBC6014B5B29B1D5 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		2518DA4C8E518B1E7AFEBA10 /* NavigationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationViewModel.swift; sourceTree = "<group>"; };
 		4238A732171973AB1ECFE4FD /* ErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorView.swift; sourceTree = "<group>"; };
 		43C086D7826209A53F9F40A5 /* HapticFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticFeedback.swift; sourceTree = "<group>"; };
 		49011EAEC6702F3EB9B8D3D7 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
@@ -105,6 +107,7 @@
 				53B0235B676D4A39676D821E /* AIChatViewModel.swift */,
 				1F9EBDF5DBC6014B5B29B1D5 /* AuthViewModel.swift */,
 				F7C6F3AFE662B318F5C8D812 /* LearningLogViewModel.swift */,
+				2518DA4C8E518B1E7AFEBA10 /* NavigationViewModel.swift */,
 				63CADAE9B697F008E7FFF5E9 /* PortfolioViewModel.swift */,
 				02FDDB329E65417CE061EAC1 /* ProfileViewModel.swift */,
 				E7DDD866C105A41B44DD6918 /* StatisticsViewModel.swift */,
@@ -366,6 +369,7 @@
 				F204F98B282F03333782D984 /* LearningLogViewModel.swift in Sources */,
 				E946BC9AA3635EDEC9569886 /* LoadingView.swift in Sources */,
 				F06658005BA66A699F5C00D5 /* LoginView.swift in Sources */,
+				76603D500C12A0AD31F989B7 /* NavigationViewModel.swift in Sources */,
 				E9DEF97E1C9F82AAEB31A794 /* PersistenceService.swift in Sources */,
 				59F97985237F1EE4B2C4DE82 /* PortfolioView.swift in Sources */,
 				741BE9B9B93612081D296324 /* PortfolioViewModel.swift in Sources */,

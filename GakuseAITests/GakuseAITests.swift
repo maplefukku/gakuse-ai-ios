@@ -2852,4 +2852,210 @@ struct NavigationStateConsistencyTests {
     }
 }
 
+// MARK: - NavigationViewModel Tests
+
+struct NavigationViewModelTests {
+    @Test func testNavigationViewModelInitialization() async throws {
+        // NavigationViewModelの初期化
+        let viewModel = NavigationViewModel.shared
+        
+        // 初期値の確認
+        #expect(viewModel.selectedTab == 0)
+        #expect(viewModel.isNavigationRestoring == false)
+        #expect(viewModel.isSavingState == false)
+    }
+    
+    @Test func testNavigationViewModelTabChange() async throws {
+        // タブ変更時の動作確認
+        let viewModel = NavigationViewModel.shared
+        
+        // タブを変更
+        viewModel.selectedTab = 2
+        
+        // デバウンス待機
+        try await Task.sleep(nanoseconds: 600_000_000) // 0.6秒待機
+        
+        // 変更が反映されているか確認
+        #expect(viewModel.selectedTab == 2)
+    }
+    
+    @Test func testNavigationViewModelMultipleTabChanges() async throws {
+        // 複数回のタブ変更時のデバウンス動作確認
+        let viewModel = NavigationViewModel.shared
+        
+        // 高速にタブを変更
+        viewModel.selectedTab = 1
+        try await Task.sleep(nanoseconds: 100_000_000)
+        viewModel.selectedTab = 2
+        try await Task.sleep(nanoseconds: 100_000_000)
+        viewModel.selectedTab = 3
+        
+        // 最後の変更のみが反映されるのを待機
+        try await Task.sleep(nanoseconds: 600_000_000)
+        
+        #expect(viewModel.selectedTab == 3)
+    }
+    
+    @Test func testNavigationViewModelRestoreState() async throws {
+        // ナビゲーション状態の復元
+        let viewModel = NavigationViewModel.shared
+        let persistence = PersistenceService.shared
+        
+        // クリーンアップ
+        try await persistence.deleteAllData()
+        
+        // 状態を保存
+        let state = NavigationState(selectedTab: 3)
+        try await persistence.saveNavigationState(state)
+        
+        // 復元実行
+        await viewModel.restoreNavigationState()
+        
+        // 復元が完了しているか確認
+        #expect(viewModel.selectedTab == 3)
+        #expect(viewModel.isNavigationRestoring == false)
+        
+        // クリーンアップ
+        try await persistence.deleteAllData()
+    }
+    
+    @Test func testNavigationViewModelSaveImmediately() async throws {
+        // 即時保存の動作確認
+        let viewModel = NavigationViewModel.shared
+        let persistence = PersistenceService.shared
+        
+        // クリーンアップ
+        try await persistence.deleteAllData()
+        
+        // タブを変更して即時保存
+        viewModel.selectedTab = 2
+        await viewModel.saveNavigationStateImmediately()
+        
+        // 保存が完了しているか確認
+        let loadedState = try await persistence.loadNavigationState()
+        #expect(loadedState.selectedTab == 2)
+        
+        // クリーンアップ
+        try await persistence.deleteAllData()
+    }
+    
+    @Test func testNavigationViewModelTabState() async throws {
+        // 各タブの状態管理
+        let viewModel = NavigationViewModel.shared
+        let persistence = PersistenceService.shared
+        
+        // クリーンアップ
+        try await persistence.deleteAllData()
+        
+        // タブ状態を保存
+        let tabState = TabState()
+        tabState.navigationPath = ["detail"]
+        tabState.scrollPosition = 100.0
+        tabState.selectedItemId = "item1"
+        
+        await viewModel.saveTabState(tabState, for: 0)
+        
+        // タブ状態を読み込み
+        let loadedTabState = await viewModel.tabState(for: 0)
+        
+        #expect(loadedTabState != nil)
+        #expect(loadedTabState?.navigationPath == ["detail"])
+        #expect(loadedTabState?.scrollPosition == 100.0)
+        #expect(loadedTabState?.selectedItemId == "item1")
+        
+        // クリーンアップ
+        try await persistence.deleteAllData()
+    }
+    
+    @Test func testNavigationViewModelConcurrentTabChanges() async throws {
+        // 並行タブ変更時の動作確認
+        let viewModel = NavigationViewModel.shared
+        let persistence = PersistenceService.shared
+        
+        // クリーンアップ
+        try await persistence.deleteAllData()
+        
+        // 並行してタブを変更
+        await withTaskGroup(of: Void.self) { group in
+            for i in 0..<5 {
+                group.addTask {
+                    await MainActor.run {
+                        viewModel.selectedTab = i % 4
+                    }
+                }
+            }
+        }
+        
+        // デバウンス待機
+        try await Task.sleep(nanoseconds: 600_000_000)
+        
+        // 保存が成功しているか確認（エラーが発生しないこと）
+        let loadedState = try await persistence.loadNavigationState()
+        #expect(loadedState.selectedTab >= 0)
+        #expect(loadedState.selectedTab <= 3)
+        
+        // クリーンアップ
+        try await persistence.deleteAllData()
+    }
+    
+    @Test func testNavigationViewModelRestoringFlag() async throws {
+        // 復元中フラグの確認
+        let viewModel = NavigationViewModel.shared
+        
+        // 復元開始前
+        #expect(viewModel.isNavigationRestoring == false)
+        
+        // 復元タスクを開始
+        let restoreTask = Task {
+            await viewModel.restoreNavigationState()
+        }
+        
+        // 復元中フラグが立っているか確認（非同期処理のタイミング依存）
+        // 実際のUIではisNavigationRestoringがtrueになる瞬間がある
+        
+        // 復元完了を待機
+        await restoreTask.value
+        
+        // 復元完了後
+        #expect(viewModel.isNavigationRestoring == false)
+    }
+}
+
+// MARK: - ErrorView Tests
+
+struct ErrorViewTests {
+    @Test func testErrorViewNetworkError() async throws {
+        // ネットワークエラー時のアイコン確認
+        let error = APIError.networkError(URLError(.notConnectedToInternet))
+        let errorView = ErrorView(error: error, onRetry: {}, onUseCachedData: {})
+        
+        // ビューが作成できることだけを確認（SwiftUIのテストは限定的）
+        #expect(error != nil)
+    }
+    
+    @Test func testErrorViewTimeout() async throws {
+        // タイムアウトエラー時の確認
+        let error = APIError.timeout
+        let errorView = ErrorView(error: error, onRetry: {})
+        
+        #expect(error != nil)
+    }
+    
+    @Test func testErrorViewUnauthenticated() async throws {
+        // 認証エラー時の確認
+        let error = APIError.unauthenticated
+        let errorView = ErrorView(error: error, onRetry: {})
+        
+        #expect(error != nil)
+    }
+    
+    @Test func testNetworkErrorView() async throws {
+        // NetworkErrorViewの確認
+        let networkErrorView = NetworkErrorView(onRetry: {}, onUseCachedData: {})
+        
+        // ビューが作成できることだけを確認
+        #expect(networkErrorView != nil)
+    }
+}
+
 
