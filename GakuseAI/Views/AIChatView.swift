@@ -391,7 +391,8 @@ struct MessageBubble: View {
     let message: ChatMessageData
     let viewModel: AIChatViewModel
     @State private var showingMenu = false
-    
+    @State private var isPressed = false
+
     var body: some View {
         HStack {
             if message.isUser { Spacer() }
@@ -403,8 +404,14 @@ struct MessageBubble: View {
                     .background(message.isUser ? Color.pink : Color(.systemGray6))
                     .foregroundColor(message.isUser ? .white : .primary)
                     .cornerRadius(16)
-                    .scaleEffect(showingMenu ? 1.05 : 1.0)
+                    .scaleEffect(showingMenu ? 1.05 : (isPressed ? 0.98 : 1.0))
+                    .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showingMenu)
+                    .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+                        withAnimation {
+                            isPressed = pressing
+                        }
+                    }, perform: {})
                     .contextMenu {
                         Button {
                             viewModel.copyMessage(message)

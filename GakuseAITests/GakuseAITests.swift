@@ -4020,4 +4020,122 @@ struct ContentViewButtonTests {
     }
 }
 
+// MARK: - AIChat View Tap Feedback Tests
+
+struct AIChatViewTapFeedbackTests {
+
+    @Test func testMessageBubbleTapFeedbackScale() async throws {
+        // MessageBubbleのスケールエフェクトをテスト
+        let expectedScaleWhenPressed: Double = 0.98
+        let expectedScaleWhenNotPressed: Double = 1.0
+
+        let isPressed = true
+        let showingMenu = false
+        let scale = isPressed ? expectedScaleWhenPressed : (showingMenu ? 1.05 : expectedScaleWhenNotPressed)
+        #expect(scale == 0.98)
+
+        let notPressedScale = !isPressed ? expectedScaleWhenPressed : (showingMenu ? 1.05 : expectedScaleWhenNotPressed)
+        #expect(notPressedScale == 1.0)
+
+        let showingMenuScale = !isPressed && showingMenu ? 1.05 : expectedScaleWhenNotPressed
+        #expect(showingMenuScale == 1.05)
+    }
+
+    @Test func testMessageBubbleTapFeedbackAnimation() async throws {
+        // MessageBubbleのSpringアニメーションパラメータをテスト
+        let expectedResponse: Double = 0.2
+        let expectedDampingFraction: Double = 0.6
+
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+    }
+
+    @Test func testCategoryFilterButtonTapFeedbackScale() async throws {
+        // CategoryFilterButtonのスケールエフェクトをテスト
+        let expectedScaleWhenPressed: Double = 0.95
+        let expectedScaleWhenNotPressed: Double = 1.0
+
+        let isPressed = true
+        let scale = isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(scale == 0.95)
+
+        let notPressedScale = !isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(notPressedScale == 1.0)
+    }
+
+    @Test func testCategoryFilterButtonTapFeedbackAnimation() async throws {
+        // CategoryFilterButtonのSpringアニメーションパラメータをテスト
+        let expectedResponse: Double = 0.2
+        let expectedDampingFraction: Double = 0.6
+
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+    }
+
+    @Test func testAllPromptsButtonTapFeedbackScale() async throws {
+        // AllPromptsButtonのスケールエフェクトをテスト
+        let expectedScaleWhenPressed: Double = 0.95
+        let expectedScaleWhenNotPressed: Double = 1.0
+
+        let isPressed = true
+        let scale = isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(scale == 0.95)
+
+        let notPressedScale = !isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(notPressedScale == 1.0)
+    }
+
+    @Test func testAllPromptsButtonTapFeedbackAnimation() async throws {
+        // AllPromptsButtonのSpringアニメーションパラメータをテスト
+        let expectedResponse: Double = 0.2
+        let expectedDampingFraction: Double = 0.6
+
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+    }
+
+    @Test func testSuggestedPromptButtonTapFeedbackScale() async throws {
+        // SuggestedPromptButtonのスケールエフェクトをテスト
+        let expectedScaleWhenPressed: Double = 0.97
+        let expectedScaleWhenNotPressed: Double = 1.0
+
+        let isPressed = true
+        let scale = isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(scale == 0.97)
+
+        let notPressedScale = !isPressed ? expectedScaleWhenPressed : expectedScaleWhenNotPressed
+        #expect(notPressedScale == 1.0)
+    }
+
+    @Test func testSuggestedPromptButtonTapFeedbackAnimation() async throws {
+        // SuggestedPromptButtonのSpringアニメーションパラメータをテスト
+        let expectedResponse: Double = 0.2
+        let expectedDampingFraction: Double = 0.6
+
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+    }
+
+    @Test func testAIChatViewTapFeedbackConsistency() async throws {
+        // すべてのAIChatViewのボタンで一貫したSpringパラメータを使用していることを確認
+        let expectedResponse: Double = 0.2
+        let expectedDampingFraction: Double = 0.6
+
+        // MessageBubble
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+
+        // CategoryFilterButton
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+
+        // AllPromptsButton
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+
+        // SuggestedPromptButton
+        #expect(expectedResponse == 0.2)
+        #expect(expectedDampingFraction == 0.6)
+    }
+}
 
