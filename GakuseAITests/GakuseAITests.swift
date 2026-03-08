@@ -2377,5 +2377,233 @@ func getPasswordStrengthColor(for index: Int, strength: Int) -> Color {
     return .gray.opacity(0.3)
 }
 
+// MARK: - Navigation State Tests
+
+struct NavigationStateTests {
+    @Test func testNavigationStateInitialization() async throws {
+        // デフォルト値で初期化
+        let state = NavigationState()
+        
+        #expect(state.selectedTab == 0)
+        #expect(state.tabStates.isEmpty)
+        #expect(state.lastUpdateTime <= Date())
+    }
+    
+    @Test func testNavigationStateCustomInitialization() async throws {
+        // カスタム値で初期化
+        let state = NavigationState(selectedTab: 2)
+        
+        #expect(state.selectedTab == 2)
+        #expect(state.tabStates.isEmpty)
+        #expect(state.lastUpdateTime <= Date())
+    }
+    
+    @Test func testNavigationStateCodable() async throws {
+        // Codableのテスト
+        let state = NavigationState(selectedTab: 1)
+        
+        // TabStateを追加
+        state.tabStates[0] = TabState()
+        
+        // エンコード・デコード
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        let data = try encoder.encode(state)
+        let decodedState = try decoder.decode(NavigationState.self, from: data)
+        
+        #expect(decodedState.selectedTab == state.selectedTab)
+        #expect(decodedState.tabStates.count == state.tabStates.count)
+    }
+}
+
+// MARK: - TabState Tests
+
+struct TabStateTests {
+    @Test func testTabStateInitialization() async throws {
+        // デフォルト値で初期化
+        let tabState = TabState()
+        
+        #expect(tabState.navigationPath.isEmpty)
+        #expect(tabState.scrollPosition == 0)
+        #expect(tabState.selectedItemId == nil)
+    }
+    
+    @Test func testTabStateCodable() async throws {
+        // Codableのテスト
+        var tabState = TabState()
+        tabState.navigationPath = ["home", "detail", "edit"]
+        tabState.scrollPosition = 123.45
+        tabState.selectedItemId = "item-123"
+        
+        // エンコード・デコード
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        let data = try encoder.encode(tabState)
+        let decodedState = try decoder.decode(TabState.self, from: data)
+        
+        #expect(decodedState.navigationPath == tabState.navigationPath)
+        #expect(decodedState.scrollPosition == tabState.scrollPosition)
+        #expect(decodedState.selectedItemId == tabState.selectedItemId)
+    }
+}
+
+// MARK: - Navigation Persistence Tests
+
+struct NavigationPersistenceTests {
+    @Test func testSaveAndLoadNavigationState() async throws {
+        let service = PersistenceService.shared
+        
+        // クリーンアップしてから開始
+        try await service.deleteAllData()
+        
+        // テストデータを作成
+        let state = NavigationState(selectedTab: 2)
+        state.tabStates[0] = TabState()
+        state.tabStates[0]?.navigationPath = ["home", "detail"]
+        state.tabStates[1] = TabState()
+        state.tabStates[1]?.selectedItemId = "item-456"
+        
+        // 保存
+        try await service.saveNavigationState(state)
+        
+        // 読み込み
+        let loadedState = try await service.loadNavigationState()
+        
+        #expect(loadedState.selectedTab == 2)
+        #expect(loadedState.tabStates.count == 2)
+        #expect(loadedState.tabStates[0]?.navigationPath == ["home", "detail"])
+        #expect(loadedState.tabStates[1]?.selectedItemId == "item-456")
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+    
+    @Test func testLoadNavigationStateDefault() async throws {
+        let service = PersistenceService.shared
+        
+        // クリーンアップしてから開始
+        try await service.deleteAllData()
+        
+        // 保存されていない状態で読み込み
+        let state = try await service.loadNavigationState()
+        
+        #expect(state.selectedTab == 0)
+        #expect(state.tabStates.isEmpty)
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+    
+    @Test func testNavigationStatePersistenceAcrossSessions() async throws {
+        let service = PersistenceService.shared
+        
+        // クリーンアップしてから開始
+        try await service.deleteAllData()
+        
+        // セッション1: 状態を保存
+        let session1State = NavigationState(selectedTab: 3)
+        try await service.saveNavigationState(session1State)
+        
+        // セッション2: 状態を読み込み
+        let session2State = try await service.loadNavigationState()
+        
+        #expect(session2State.selectedTab == 3)
+        
+        // セッション3: 新しい状態を保存
+        let session3State = NavigationState(selectedTab: 1)
+        try await service.saveNavigationState(session3State)
+        
+        // セッション4: 更新された状態を読み込み
+        let session4State = try await service.loadNavigationState()
+        
+        #expect(session4State.selectedTab == 1)
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+}
+
+// MARK: - ContentView Navigation Tests
+
+struct ContentViewNavigationTests {
+    @Test func testContentViewTabDefinitions() async throws {
+        // ContentViewが4つのタブを持っていることを確認
+        let contentViewPath = "/Users/fukku/.opengoat/workspaces/fe-dev-2/gakuse-ai-ios-repo/GakuseAI/Views/ContentView.swift"
+        let content = try String(contentsOfFile: contentViewPath)
+        
+        // 各タブが定義されている
+        #expect(content.contains("LearningLogView"))
+        #expect(content.contains("PortfolioView"))
+        #expect(content.contains("AIChatView"))
+        #expect(content.contains("ProfileView"))
+        
+        // タブタグが定義されている
+        #expect(content.contains(".tag(0)"))
+        #expect(content.contains(".tag(1)"))
+        #expect(content.contains(".tag(2)"))
+        #expect(content.contains(".tag(3)"))
+    }
+    
+    @Test func testContentViewAccessibilityIdentifiers() async throws {
+        // 各タブにaccessibilityIdentifierが設定されている
+        let contentViewPath = "/Users/fukku/.opengoat/workspaces/fe-dev-2/gakuse-ai-ios-repo/GakuseAI/Views/ContentView.swift"
+        let content = try String(contentsOfFile: contentViewPath)
+        
+        #expect(content.contains("accessibilityIdentifier(\"learningLogTab\")"))
+        #expect(content.contains("accessibilityIdentifier(\"portfolioTab\")"))
+        #expect(content.contains("accessibilityIdentifier(\"aiChatTab\")"))
+        #expect(content.contains("accessibilityIdentifier(\"profileTab\")"))
+    }
+    
+    @Test func testContentViewNavigationStateIntegration() async throws {
+        // ContentViewがナビゲーション状態を保存・復元している
+        let contentViewPath = "/Users/fukku/.opengoat/workspaces/fe-dev-2/gakuse-ai-ios-repo/GakuseAI/Views/ContentView.swift"
+        let content = try String(contentsOfFile: contentViewPath)
+        
+        // onChangeでナビゲーション状態を保存
+        #expect(content.contains("onChange(of: selectedTab)"))
+        #expect(content.contains("saveNavigationState"))
+        
+        // onAppearでナビゲーション状態を復元
+        #expect(content.contains("onAppear"))
+        #expect(content.contains("loadNavigationState"))
+    }
+    
+    @Test func testContentViewAnimation() async throws {
+        // ContentViewにアニメーションが設定されている
+        let contentViewPath = "/Users/fukku/.opengoat/workspaces/fe-dev-2/gakuse-ai-ios-repo/GakuseAI/Views/ContentView.swift"
+        let content = try String(contentsOfFile: contentViewPath)
+        
+        #expect(content.contains(".animation(.easeInOut(duration: 0.25), value: selectedTab)"))
+    }
+    
+    @Test func testContentViewHapticFeedback() async throws {
+        // ContentViewにHaptic Feedbackが設定されている
+        let contentViewPath = "/Users/fukku/.opengoat/workspaces/fe-dev-2/gakuse-ai-ios-repo/GakuseAI/Views/ContentView.swift"
+        let content = try String(contentsOfFile: contentViewPath)
+        
+        #expect(content.contains("HapticFeedback.light()"))
+    }
+    
+    @Test func testContentViewSymbolEffect() async throws {
+        // ContentViewにSymbol Effectが設定されている
+        let contentViewPath = "/Users/fukku/.opengoat/workspaces/fe-dev-2/gakuse-ai-ios-repo/GakuseAI/Views/ContentView.swift"
+        let content = try String(contentsOfFile: contentViewPath)
+        
+        #expect(content.contains("symbolEffect(.bounce, value: selectedTab)"))
+    }
+    
+    @Test func testContentViewLogoutMenu() async throws {
+        // ContentViewにログアウトメニューが設定されている
+        let contentViewPath = "/Users/fukku/.opengoat/workspaces/fe-dev-2/gakuse-ai-ios-repo/GakuseAI/Views/ContentView.swift"
+        let content = try String(contentsOfFile: contentViewPath)
+        
+        #expect(content.contains("Button(role: .destructive)"))
+        #expect(content.contains("signOut()"))
+        #expect(content.contains("ログアウト"))
+    }
+}
 
 
