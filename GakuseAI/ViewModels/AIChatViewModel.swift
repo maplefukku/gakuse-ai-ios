@@ -42,7 +42,7 @@ class AIChatViewModel: ObservableObject {
     func sendMessage() async {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-        
+
         // ユーザーメッセージを追加
         let userMessage = ChatMessageData(
             id: UUID(),
@@ -52,24 +52,27 @@ class AIChatViewModel: ObservableObject {
         )
         messages.append(userMessage)
         inputText = ""
-        
+        HapticFeedback.light() // メッセージ送信
+
         // 保存
         do {
             try await persistenceService.appendChatMessage(userMessage)
         } catch {
             print("保存エラー: \(error)")
         }
-        
+
         // AI応答を取得
         isLoading = true
         defer { isLoading = false }
-        
+
         do {
             let response = try await apiService.sendChatMessage(text, history: messages)
             messages.append(response)
             try await persistenceService.appendChatMessage(response)
+            HapticFeedback.success() // AI応答受信
         } catch {
             errorMessage = "AI応答エラー: \(error.localizedDescription)"
+            HapticFeedback.error() // エラー時
             // エラー時もダミー応答で継続性を保つ
             let fallbackResponse = ChatMessageData(
                 id: UUID(),
@@ -85,8 +88,10 @@ class AIChatViewModel: ObservableObject {
         do {
             try await persistenceService.clearChatHistory()
             messages = []
+            HapticFeedback.success() // 履歴クリア成功
         } catch {
             errorMessage = "履歴削除エラー: \(error.localizedDescription)"
+            HapticFeedback.error() // エラー時
         }
     }
     
@@ -258,17 +263,19 @@ class AIChatViewModel: ObservableObject {
     
     func deleteMessage() async {
         guard let message = selectedMessage else { return }
-        
+
         // ローカル配列から削除
         messages.removeAll { $0.id == message.id }
-        
+
         // 永続化（履歴を上書き）
         do {
             try await persistenceService.saveChatHistory(messages)
+            HapticFeedback.heavy() // メッセージ削除成功
         } catch {
             errorMessage = "削除エラー: \(error.localizedDescription)"
+            HapticFeedback.error() // エラー時
         }
-        
+
         selectedMessage = nil
         showingDeleteConfirmation = false
     }

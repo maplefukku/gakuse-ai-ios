@@ -50,9 +50,11 @@ class ProfileViewModel: ObservableObject {
         do {
             try await persistenceService.saveUserProfile(profile)
             userProfile = profile
+            HapticFeedback.success() // プロファイル更新成功
         } catch {
             errorMessage = "プロファイル保存エラー: \(error.localizedDescription)"
             print("プロファイル保存エラー: \(error)")
+            HapticFeedback.error() // エラー時
         }
     }
     
@@ -60,57 +62,65 @@ class ProfileViewModel: ObservableObject {
     
     func updateSettings(_ settings: UserSettings) async {
         guard var profile = userProfile else { return }
-        
+
         profile.settings = settings
-        
+
         do {
             try await persistenceService.saveUserProfile(profile)
             userProfile = profile
+            HapticFeedback.light() // 設定更新成功
         } catch {
             errorMessage = "設定保存エラー: \(error.localizedDescription)"
             print("設定保存エラー: \(error)")
+            HapticFeedback.error() // エラー時
         }
     }
     
     func updateTheme(_ theme: AppTheme) async {
         guard var profile = userProfile else { return }
-        
+
         profile.settings.theme = theme
-        
+
         do {
             try await persistenceService.saveUserProfile(profile)
             userProfile = profile
+            HapticFeedback.light() // テーマ更新成功
         } catch {
             errorMessage = "テーマ保存エラー: \(error.localizedDescription)"
             print("テーマ保存エラー: \(error)")
+            HapticFeedback.error() // エラー時
         }
     }
-    
+
     func updateNotificationTime(_ time: DateComponents) async {
         guard var profile = userProfile else { return }
-        
+
         profile.settings.notificationTime = time
-        
+
         do {
             try await persistenceService.saveUserProfile(profile)
             userProfile = profile
+            HapticFeedback.success() // 通知時間更新成功
         } catch {
             errorMessage = "通知時間保存エラー: \(error.localizedDescription)"
             print("通知時間保存エラー: \(error)")
+            HapticFeedback.error() // エラー時
         }
     }
-    
+
     func updateLanguage(_ language: AppLanguage) async {
         guard var profile = userProfile else { return }
-        
+
         profile.settings.language = language
-        
+
         do {
             try await persistenceService.saveUserProfile(profile)
             userProfile = profile
+            HapticFeedback.success() // 言語設定更新成功
         } catch {
             errorMessage = "言語設定保存エラー: \(error.localizedDescription)"
             print("言語設定保存エラー: \(error)")
+            HapticFeedback.error() // エラー時
         }
     }
     
@@ -137,11 +147,13 @@ class ProfileViewModel: ObservableObject {
         do {
             try await persistenceService.deleteAllData()
             userProfile = nil
+            HapticFeedback.warning() // データ削除警告
             // 新規プロファイルを作成
             await loadProfile()
         } catch {
             errorMessage = "データ削除エラー: \(error.localizedDescription)"
             print("データ削除エラー: \(error)")
+            HapticFeedback.error() // エラー時
         }
     }
     

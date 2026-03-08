@@ -18,6 +18,7 @@
 		5065E1396D0CFA58200AA894 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888E3B3582F796E49AE615D0 /* APIService.swift */; };
 		54A9C139199D2C11ACD315DC /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03206AAD21390FE19A6216AF /* ProfileView.swift */; };
 		59F97985237F1EE4B2C4DE82 /* PortfolioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CD55FFBD583D29CDC0997DC /* PortfolioView.swift */; };
+		5F0FD72EA9812663041F5EF1 /* HapticFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43C086D7826209A53F9F40A5 /* HapticFeedback.swift */; };
 		60DDB753739A49C18C47B620 /* AIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F8675F6C3F20E29CC87A601 /* AIChatView.swift */; };
 		6CF1D5A75C1BAC7AFCA7C1AF /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02FDDB329E65417CE061EAC1 /* ProfileViewModel.swift */; };
 		741BE9B9B93612081D296324 /* PortfolioViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CADAE9B697F008E7FFF5E9 /* PortfolioViewModel.swift */; };
@@ -55,6 +56,7 @@
 		0CADDCDEF00F749794E8D9E2 /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
 		0D11FD95DB1D5284F512FDDC /* GakuseAITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GakuseAITests.swift; sourceTree = "<group>"; };
 		1F9EBDF5DBC6014B5B29B1D5 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		43C086D7826209A53F9F40A5 /* HapticFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticFeedback.swift; sourceTree = "<group>"; };
 		49011EAEC6702F3EB9B8D3D7 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
 		4F0025900B49CB1206333D40 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		53B0235B676D4A39676D821E /* AIChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatViewModel.swift; sourceTree = "<group>"; };
@@ -112,6 +114,7 @@
 				FC1FE75A9FBEC69059BA66D3 /* Info.plist */,
 				7A5C06C6D2DF58A0E47BE7D3 /* Models */,
 				49B7BC40B002F2A072598614 /* Services */,
+				8C53EA25A248CC7970BE963C /* Utils */,
 				000217A7815040E7DDDFA337 /* ViewModels */,
 				EA53F1D4A20B7E6D2A9E5A5E /* Views */,
 			);
@@ -170,6 +173,14 @@
 				0D11FD95DB1D5284F512FDDC /* GakuseAITests.swift */,
 			);
 			path = GakuseAITests;
+			sourceTree = "<group>";
+		};
+		8C53EA25A248CC7970BE963C /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				43C086D7826209A53F9F40A5 /* HapticFeedback.swift */,
+			);
+			path = Utils;
 			sourceTree = "<group>";
 		};
 		C21E9DF5508304B9C78D2CD3 = {
@@ -330,6 +341,7 @@
 				D36E3888D994216B6491ECDD /* AuthViewModel.swift in Sources */,
 				B20AF944DF87A6269AE698EB /* ContentView.swift in Sources */,
 				15216031CC94FE9EBB7134A3 /* GakuseAIApp.swift in Sources */,
+				5F0FD72EA9812663041F5EF1 /* HapticFeedback.swift in Sources */,
 				E23B5E32C95E452462D1AE4B /* LearningLog.swift in Sources */,
 				216FE832731D9C856F36FFC2 /* LearningLogView.swift in Sources */,
 				F204F98B282F03333782D984 /* LearningLogViewModel.swift in Sources */,

@@ -2,32 +2,40 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
+    @State private var selectedTab = 0
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             LearningLogView()
                 .tabItem {
                     Label("学習ログ", systemImage: "book.fill")
                 }
+                .tag(0)
                 .accessibilityIdentifier("learningLogTab")
 
             PortfolioView()
                 .tabItem {
                     Label("ポートフォリオ", systemImage: "person.fill")
                 }
+                .tag(1)
                 .accessibilityIdentifier("portfolioTab")
 
             AIChatView()
                 .tabItem {
                     Label("AI壁打ち", systemImage: "bubble.left.and.bubble.right.fill")
                 }
+                .tag(2)
                 .accessibilityIdentifier("aiChatTab")
 
             ProfileView()
                 .tabItem {
                     Label("プロフィール", systemImage: "gearshape.fill")
                 }
+                .tag(3)
                 .accessibilityIdentifier("profileTab")
+        }
+        .onChange(of: selectedTab) { oldValue, newValue in
+            HapticFeedback.light() // タブ切替
         }
         .tint(.pink)
         .accessibilityElement(children: .contain)

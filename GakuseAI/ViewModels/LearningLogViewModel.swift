@@ -131,8 +131,10 @@ class LearningLogViewModel: ObservableObject {
         do {
             try await persistenceService.appendLearningLog(newLog)
             logs.insert(newLog, at: 0) // 先頭に追加
+            HapticFeedback.success() // ログ作成成功
         } catch {
             errorMessage = "保存エラー: \(error.localizedDescription)"
+            HapticFeedback.error() // エラー時
         }
     }
     
@@ -142,8 +144,11 @@ class LearningLogViewModel: ObservableObject {
                 try await persistenceService.deleteLearningLog(id: logs[index].id)
             } catch {
                 errorMessage = "削除エラー: \(error.localizedDescription)"
+                HapticFeedback.error() // エラー時
+                return
             }
         }
+        HapticFeedback.heavy() // 削除成功
         logs.remove(atOffsets: offsets)
     }
     
@@ -160,12 +165,14 @@ class LearningLogViewModel: ObservableObject {
         var updatedLog = log
         updatedLog.isPublic.toggle()
         await updateLog(updatedLog)
+        HapticFeedback.light() // 公開設定切替
     }
 
     func toggleFavorite(for log: LearningLog) async {
         var updatedLog = log
         updatedLog.isFavorite.toggle()
         await updateLog(updatedLog)
+        HapticFeedback.success() // お気に入り切替
     }
     
     func addSkill(to log: LearningLog, name: String, level: SkillLevel) async {
