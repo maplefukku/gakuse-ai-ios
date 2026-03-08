@@ -35,6 +35,8 @@ struct PortfolioView: View {
                 }
                 .padding()
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("ポートフォリオ画面")
             .navigationTitle("ポートフォリオ")
             .refreshable {
                 await viewModel.loadData()
@@ -46,6 +48,8 @@ struct PortfolioView: View {
                     } label: {
                         Image(systemName: "chart.bar.fill")
                     }
+                    .accessibilityLabel("統計を表示")
+                    .accessibilityHint("学習統計画面を開きます")
                 }
             }
             .sheet(isPresented: $showingStatistics) {
@@ -246,16 +250,16 @@ struct StatCard: View {
     let value: String
     let icon: String
     let color: Color
-    
+
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.title2)
                 .foregroundColor(color)
-            
+
             Text(value)
                 .font(.title.bold())
-            
+
             Text(title)
                 .font(.caption)
                 .foregroundColor(.secondary)
@@ -264,6 +268,8 @@ struct StatCard: View {
         .padding(.vertical, 16)
         .background(Color(.systemGray6))
         .cornerRadius(12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(value)")
     }
 }
 
@@ -271,7 +277,7 @@ struct StatCard: View {
 
 struct PortfolioLogCard: View {
     let log: LearningLog
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: log.category.icon)
@@ -280,19 +286,19 @@ struct PortfolioLogCard: View {
                 .frame(width: 40, height: 40)
                 .background(Color.pink)
                 .cornerRadius(10)
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(log.title)
                     .font(.headline)
                     .lineLimit(1)
-                
+
                 Text(log.category.rawValue)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
+
             Spacer()
-            
+
             Image(systemName: "chevron.right")
                 .foregroundColor(.secondary)
                 .font(.caption)
@@ -300,6 +306,9 @@ struct PortfolioLogCard: View {
         .padding()
         .background(Color(.systemGray6))
         .cornerRadius(12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(log.title)、\(log.category.rawValue)")
+        .accessibilityHint("詳細を表示")
     }
 }
 

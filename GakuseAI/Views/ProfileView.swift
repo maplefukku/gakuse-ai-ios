@@ -9,10 +9,13 @@ struct ProfileView: View {
     @State private var showingLogoutConfirmation = false
     @State private var showingDeleteDataConfirmation = false
     @State private var isDeletingData = false
-    
+
     var body: some View {
         NavigationStack {
             List {
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("設定画面")
                 // Profile Section
                 Section {
                     Button {
@@ -22,6 +25,9 @@ struct ProfileView: View {
                             profile: viewModel.userProfile
                         )
                     }
+                    .accessibilityIdentifier("profileEditButton")
+                    .accessibilityLabel("プロフィール編集")
+                    .accessibilityHint("プロフィール情報を編集できます")
                 }
                 
                 // Settings Section
@@ -43,7 +49,9 @@ struct ProfileView: View {
                             }
                         }
                     }
-                    
+                    .accessibilityIdentifier("notificationsSetting")
+                    .accessibilityLabel("通知設定")
+
                     // Appearance
                     NavigationLink {
                         AppearanceSettingsView(viewModel: viewModel)
@@ -59,7 +67,9 @@ struct ProfileView: View {
                                 .font(.caption)
                         }
                     }
-                    
+                    .accessibilityIdentifier("appearanceSetting")
+                    .accessibilityLabel("外観設定")
+
                     // Language
                     NavigationLink {
                         LanguageSettingsView(viewModel: viewModel)
@@ -78,6 +88,8 @@ struct ProfileView: View {
                                 .font(.caption)
                         }
                     }
+                    .accessibilityIdentifier("languageSetting")
+                    .accessibilityLabel("言語設定")
                 }
                 
                 // Data Section
@@ -90,7 +102,10 @@ struct ProfileView: View {
                             Text("学習ログをエクスポート")
                         }
                     }
-                    
+                    .accessibilityIdentifier("exportDataButton")
+                    .accessibilityLabel("学習ログをエクスポート")
+                    .accessibilityHint("CSVまたはJSON形式でエクスポートできます")
+
                     Button(role: .destructive) {
                         showingDeleteDataConfirmation = true
                     } label: {
@@ -105,27 +120,41 @@ struct ProfileView: View {
                         }
                     }
                     .disabled(isDeletingData)
+                    .accessibilityIdentifier("deleteAllDataButton")
+                    .accessibilityLabel("すべてのデータを削除")
+                    .accessibilityHint("すべての学習データが削除されます")
                 }
                 
                 // About Section
                 Section("その他") {
                     Link("利用規約", destination: URL(string: "https://gakuse.ai/terms")!)
+                        .accessibilityIdentifier("termsOfService")
+                        .accessibilityLabel("利用規約")
                     Link("プライバシーポリシー", destination: URL(string: "https://gakuse.ai/privacy")!)
+                        .accessibilityIdentifier("privacyPolicy")
+                        .accessibilityLabel("プライバシーポリシー")
                     Link("ヘルプ", destination: URL(string: "https://gakuse.ai/help")!)
-                    
+                        .accessibilityIdentifier("help")
+                        .accessibilityLabel("ヘルプ")
+
                     HStack {
                         Text("バージョン")
                         Spacer()
                         Text(appVersion)
                             .foregroundColor(.secondary)
                     }
+                    .accessibilityIdentifier("versionInfo")
+                    .accessibilityLabel("バージョン情報 \(appVersion)")
                 }
-                
+
                 // Logout Section
                 Section {
                     Button("ログアウト", role: .destructive) {
                         showingLogoutConfirmation = true
                     }
+                    .accessibilityIdentifier("logoutButton")
+                    .accessibilityLabel("ログアウト")
+                    .accessibilityHint("アカウントからログアウトします")
                 }
             }
             .navigationTitle("設定")
