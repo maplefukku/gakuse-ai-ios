@@ -2606,4 +2606,250 @@ struct ContentViewNavigationTests {
     }
 }
 
+// MARK: - Navigation State Edge Case Tests
+
+struct NavigationStateEdgeCaseTests {
+    @Test func testNavigationStateNegativeTab() async throws {
+        // 負のタブインデックスを許容するか確認
+        let state = NavigationState(selectedTab: -1)
+        
+        #expect(state.selectedTab == -1)
+    }
+    
+    @Test func testNavigationStateLargeTab() async throws {
+        // 大きなタブインデックスを許容するか確認
+        let state = NavigationState(selectedTab: 999)
+        
+        #expect(state.selectedTab == 999)
+    }
+    
+    @Test func testNavigationStateMultipleTabStates() async throws {
+        // 複数のタブ状態を保存できるか確認
+        var state = NavigationState(selectedTab: 2)
+        state.tabStates[0] = TabState()
+        state.tabStates[1] = TabState()
+        state.tabStates[2] = TabState()
+        
+        #expect(state.tabStates.count == 3)
+        
+        // Codableで正しく復元されるか
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        let data = try encoder.encode(state)
+        let decodedState = try decoder.decode(NavigationState.self, from: data)
+        
+        #expect(decodedState.tabStates.count == 3)
+    }
+    
+    @Test func testNavigationStateTimestampUpdate() async throws {
+        // タイムスタンプが更新されるか確認
+        var state = NavigationState(selectedTab: 0)
+        let initialTime = state.lastUpdateTime
+        
+        // 少し待機
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        
+        state.selectedTab = 1
+        
+        #expect(state.lastUpdateTime >= initialTime)
+    }
+}
+
+// MARK: - TabState Edge Case Tests
+
+struct TabStateEdgeCaseTests {
+    @Test func testTabStateEmptyPath() async throws {
+        // 空のナビゲーションパス
+        var tabState = TabState()
+        tabState.navigationPath = []
+        
+        #expect(tabState.navigationPath.isEmpty)
+    }
+    
+    @Test func testTabStateDeepPath() async throws {
+        // 深いナビゲーションパス
+        var tabState = TabState()
+        tabState.navigationPath = ["level1", "level2", "level3", "level4", "level5"]
+        
+        #expect(tabState.navigationPath.count == 5)
+    }
+    
+    @Test func testTabStateNegativeScroll() async throws {
+        // 負のスクロール位置
+        var tabState = TabState()
+        tabState.scrollPosition = -100.5
+        
+        #expect(tabState.scrollPosition == -100.5)
+    }
+    
+    @Test func testTabStateLargeScroll() async throws {
+        // 大きなスクロール位置
+        var tabState = TabState()
+        tabState.scrollPosition = 999999.0
+        
+        #expect(tabState.scrollPosition == 999999.0)
+    }
+    
+    @Test func testTabStateEmptyItemId() async throws {
+        // 空文字のアイテムID
+        var tabState = TabState()
+        tabState.selectedItemId = ""
+        
+        #expect(tabState.selectedItemId == "")
+    }
+}
+
+// MARK: - Tab Transition Tests
+
+struct TabTransitionTests {
+    @Test func testTabTransitionSequence() async throws {
+        // タブ遷移のシーケンステスト
+        let service = PersistenceService.shared
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+        
+        // タブ遷移: 0 -> 1 -> 2 -> 3 -> 0
+        let sequence = [0, 1, 2, 3, 0]
+        
+        for tab in sequence {
+            let state = NavigationState(selectedTab: tab)
+            try await service.saveNavigationState(state)
+            
+            let loadedState = try await service.loadNavigationState()
+            #expect(loadedState.selectedTab == tab)
+        }
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+    
+    @Test func testTabStateAccumulation() async throws {
+        // タブ状態の蓄積テスト
+        let service = PersistenceService.shared
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+        
+        var state = NavigationState(selectedTab: 0)
+        
+        // 各タブの状態を蓄積
+        for i in 0..<4 {
+            var tabState = TabState()
+            tabState.navigationPath = ["tab\(i)", "detail"]
+            state.tabStates[i] = tabState
+        }
+        
+        try await service.saveNavigationState(state)
+        
+        // 読み込み
+        let loadedState = try await service.loadNavigationState()
+        
+        #expect(loadedState.tabStates.count == 4)
+        for i in 0..<4 {
+            #expect(loadedState.tabStates[i]?.navigationPath == ["tab\(i)", "detail"])
+        }
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+    
+    @Test func testTabStateOverwrite() async throws {
+        // タブ状態の上書きテスト
+        let service = PersistenceService.shared
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+        
+        var state = NavigationState(selectedTab: 0)
+        
+        // 初期状態を保存
+        state.tabStates[0] = TabState()
+        try await service.saveNavigationState(state)
+        
+        // 上書き
+        var newState = NavigationState(selectedTab: 1)
+        var tabState = TabState()
+        tabState.navigationPath = ["updated"]
+        newState.tabStates[0] = tabState
+        try await service.saveNavigationState(newState)
+        
+        // 読み込み
+        let loadedState = try await service.loadNavigationState()
+        
+        #expect(loadedState.selectedTab == 1)
+        #expect(loadedState.tabStates[0]?.navigationPath == ["updated"])
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+}
+
+// MARK: - Navigation State Consistency Tests
+
+struct NavigationStateConsistencyTests {
+    @Test func testStateConsistencyAfterMultipleSaves() async throws {
+        // 複数回保存後の整合性テスト
+        let service = PersistenceService.shared
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+        
+        // 複数回保存
+        for i in 0..<10 {
+            let state = NavigationState(selectedTab: i % 4)
+            try await service.saveNavigationState(state)
+        }
+        
+        // 最後の状態を読み込み
+        let finalState = try await service.loadNavigationState()
+        #expect(finalState.selectedTab == 9 % 4) // 9 % 4 = 1
+        
+        // クリーンアップ
+        try await service.deleteAllData()
+    }
+    
+    @Test func testTabStateConsistencyWithNavigationPath() async throws {
+        // ナビゲーションパスの一貫性テスト
+        var tabState = TabState()
+        tabState.navigationPath = ["home"]
+        
+        // パスを追加
+        tabState.navigationPath.append("detail")
+        tabState.navigationPath.append("edit")
+        
+        #expect(tabState.navigationPath.count == 3)
+        #expect(tabState.navigationPath.last == "edit")
+        
+        // パスを削除
+        tabState.navigationPath.removeLast()
+        tabState.navigationPath.removeLast()
+        
+        #expect(tabState.navigationPath.count == 1)
+        #expect(tabState.navigationPath.last == "home")
+    }
+    
+    @Test func testNavigationStateWithNilTabStates() async throws {
+        // Nilのタブ状態を含む場合のテスト
+        var state = NavigationState(selectedTab: 0)
+        state.tabStates[0] = TabState()
+        state.tabStates[1] = nil
+        state.tabStates[2] = TabState()
+        
+        #expect(state.tabStates.count == 3)
+        
+        // Codableで正しく処理されるか
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        let data = try encoder.encode(state)
+        let decodedState = try decoder.decode(NavigationState.self, from: data)
+        
+        #expect(decodedState.tabStates[0] != nil)
+        #expect(decodedState.tabStates[1] == nil)
+        #expect(decodedState.tabStates[2] != nil)
+    }
+}
+
 
