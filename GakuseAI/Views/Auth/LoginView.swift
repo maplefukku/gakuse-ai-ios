@@ -55,7 +55,7 @@ struct LoginView: View {
     }
     
     // MARK: - Logo View
-    
+
     private var logoView: some View {
         VStack(spacing: 16) {
             Circle()
@@ -73,18 +73,19 @@ struct LoginView: View {
                         .foregroundColor(.white)
                 }
                 .shadow(color: .pink.opacity(0.3), radius: 10)
-            
+
             Text("GakuseAI")
                 .font(.largeTitle.bold())
-            
+
             Text("学習ログを資産に変える")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
         }
+        .drawingGroup()
     }
     
     // MARK: - Form Section
-    
+
     private var formSection: some View {
         VStack(spacing: 16) {
             TextField("メールアドレス", text: $email)
@@ -92,10 +93,10 @@ struct LoginView: View {
                 .keyboardType(.emailAddress)
                 .autocapitalization(.none)
                 .autocorrectionDisabled()
-            
+
             SecureField("パスワード", text: $password)
                 .textFieldStyle(.roundedBorder)
-            
+
             Button {
                 showingPasswordReset = true
             } label: {
@@ -113,10 +114,11 @@ struct LoginView: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.horizontal)
+        .drawingGroup()
     }
     
     // MARK: - Action Buttons
-    
+
     private var actionButtons: some View {
         VStack(spacing: 16) {
             Button {
@@ -158,6 +160,7 @@ struct LoginView: View {
             }, perform: {})
         }
         .padding(.horizontal)
+        .drawingGroup()
     }
 }
 
@@ -179,7 +182,7 @@ struct PasswordResetView: View {
                         .autocapitalization(.none)
                         .autocorrectionDisabled()
                 }
-                
+
                 Section {
                     Button("リセットメールを送信") {
                         Task {
@@ -201,6 +204,7 @@ struct PasswordResetView: View {
             }
             .navigationTitle("パスワードリセット")
             .navigationBarTitleDisplayMode(.inline)
+            .drawingGroup()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("キャンセル") {

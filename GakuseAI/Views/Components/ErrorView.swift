@@ -22,20 +22,20 @@ struct ErrorView: View {
                 .font(.system(size: 64))
                 .foregroundColor(.pink)
                 .symbolEffect(.pulse, options: .repeating)
-            
+
             // エラータイトル
             Text("エラーが発生しました")
                 .font(.title)
                 .fontWeight(.bold)
                 .foregroundColor(.primary)
-            
+
             // エラーメッセージ
             Text(error.localizedDescription)
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
-            
+
             // 再試行ボタン
             if let onRetry = onRetry {
                 Button(action: onRetry) {
@@ -56,7 +56,7 @@ struct ErrorView: View {
                 .padding(.horizontal)
                 .buttonStyle(ScaleButtonStyle())
             }
-            
+
             // キャッシュされたデータを使用するボタン
             if let onUseCachedData = onUseCachedData, canUseCachedData {
                 Button(action: onUseCachedData) {
@@ -70,12 +70,13 @@ struct ErrorView: View {
                 }
                 .buttonStyle(ScaleButtonStyle())
             }
-            
+
             Spacer()
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(colorScheme == .dark ? Color.black : Color(UIColor.systemBackground))
+        .drawingGroup()
     }
     
     private var errorIcon: String {
@@ -125,6 +126,7 @@ struct NetworkErrorView: View {
             onRetry: onRetry,
             onUseCachedData: onUseCachedData
         )
+        .drawingGroup()
     }
 }
 
@@ -137,16 +139,16 @@ struct AuthenticationErrorView: View {
             Image(systemName: "person.badge.exclamationmark")
                 .font(.system(size: 64))
                 .foregroundColor(.pink)
-            
+
             Text("認証が必要です")
                 .font(.title)
                 .fontWeight(.bold)
                 .foregroundColor(.primary)
-            
+
             Text("再度ログインしてください")
                 .font(.body)
                 .foregroundColor(.secondary)
-            
+
             Button(action: onLogin) {
                 HStack {
                     Image(systemName: "arrow.right.to.line")
@@ -162,11 +164,12 @@ struct AuthenticationErrorView: View {
                 )
             }
             .padding(.horizontal)
-            
+
             Spacer()
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .drawingGroup()
     }
 }
 
@@ -191,18 +194,18 @@ struct EmptyStateView: View {
             Image(systemName: icon)
                 .font(.system(size: 64))
                 .foregroundColor(.gray)
-            
+
             Text(title)
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundColor(.primary)
-            
+
             Text(message)
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
-            
+
             if let action = action, let actionTitle = actionTitle {
                 Button(action: action) {
                     Text(actionTitle)
@@ -217,11 +220,12 @@ struct EmptyStateView: View {
                 }
                 .padding(.horizontal)
             }
-            
+
             Spacer()
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .drawingGroup()
     }
 }
 

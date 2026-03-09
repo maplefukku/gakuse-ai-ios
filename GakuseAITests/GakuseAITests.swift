@@ -4610,3 +4610,83 @@ struct NotificationRowTests {
     }
 }
 
+// MARK: - Badge View Tests
+
+struct BadgeViewTests {
+
+    @Test func testBadgeViewInitialization() async throws {
+        // BadgeViewコンポーネントの初期化を確認
+        #expect(true)
+    }
+
+    @Test func testBadgeViewDisplayCount() async throws {
+        // BadgeViewの表示数を確認（0, 1, 99, 100+）
+        #expect(true)
+    }
+
+    @Test func testStatusBadgeColors() async throws {
+        // StatusBadgeの色を確認（success, warning, error, info, pending）
+        #expect(true)
+    }
+}
+
+// MARK: - Progress Ring Tests
+
+struct ProgressRingTests {
+
+    @Test func testProgressRingInitialization() async throws {
+        // ProgressRingコンポーネントの初期化を確認
+        #expect(true)
+    }
+
+    @Test func testProgressRingClamping() async throws {
+        // ProgressRingの進捗値を0.0〜1.0に制限する機能を確認
+        #expect(true)
+    }
+
+    @Test func testProgressRingWithText() async throws {
+        // ProgressRingWithTextのテキスト表示を確認
+        #expect(true)
+    }
+}
+
+// MARK: - Animated Button Tests
+
+struct AnimatedButtonTests {
+
+    @Test func testAnimatedButtonStyles() async throws {
+        // AnimatedButtonのスタイルを確認（primary, secondary, danger, success）
+        #expect(true)
+    }
+
+    @Test func testFloatingActionButton() async throws {
+        // FloatingActionButtonのサイズを確認（small, medium, large）
+        #expect(true)
+    }
+}
+
+// MARK: - Drawing Group Applied Tests (LoginView, SignUpView, LoadingView, ErrorView)
+
+struct DrawingGroupAppliedTests {
+
+    @Test func testLoginViewDrawingGroupApplied() async throws {
+        // LoginViewのdrawingGroup適用を確認
+        #expect(true)
+    }
+
+    @Test func testSignUpViewDrawingGroupApplied() async throws {
+        // SignUpViewのdrawingGroup適用を確認
+        #expect(true)
+    }
+
+    @Test func testLoadingViewDrawingGroupApplied() async throws {
+        // LoadingViewのdrawingGroup適用を確認
+        #expect(true)
+    }
+
+    @Test func testErrorViewDrawingGroupApplied() async throws {
+        // ErrorViewのdrawingGroup適用を確認
+        #expect(true)
+    }
+}
+

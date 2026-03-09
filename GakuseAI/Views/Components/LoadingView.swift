@@ -15,7 +15,7 @@ struct LoadingView: View {
             ProgressView()
                 .scaleEffect(1.5)
                 .progressViewStyle(CircularProgressViewStyle(tint: .pink))
-            
+
             // メッセージ
             if let message = message {
                 Text(message)
@@ -26,6 +26,7 @@ struct LoadingView: View {
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(UIColor.systemBackground))
+        .drawingGroup()
     }
 }
 
@@ -40,7 +41,7 @@ struct PullToRefreshLoadingView: View {
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle(tint: .pink))
             }
-            
+
             if let message = message {
                 Text(message)
                     .font(.subheadline)
@@ -48,6 +49,7 @@ struct PullToRefreshLoadingView: View {
             }
         }
         .padding(.vertical, 8)
+        .drawingGroup()
     }
 }
 
@@ -78,6 +80,7 @@ struct LoadingButton: View {
             )
             .disabled(isLoading)
         }
+        .drawingGroup()
     }
 }
 
@@ -89,12 +92,12 @@ struct SkeletonLoadingView: View {
         VStack(alignment: .leading, spacing: 12) {
             // タイトル用スケルトン
             SkeletonRow(widthRatio: 0.8, height: 24)
-            
+
             // 本文用スケルトン
             SkeletonRow(widthRatio: 1.0, height: 16)
             SkeletonRow(widthRatio: 0.9, height: 16)
             SkeletonRow(widthRatio: 0.7, height: 16)
-            
+
             // メタデータ用スケルトン
             HStack {
                 SkeletonRow(widthRatio: 0.3, height: 14)
@@ -105,6 +108,7 @@ struct SkeletonLoadingView: View {
         .padding()
         .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(12)
+        .drawingGroup()
         .onAppear {
             withAnimation(
                 Animation
@@ -142,6 +146,7 @@ struct SkeletonRow: View {
                     height: height
                 )
                 .offset(x: isAnimating ? geometry.size.width : -geometry.size.width)
+                .drawingGroup()
                 .onAppear {
                     withAnimation(
                         Animation
@@ -179,7 +184,7 @@ struct InlineLoadingIndicator: View {
             ProgressView()
                 .progressViewStyle(CircularProgressViewStyle(tint: .pink))
                 .scaleEffect(0.8)
-            
+
             if let message = message {
                 Text(message)
                     .font(.caption)
@@ -190,6 +195,7 @@ struct InlineLoadingIndicator: View {
         .padding(.horizontal, 8)
         .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(8)
+        .drawingGroup()
     }
 }
 

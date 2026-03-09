@@ -74,6 +74,7 @@ struct SignUpView: View {
                 .foregroundColor(.secondary)
         }
         .padding(.top)
+        .drawingGroup()
     }
 
     // MARK: - Form Section
@@ -102,6 +103,7 @@ struct SignUpView: View {
             termsView
         }
         .padding(.horizontal)
+        .drawingGroup()
     }
 
     // MARK: - Password Strength
@@ -246,6 +248,7 @@ struct SignUpView: View {
             }, perform: {})
         }
         .padding(.horizontal)
+        .drawingGroup()
     }
 
     // MARK: - Validation
