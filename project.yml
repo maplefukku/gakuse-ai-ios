@@ -10,7 +10,7 @@ options:
 settings:
   base:
     PRODUCT_NAME: GakuseAI
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "B8VLTB63PB"
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "6.0"
     ENABLE_USER_SCRIPT_SANDBOXING: false
@@ -40,6 +40,7 @@ targets:
         SUPABASE_ANON_KEY: YOUR_ANON_KEY
         API_BASE_URL: https://api.gakuse.ai
         AI_API_ENDPOINT: ""
+        ENABLE_USER_NOTIFICATIONS: "YES"
     info:
       path: GakuseAI/Info.plist
       properties:

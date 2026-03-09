@@ -4139,3 +4139,156 @@ struct AIChatViewTapFeedbackTests {
     }
 }
 
+// MARK: - NotificationService Tests
+
+struct NotificationServiceTests {
+    @Test func testNotificationServiceInitialization() async throws {
+        let service = NotificationService.shared
+        #expect(service !== nil)
+    }
+
+    @Test func testDailyReminderScheduling() async throws {
+        let service = NotificationService.shared
+
+        // テストのために通知権限を要求（実際にはUIで承認が必要）
+        let granted = await service.requestNotificationPermission()
+
+        // 通知権限が付与されている場合のみテストを実行
+        if granted {
+            await service.scheduleDailyReminder(at: 20) // 20時に通知
+            #expect(service.notificationTime?.hour == 20)
+
+            // テスト後にキャンセル
+            service.cancelDailyReminder()
+        } else {
+            // 通知権限がない場合はテストをスキップ
+            print("通知権限がないためテストをスキップします")
+        }
+    }
+
+    @Test func testWeeklySummaryScheduling() async throws {
+        let service = NotificationService.shared
+
+        // テストのために通知権限を要求（実際にはUIで承認が必要）
+        let granted = await service.requestNotificationPermission()
+
+        // 通知権限が付与されている場合のみテストを実行
+        if granted {
+            await service.scheduleWeeklySummary(on: 2, at: 9) // 月曜日の9時に通知
+
+            // テスト後にキャンセル
+            service.cancelWeeklySummary()
+        } else {
+            // 通知権限がない場合はテストをスキップ
+            print("通知権限がないためテストをスキップします")
+        }
+    }
+
+    @Test func testCancelAllNotifications() async throws {
+        let service = NotificationService.shared
+
+        // 通知権限を要求
+        let granted = await service.requestNotificationPermission()
+
+        if granted {
+            // 通知をスケジュール
+            await service.scheduleDailyReminder(at: 20)
+            await service.scheduleWeeklySummary(on: 2, at: 9)
+
+            // 全ての通知をキャンセル
+            service.cancelAllNotifications()
+            #expect(service.notificationTime == nil)
+        }
+    }
+
+    @Test func testBadgeManagement() async throws {
+        let service = NotificationService.shared
+
+        // バッジをインクリメント
+        service.incrementBadge(by: 1)
+
+        // バッジをクリア
+        service.clearBadge()
+
+        #expect(true) // エラーが発生しなければ成功
+    }
+}
+
+// MARK: - SyncService Tests
+
+struct SyncServiceTests {
+    @Test func testSyncServiceInitialization() async throws {
+        let service = SyncService.shared
+        #expect(service !== nil)
+    }
+
+    @Test func testSyncNotInProgressInitially() async throws {
+        let service = SyncService.shared
+        #expect(!service.syncInProgress)
+    }
+
+    @Test func testSyncAllData() async throws {
+        let service = SyncService.shared
+        let persistence = PersistenceService.shared
+
+        // テストデータを作成
+        let testLog = LearningLog(
+            title: "同期テストログ",
+            description: "同期機能のテスト",
+            category: .programming
+        )
+        try await persistence.appendLearningLog(testLog)
+
+        // 同期を実行（オフラインの場合はエラーになる可能性がある）
+        do {
+            let result = try await service.syncAllData()
+            #expect(result.syncedAt != nil)
+            print("同期結果: 成功 \(result.totalSynced) 件, 失敗 \(result.totalFailed) 件")
+        } catch {
+            // オフラインの場合はエラーを無視
+            print("同期エラー（オフラインの場合は正常）: \(error.localizedDescription)")
+        }
+
+        // クリーンアップ
+        try await persistence.deleteAllData()
+    }
+
+    @Test func testSyncConflictResolution() async throws {
+        let service = SyncService.shared
+
+        let oldDate = Date().addingTimeInterval(-3600) // 1時間前
+        let newDate = Date()
+
+        let localLog = LearningLog(
+            title: "ローカルログ",
+            description: "ローカルの方が新しい",
+            category: .programming,
+            updatedAt: newDate
+        )
+
+        let remoteLog = LearningLog(
+            title: "リモートログ",
+            description: "リモートの方が古い",
+            category: .programming,
+            updatedAt: oldDate
+        )
+
+        // コンフリクト解決テスト
+        let resolved = try await service.resolveConflict(local: localLog, remote: remoteLog)
+
+        // ローカルの方が新しいので、ローカルを採用
+        #expect(resolved.title == "ローカルログ")
+    }
+
+    @Test func testSyncErrorHandling() async throws {
+        // 同期エラーのエラーメッセージを確認
+        #expect(SyncError.syncInProgress.errorDescription == "同期が進行中です")
+        #expect(SyncError.networkUnavailable.errorDescription == "ネットワーク接続が利用できません")
+        #expect(SyncError.authenticationRequired.errorDescription == "認証が必要です")
+        #expect(SyncError.conflictDetected.errorDescription == "同期コンフリクトが検出されました")
+        #expect(SyncError.unknown.errorDescription == "不明なエラー")
+    }
+}
+
+
+

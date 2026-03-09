@@ -72,8 +72,8 @@ actor APIService {
     }
     
     // MARK: - Network Monitoring
-    
-    var isConnected: Bool {
+
+    nonisolated var isConnected: Bool {
         isOnline
     }
     
