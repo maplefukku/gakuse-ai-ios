@@ -56,6 +56,7 @@ struct PortfolioView: View {
                 StatisticsView()
             }
         }
+        .drawingGroup() // パフォーマンス最適化: レイヤー合成をまとめる
     }
     
     // MARK: - Profile Header

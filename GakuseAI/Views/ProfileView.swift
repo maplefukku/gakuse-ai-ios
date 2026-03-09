@@ -77,7 +77,6 @@ struct ProfileView: View {
                     .accessibilityIdentifier("languageSetting")
                     .accessibilityLabel("言語設定")
                 }
-
                 // Data Section
                 Section("データ") {
                     NavigationLink {
@@ -147,6 +146,7 @@ struct ProfileView: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel("設定画面")
             .navigationTitle("設定")
+            .drawingGroup() // パフォーマンス最適化: レイヤー合成を1回にまとめる
             .alert("エラー", isPresented: .init(
                 get: { viewModel.errorMessage != nil },
                 set: { if !$0 { viewModel.errorMessage = nil } }

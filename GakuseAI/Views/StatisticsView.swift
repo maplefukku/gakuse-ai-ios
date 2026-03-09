@@ -63,6 +63,7 @@ struct StatisticsView: View {
                     .presentationDragIndicator(.visible)
             }
         }
+        .drawingGroup() // パフォーマンス最適化: レイヤー合成をまとめる
     }
 
     // MARK: - Empty State

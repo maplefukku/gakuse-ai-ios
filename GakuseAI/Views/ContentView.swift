@@ -36,6 +36,7 @@ struct ContentView: View {
                 .accessibilityIdentifier("profileTab")
         }
         .animation(.easeInOut(duration: 0.25), value: navigationViewModel.selectedTab)
+        .drawingGroup() // パフォーマンス最適化: レイヤー合成を1回にまとめる
         .onChange(of: navigationViewModel.selectedTab) { oldValue, newValue in
             HapticFeedback.light() // タブ切替
         }

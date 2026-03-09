@@ -58,35 +58,36 @@ struct AIChatView: View {
                     .accessibilityHint("履歴のクリアやエクスポートができます")
                 }
             }
-            .alert("エラー", isPresented: .init(
-                get: { viewModel.errorMessage != nil },
-                set: { if !$0 { viewModel.errorMessage = nil } }
-            )) {
-                Button("OK") { viewModel.errorMessage = nil }
-            } message: {
-                if let error = viewModel.errorMessage {
-                    Text(error)
+        }
+        .drawingGroup() // パフォーマンス最適化: レイヤー合成をまとめる
+        .alert("エラー", isPresented: .init(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK") { viewModel.errorMessage = nil }
+        } message: {
+            if let error = viewModel.errorMessage {
+                Text(error)
+            }
+        }
+        .confirmationDialog("メッセージを削除", isPresented: $viewModel.showingDeleteConfirmation) {
+            Button("キャンセル", role: .cancel) { }
+            Button("削除", role: .destructive) {
+                Task {
+                    await viewModel.deleteMessage()
                 }
             }
-            .confirmationDialog("メッセージを削除", isPresented: $viewModel.showingDeleteConfirmation) {
-                Button("キャンセル", role: .cancel) { }
-                Button("削除", role: .destructive) {
-                    Task {
-                        await viewModel.deleteMessage()
-                    }
-                }
-            } message: {
-                Text("このメッセージを削除しますか？")
+        } message: {
+            Text("このメッセージを削除しますか？")
+        }
+        .sheet(isPresented: $viewModel.showingShareSheet) {
+            if let text = viewModel.messageToShare {
+                ShareSheet(items: [text] as [Any])
             }
-            .sheet(isPresented: $viewModel.showingShareSheet) {
-                if let text = viewModel.messageToShare {
-                    ShareSheet(items: [text] as [Any])
-                }
-            }
-            .sheet(isPresented: $viewModel.showingExportSheet) {
-                if let url = viewModel.exportURL {
-                    ShareSheet(items: [url] as [Any])
-                }
+        }
+        .sheet(isPresented: $viewModel.showingExportSheet) {
+            if let url = viewModel.exportURL {
+                ShareSheet(items: [url] as [Any])
             }
         }
     }
