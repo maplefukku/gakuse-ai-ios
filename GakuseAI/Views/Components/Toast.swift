@@ -1,0 +1,568 @@
+//
+//  Toast.swift
+//  GakuseAI
+//
+//  Created by fe-dev-2 on 2026-03-09.
+//
+
+import SwiftUI
+
+// MARK: - Toast Message
+struct ToastMessage: Identifiable, Equatable {
+    let id: String = UUID().uuidString
+    let text: String
+    let type: ToastType
+    let duration: TimeInterval
+    var icon: String?
+    var action: ToastAction?
+
+    init(
+        text: String,
+        type: ToastType = .info,
+        duration: TimeInterval = 3.0,
+        icon: String? = nil,
+        action: ToastAction? = nil
+    ) {
+        self.text = text
+        self.type = type
+        self.duration = duration
+        self.icon = icon
+        self.action = action
+    }
+
+    static func == (lhs: ToastMessage, rhs: ToastMessage) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
+// MARK: - Toast Type
+enum ToastType {
+    case success
+    case error
+    case warning
+    case info
+
+    var icon: String {
+        switch self {
+        case .success:
+            return "checkmark.circle.fill"
+        case .error:
+            return "xmark.circle.fill"
+        case .warning:
+            return "exclamationmark.triangle.fill"
+        case .info:
+            return "info.circle.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .success:
+            return .green
+        case .error:
+            return .red
+        case .warning:
+            return .orange
+        case .info:
+            return .blue
+        }
+    }
+
+    var backgroundColor: Color {
+        switch self {
+        case .success:
+            return Color(.systemGreen).opacity(0.1)
+        case .error:
+            return Color(.systemRed).opacity(0.1)
+        case .warning:
+            return Color(.systemOrange).opacity(0.1)
+        case .info:
+            return Color(.systemBlue).opacity(0.1)
+        }
+    }
+}
+
+// MARK: - Toast Action
+struct ToastAction {
+    let title: String
+    let action: () -> Void
+}
+
+// MARK: - Toast View
+struct Toast: View {
+    let message: ToastMessage
+    var style: ToastStyle = .standard
+    var onDismiss: (() -> Void)? = nil
+    var onAction: (() -> Void)? = nil
+
+    @State private var isPressed: Bool = false
+    @State private var offsetX: CGFloat = 0
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // アイコン
+            Image(systemName: message.icon ?? message.type.icon)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(message.type.color)
+                .frame(width: 24, height: 24)
+
+            // テキスト
+            Text(message.text)
+                .font(.system(size: style.fontSize, weight: .regular))
+                .foregroundColor(.primary)
+                .lineLimit(style.lineLimit)
+                .multilineTextAlignment(.leading)
+
+            Spacer()
+
+            // アクションボタン
+            if let action = message.action {
+                Button(action: {
+                    action.action()
+                    onAction?()
+                    onDismiss?()
+                }) {
+                    Text(action.title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(message.type.color)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+
+            // 閉じるボタン
+            if style.showDismissButton {
+                Button(action: onDismiss ?? {}) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(.horizontal, style.padding)
+        .padding(.vertical, style.padding * 0.75)
+        .background(toastBackground)
+        .cornerRadius(style.cornerRadius)
+        .overlay(
+            RoundedRectangle(cornerRadius: style.cornerRadius)
+                .stroke(message.type.color.opacity(0.2), lineWidth: style.borderWidth)
+        )
+        .shadow(color: Color.black.opacity(style.shadowOpacity), radius: style.shadowRadius, x: 0, y: style.shadowYOffset)
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .offset(x: offsetX)
+        .onTapGesture {
+            // スワイプして閉じる
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                offsetX = 300
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                onDismiss?()
+            }
+        }
+        .pressEvents(
+            onPressBegin: { isPressed = true },
+            onPressEnd: { isPressed = false }
+        )
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
+        .transition(.move(edge: .top).combined(with: .opacity))
+        .accessibilityLabel(message.text)
+        .accessibilityRole(.alert)
+        .accessibilityAddTraits(.button)
+    }
+
+    @ViewBuilder
+    private var toastBackground: some View {
+        if style.isTransparent {
+            message.type.backgroundColor
+        } else {
+            Color(.systemBackground)
+        }
+    }
+}
+
+// MARK: - Toast Style
+enum ToastStyle {
+    case standard
+    case minimal
+    case floating
+    case inline
+
+    var fontSize: CGFloat {
+        switch self {
+        case .standard:
+            return 14
+        case .minimal:
+            return 13
+        case .floating:
+            return 15
+        case .inline:
+            return 14
+        }
+    }
+
+    var padding: CGFloat {
+        switch self {
+        case .standard:
+            return 16
+        case .minimal:
+            return 12
+        case .floating:
+            return 18
+        case .inline:
+            return 12
+        }
+    }
+
+    var cornerRadius: CGFloat {
+        switch self {
+        case .standard:
+            return 12
+        case .minimal:
+            return 8
+        case .floating:
+            return 16
+        case .inline:
+            return 8
+        }
+    }
+
+    var borderWidth: CGFloat {
+        switch self {
+        case .standard:
+            return 1
+        case .minimal:
+            return 0
+        case .floating:
+            return 0
+        case .inline:
+            return 0
+        }
+    }
+
+    var shadowOpacity: Double {
+        switch self {
+        case .standard:
+            return 0.05
+        case .minimal:
+            return 0.0
+        case .floating:
+            return 0.1
+        case .inline:
+            return 0.0
+        }
+    }
+
+    var shadowRadius: CGFloat {
+        switch self {
+        case .standard:
+            return 8
+        case .minimal:
+            return 0
+        case .floating:
+            return 12
+        case .inline:
+            return 0
+        }
+    }
+
+    var shadowYOffset: CGFloat {
+        switch self {
+        case .standard:
+            return 4
+        case .minimal:
+            return 0
+        case .floating:
+            return 6
+        case .inline:
+            return 0
+        }
+    }
+
+    var lineLimit: Int {
+        switch self {
+        case .standard:
+            return 2
+        case .minimal:
+            return 1
+        case .floating:
+            return 3
+        case .inline:
+            return 1
+        }
+    }
+
+    var showDismissButton: Bool {
+        switch self {
+        case .standard:
+            return true
+        case .minimal:
+            return false
+        case .floating:
+            return true
+        case .inline:
+            return false
+        }
+    }
+
+    var isTransparent: Bool {
+        switch self {
+        case .standard:
+            return true
+        case .minimal:
+            return false
+        case .floating:
+            return true
+        case .inline:
+            return false
+        }
+    }
+}
+
+// MARK: - Press Events Modifier
+struct PressEventsModifier: ViewModifier {
+    var onPressBegin: () -> Void
+    var onPressEnd: () -> Void
+
+    @State private var isPressed = false
+
+    func body(content: Content) -> some View {
+        content
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        if !isPressed {
+                            isPressed = true
+                            onPressBegin()
+                        }
+                    }
+                    .onEnded { _ in
+                        isPressed = false
+                        onPressEnd()
+                    }
+            )
+    }
+}
+
+extension View {
+    func pressEvents(
+        onPressBegin: @escaping () -> Void = {},
+        onPressEnd: @escaping () -> Void = {}
+    ) -> some View {
+        modifier(PressEventsModifier(onPressBegin: onPressBegin, onPressEnd: onPressEnd))
+    }
+}
+
+// MARK: - Toast Container
+struct ToastContainer: View {
+    @Binding var messages: [ToastMessage]
+    var style: ToastStyle = .standard
+    var maxToasts: Int = 3
+
+    var body: some View {
+        VStack(spacing: 8) {
+            ForEach(Array(messages.prefix(maxToasts).enumerated()), id: \.element.id) { index, message in
+                Toast(
+                    message: message,
+                    style: style,
+                    onDismiss: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            messages.removeAll { $0.id == message.id }
+                        }
+                    }
+                )
+                .transition(.asymmetric(
+                    insertion: .move(edge: .top).combined(with: .opacity),
+                    removal: .move(edge: .top).combined(with: .opacity)
+                ))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .drawingGroup()
+    }
+}
+
+// MARK: - SwiftUI Previews
+#Preview("Standard Toasts") {
+    VStack(spacing: 20) {
+        Toast(
+            message: ToastMessage(
+                text: "保存しました",
+                type: .success,
+                duration: 3.0
+            ),
+            style: .standard
+        )
+
+        Toast(
+            message: ToastMessage(
+                text: "エラーが発生しました",
+                type: .error,
+                duration: 3.0
+            ),
+            style: .standard
+        )
+
+        Toast(
+            message: ToastMessage(
+                text: "警告: 保存されていません",
+                type: .warning,
+                duration: 3.0
+            ),
+            style: .standard
+        )
+
+        Toast(
+            message: ToastMessage(
+                text: "新しい通知が届きました",
+                type: .info,
+                duration: 3.0
+            ),
+            style: .standard
+        )
+    }
+    .padding()
+    .background(Color(.systemGroupedBackground))
+}
+
+#Preview("Minimal Toasts") {
+    VStack(spacing: 20) {
+        Toast(
+            message: ToastMessage(text: "成功", type: .success),
+            style: .minimal
+        )
+
+        Toast(
+            message: ToastMessage(text: "エラー", type: .error),
+            style: .minimal
+        )
+
+        Toast(
+            message: ToastMessage(text: "警告", type: .warning),
+            style: .minimal
+        )
+
+        Toast(
+            message: ToastMessage(text: "情報", type: .info),
+            style: .minimal
+        )
+    }
+    .padding()
+    .background(Color(.systemGroupedBackground))
+}
+
+#Preview("Floating Toasts") {
+    VStack(spacing: 20) {
+        Toast(
+            message: ToastMessage(
+                text: "データを正常に保存しました。バックアップも完了しました。",
+                type: .success,
+                duration: 5.0
+            ),
+            style: .floating
+        )
+
+        Toast(
+            message: ToastMessage(
+                text: "ネットワークエラーが発生しました。再試行してください。",
+                type: .error,
+                duration: 5.0
+            ),
+            style: .floating
+        )
+    }
+    .padding()
+    .background(Color(.systemGroupedBackground))
+}
+
+#Preview("Toast with Action") {
+    VStack(spacing: 20) {
+        Toast(
+            message: ToastMessage(
+                text: "削除しました",
+                type: .success,
+                action: ToastAction(title: "元に戻す") {
+                    print("Undo action")
+                }
+            ),
+            style: .standard,
+            onAction: {
+                print("Action triggered")
+            }
+        )
+
+        Toast(
+            message: ToastMessage(
+                text: "接続が切断されました",
+                type: .warning,
+                action: ToastAction(title: "再接続") {
+                    print("Reconnect action")
+                }
+            ),
+            style: .floating
+        )
+    }
+    .padding()
+    .background(Color(.systemGroupedBackground))
+}
+
+#Preview("Toast Container") {
+    ZStack {
+        Color(.systemGroupedBackground)
+
+        VStack {
+            Text("コンテンツ")
+                .font(.largeTitle)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+        VStack {
+            Spacer()
+
+            ToastContainer(
+                messages: .constant([
+                    ToastMessage(text: "最初のトースト", type: .success),
+                    ToastMessage(text: "2番目のトースト", type: .info),
+                    ToastMessage(text: "3番目のトースト", type: .warning),
+                ]),
+                style: .floating,
+                maxToasts: 3
+            )
+        }
+    }
+}
+
+#Preview("Toast Duration") {
+    VStack(spacing: 20) {
+        Text("異なる表示時間のトースト")
+            .font(.headline)
+
+        VStack(spacing: 10) {
+            HStack {
+                Text("2秒")
+                Toast(
+                    message: ToastMessage(text: "短いメッセージ", type: .info, duration: 2.0),
+                    style: .minimal
+                )
+            }
+
+            HStack {
+                Text("3秒")
+                Toast(
+                    message: ToastMessage(text: "標準メッセージ", type: .info, duration: 3.0),
+                    style: .minimal
+                )
+            }
+
+            HStack {
+                Text("5秒")
+                Toast(
+                    message: ToastMessage(text: "長いメッセージ", type: .info, duration: 5.0),
+                    style: .minimal
+                )
+            }
+        }
+    }
+    .padding()
+    .background(Color(.systemGroupedBackground))
+}
