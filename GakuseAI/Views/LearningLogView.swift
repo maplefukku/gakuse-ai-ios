@@ -197,6 +197,7 @@ struct LearningLogView: View {
                 }
             }
         }
+        .drawingGroup() // パフォーマンス改善: レイヤー合成を最適化
         .animation(.easeInOut(duration: 0.3), value: viewModel.filteredLogs.count)
         .navigationDestination(for: LearningLog.self) { log in
             LearningLogDetailView(log: log, viewModel: viewModel)
