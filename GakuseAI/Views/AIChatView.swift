@@ -168,7 +168,7 @@ struct AIChatView: View {
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                         .padding(.horizontal)
-                                    
+
                                     ForEach(group.messages) { message in
                                         MessageBubble(message: message, viewModel: viewModel)
                                             .id(message.id)
@@ -178,7 +178,7 @@ struct AIChatView: View {
                                             ))
                                     }
                                 }
-                                
+
                                 if viewModel.isLoading {
                                     HStack {
                                         Spacer()
@@ -192,6 +192,7 @@ struct AIChatView: View {
                         }
                         .padding()
                     }
+                    .drawingGroup() // パフォーマンス改善: レイヤー合成を最適化
                     .onChange(of: viewModel.messages.count) {
                         if let lastMessage = viewModel.messages.last {
                             withAnimation {
@@ -220,7 +221,7 @@ struct AIChatView: View {
                                         removal: .scale(scale: 0.9).combined(with: .opacity)
                                     ))
                             }
-                            
+
                             if viewModel.isLoading {
                                 HStack {
                                     Spacer()
@@ -233,6 +234,7 @@ struct AIChatView: View {
                         }
                         .padding()
                     }
+                    .drawingGroup() // パフォーマンス改善: レイヤー合成を最適化
                     .onChange(of: viewModel.filteredMessages.count) {
                         if let lastMessage = viewModel.filteredMessages.last {
                             withAnimation {
