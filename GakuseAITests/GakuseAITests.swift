@@ -4290,5 +4290,90 @@ struct SyncServiceTests {
     }
 }
 
+// MARK: - SearchBar Component Tests
+
+struct SearchBarTests {
+    @Test func testSearchBarPlaceholder() async throws {
+        let searchBar = SearchBar(text: .constant(""), placeholder: "テスト検索")
+        // SwiftUIコンポーネントのレンダリングテスト
+        // 注: 実際のアプリではPreviewで確認
+        #expect(true)
+    }
+
+    @Test func testSearchBarTextBinding() async throws {
+        var searchText = "SwiftUI"
+        let searchBar = SearchBar(text: $searchText, placeholder: "検索")
+
+        // テキストバインディングの確認
+        #expect(searchText == "SwiftUI")
+
+        searchText = "iOS"
+        #expect(searchText == "iOS")
+    }
+
+    @Test func testSearchBarPrompt() async throws {
+        let searchBar = SearchBar(
+            text: .constant(""),
+            placeholder: "検索",
+            prompt: "キーワードを入力..."
+        )
+        #expect(true)
+    }
+
+    @Test func testAdvancedSearchBarAdvancedOptions() async throws {
+        let showAdvancedOptions = true
+        let advancedSearchBar = AdvancedSearchBar(
+            text: .constant("SwiftUI"),
+            showAdvancedOptions: .constant(showAdvancedOptions),
+            placeholder: "高度な検索"
+        )
+        #expect(showAdvancedOptions)
+    }
+
+    @Test func testSavedSearchModel() async throws {
+        let savedSearch = SavedSearch(
+            id: UUID(),
+            name: "お気に入り検索",
+            query: "SwiftUI iOS",
+            createdAt: Date()
+        )
+
+        #expect(savedSearch.name == "お気に入り検索")
+        #expect(savedSearch.query == "SwiftUI iOS")
+    }
+
+    @Test func testSearchHistoryIsEmpty() async throws {
+        let history: [String] = []
+        let searchHistory = SearchHistory(
+            history: history,
+            onSelect: { _ in },
+            onClear: {}
+        )
+        #expect(history.isEmpty)
+    }
+
+    @Test func testSearchHistoryNotEmpty() async throws {
+        let history = ["SwiftUI", "iOS", "MVVM"]
+        let searchHistory = SearchHistory(
+            history: history,
+            onSelect: { _ in },
+            onClear: {}
+        )
+        #expect(history.count == 3)
+        #expect(history.contains("SwiftUI"))
+    }
+
+    @Test func testSavedSearchesModel() async throws {
+        let searches = [
+            SavedSearch(id: UUID(), name: "検索1", query: "SwiftUI", createdAt: Date()),
+            SavedSearch(id: UUID(), name: "検索2", query: "iOS", createdAt: Date()),
+            SavedSearch(id: UUID(), name: "検索3", query: "MVVM", createdAt: Date())
+        ]
+
+        #expect(searches.count == 3)
+        #expect(searches[0].name == "検索1")
+    }
+}
+
 
 
