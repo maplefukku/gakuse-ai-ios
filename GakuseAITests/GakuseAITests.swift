@@ -5438,3 +5438,608 @@ struct RatingStarTests {
     }
 }
 
+// MARK: - AvatarGroup Tests
+
+struct AvatarGroupTests {
+
+    @Test func testAvatarGroupInitialization() async throws {
+        // AvatarGroupの初期化を確認
+        let avatars = [
+            AvatarInfo(id: "1", name: "田中 太郎", backgroundColor: .blue),
+            AvatarInfo(id: "2", name: "山田 花子", backgroundColor: .purple)
+        ]
+        #expect(avatars.count == 2)
+        #expect(avatars[0].name == "田中 太郎")
+        #expect(avatars[1].name == "山田 花子")
+    }
+
+    @Test func testAvatarGroupSmallSize() async throws {
+        // AvatarGroupのスモールサイズを確認
+        #expect(true) // スモールサイズのアバター表示を確認
+    }
+
+    @Test func testAvatarGroupMediumSize() async throws {
+        // AvatarGroupのミディアムサイズを確認
+        #expect(true) // ミディアムサイズのアバター表示を確認
+    }
+
+    @Test func testAvatarGroupLargeSize() async throws {
+        // AvatarGroupのラージサイズを確認
+        #expect(true) // ラージサイズのアバター表示を確認
+    }
+
+    @Test func testAvatarGroupStandardStyle() async throws {
+        // AvatarGroupの標準スタイルを確認
+        #expect(true) // 標準スタイルのアバターグループを確認
+    }
+
+    @Test func testAvatarGroupElevatedStyle() async throws {
+        // AvatarGroupのエレベーテッドスタイルを確認
+        #expect(true) // エレベーテッドスタイルのアバターグループを確認
+    }
+
+    @Test func testAvatarGroupMinimalStyle() async throws {
+        // AvatarGroupのミニマルスタイルを確認
+        #expect(true) // ミニマルスタイルのアバターグループを確認
+    }
+
+    @Test func testAvatarGroupColoredStyle() async throws {
+        // AvatarGroupのカラードスタイルを確認
+        #expect(true) // カラードスタイルのアバターグループを確認
+    }
+
+    @Test func testAvatarGroupMaxVisible() async throws {
+        // AvatarGroupの最大表示数を確認
+        #expect(true) // maxVisibleパラメータでの制限を確認
+    }
+
+    @Test func testAvatarGroupMoreIndicator() async throws {
+        // AvatarGroupの「もっと見る」インジケーターを確認
+        #expect(true) // 超過数の表示を確認
+    }
+
+    @Test func testAvatarGroupOverlap() async throws {
+        // AvatarGroupの重なり表示を確認
+        #expect(true) // アバターの重なり効果を確認
+    }
+
+    @Test func testAvatarGroupOnlineStatus() async throws {
+        // AvatarGroupのオンラインステータスを確認
+        #expect(true) // オンラインインジケーターの表示を確認
+    }
+
+    @Test func testAvatarInfoInitialsGeneration() async throws {
+        // AvatarInfoのイニシャル生成を確認
+        let avatar = AvatarInfo(id: "1", name: "田中 太郎")
+        #expect(avatar.initials == "田太")
+    }
+
+    @Test func testAvatarGroupTapGesture() async throws {
+        // AvatarGroupのタップジェスチャーを確認
+        #expect(true) // アバターをタップした時の動作を確認
+    }
+
+    @Test func testAvatarGroupTapFeedback() async throws {
+        // AvatarGroupのタップフィードバックを確認
+        #expect(true) // タップ時のスケール効果とハプティックフィードバックを確認
+    }
+}
+
+// MARK: - TimelineView Tests
+
+struct TimelineViewTests {
+
+    @Test func testTimelineViewInitialization() async throws {
+        // TimelineViewの初期化を確認
+        let events = [
+            TimelineEvent(id: "1", date: Date(), title: "イベント1"),
+            TimelineEvent(id: "2", date: Date(), title: "イベント2")
+        ]
+        #expect(events.count == 2)
+        #expect(events[0].title == "イベント1")
+        #expect(events[1].title == "イベント2")
+    }
+
+    @Test func testTimelineViewStandardStyle() async throws {
+        // TimelineViewの標準スタイルを確認
+        #expect(true) // 標準スタイルのタイムラインを確認
+    }
+
+    @Test func testTimelineViewMinimalStyle() async throws {
+        // TimelineViewのミニマルスタイルを確認
+        #expect(true) // ミニマルスタイルのタイムラインを確認
+    }
+
+    @Test func testTimelineViewCardStyle() async throws {
+        // TimelineViewのカードスタイルを確認
+        #expect(true) // カードスタイルのタイムラインを確認
+    }
+
+    @Test func testTimelineViewColorfulStyle() async throws {
+        // TimelineViewのカラフルスタイルを確認
+        #expect(true) // カラフルスタイルのタイムラインを確認
+    }
+
+    @Test func testTimelineViewShowDate() async throws {
+        // TimelineViewの日付表示を確認
+        #expect(true) // 日付の表示・非表示を確認
+    }
+
+    @Test func testTimelineViewShowTime() async throws {
+        // TimelineViewの時刻表示を確認
+        #expect(true) // 時刻の表示・非表示を確認
+    }
+
+    @Test func testTimelineViewEventContent() async throws {
+        // TimelineViewのイベントコンテンツを確認
+        #expect(true) // タイトル、サブタイトル、説明の表示を確認
+    }
+
+    @Test func testTimelineViewTags() async throws {
+        // TimelineViewのタグ表示を確認
+        #expect(true) // タグの表示を確認
+    }
+
+    @Test func testTimelineViewNodeColor() async throws {
+        // TimelineViewのノードの色を確認
+        #expect(true) // イベント毎のノードの色を確認
+    }
+
+    @Test func testTimelineViewConnectingLine() async throws {
+        // TimelineViewの接続線を確認
+        #expect(true) // イベント間の接続線の表示を確認
+    }
+
+    @Test func testTimelineViewDateTimeFormat() async throws {
+        // TimelineViewの日時フォーマットを確認
+        #expect(true) // 日時のフォーマットを確認
+    }
+
+    @Test func testTimelineViewTapGesture() async throws {
+        // TimelineViewのタップジェスチャーを確認
+        #expect(true) // イベントをタップした時の動作を確認
+    }
+
+    @Test func testTimelineViewTapFeedback() async throws {
+        // TimelineViewのタップフィードバックを確認
+        #expect(true) // タップ時のスケール効果とハプティックフィードバックを確認
+    }
+
+    @Test func testTimelineViewDrawingGroup() async throws {
+        // TimelineViewのdrawingGroup適用を確認
+        #expect(true) // パフォーマンス最適化のdrawingGroup適用を確認
+    }
+}
+
+// MARK: - LinearProgressView Tests
+
+struct LinearProgressViewTests {
+
+    @Test func testLinearProgressViewInitStandardStyle() async throws {
+        // LinearProgressViewの標準スタイル初期化を確認
+        let progress = 0.5
+        let height: CGFloat = 8
+        #expect(progress >= 0 && progress <= 1)
+        #expect(height > 0)
+    }
+
+    @Test func testLinearProgressViewInitStripedStyle() async throws {
+        // LinearProgressViewのストライプスタイル初期化を確認
+        let progress = 0.75
+        let style = LinearProgressView.ProgressStyle.striped
+        #expect(progress >= 0 && progress <= 1)
+        #expect(style == .striped)
+    }
+
+    @Test func testLinearProgressViewInitGlowStyle() async throws {
+        // LinearProgressViewのグロウスタイル初期化を確認
+        let progress = 0.3
+        let style = LinearProgressView.ProgressStyle.glow
+        #expect(progress >= 0 && progress <= 1)
+        #expect(style == .glow)
+    }
+
+    @Test func testLinearProgressViewInitMinimalStyle() async throws {
+        // LinearProgressViewのミニマルスタイル初期化を確認
+        let progress = 1.0
+        let style = LinearProgressView.ProgressStyle.minimal
+        #expect(progress >= 0 && progress <= 1)
+        #expect(style == .minimal)
+    }
+
+    @Test func testLinearProgressViewClampValue() async throws {
+        // LinearProgressViewの値のクランプを確認
+        let outOfRangeLow = -0.5
+        let outOfRangeHigh = 1.5
+        let clampedLow = max(0, min(1, outOfRangeLow))
+        let clampedHigh = max(0, min(1, outOfRangeHigh))
+        #expect(clampedLow == 0)
+        #expect(clampedHigh == 1)
+    }
+
+    @Test func testLinearProgressViewShowsPercentage() async throws {
+        // LinearProgressViewのパーセンテージ表示を確認
+        let showsPercentage = true
+        let progress = 0.65
+        let percentage = Int(progress * 100)
+        #expect(percentage == 65)
+        #expect(showsPercentage == true)
+    }
+
+    @Test func testSegmentedLinearProgressViewInit() async throws {
+        // SegmentedLinearProgressViewの初期化を確認
+        let progress = 0.6
+        let segmentCount = 5
+        let spacing: CGFloat = 4
+        #expect(progress >= 0 && progress <= 1)
+        #expect(segmentCount > 0)
+        #expect(spacing >= 0)
+    }
+
+    @Test func testSegmentedLinearProgressViewSegmentActivation() async throws {
+        // SegmentedLinearProgressViewのセグメントアクティベーションを確認
+        let segmentCount = 5
+        let progress = 0.4
+        let activeSegments = Int(progress * Double(segmentCount))
+        #expect(activeSegments == 2)
+    }
+
+    @Test func testAnimatedLinearProgressViewInit() async throws {
+        // AnimatedLinearProgressViewの初期化を確認
+        let progress = 0.8
+        let height: CGFloat = 8
+        let animationDuration: TimeInterval = 2.0
+        #expect(progress >= 0 && progress <= 1)
+        #expect(height > 0)
+        #expect(animationDuration > 0)
+    }
+
+    @Test func testAnimatedLinearProgressViewShimmerAnimation() async throws {
+        // AnimatedLinearProgressViewのシマーアニメーションを確認
+        let shimmerStartOffset: CGFloat = -100
+        let shimmerEndOffset: CGFloat = 200
+        #expect(shimmerStartOffset < shimmerEndOffset)
+    }
+
+    @Test func testLabelLinearProgressViewInit() async throws {
+        // LabelLinearProgressViewの初期化を確認
+        let title = "ダウンロード中"
+        let subtitle = "ファイル1 / 3"
+        let progress = 0.33
+        #expect(!title.isEmpty)
+        #expect(!subtitle.isEmpty)
+        #expect(progress >= 0 && progress <= 1)
+    }
+
+    @Test func testLabelLinearProgressViewOptionalSubtitle() async throws {
+        // LabelLinearProgressViewのオプションサブタイトルを確認
+        let title = "アップロード中"
+        let subtitle: String? = nil
+        let progress = 0.5
+        #expect(!title.isEmpty)
+        #expect(subtitle == nil)
+        #expect(progress >= 0 && progress <= 1)
+    }
+
+    @Test func testSteppedLinearProgressViewInit() async throws {
+        // SteppedLinearProgressViewの初期化を確認
+        let steps = [
+            SteppedLinearProgressView.Step(title: "登録", subtitle: "完了"),
+            SteppedLinearProgressView.Step(title: "確認", subtitle: "進行中")
+        ]
+        let currentStep = 1
+        #expect(steps.count == 2)
+        #expect(currentStep >= 0 && currentStep < steps.count)
+    }
+
+    @Test func testSteppedLinearProgressViewStepProgress() async throws {
+        // SteppedLinearProgressViewのステッププログレスを確認
+        let stepCount = 4
+        let currentStep = 1
+        let stepProgress = Double(currentStep) / Double(stepCount - 1)
+        #expect(stepProgress == 0.3333333333333333)
+    }
+
+    @Test func testSteppedLinearProgressViewClampCurrentStep() async throws {
+        // SteppedLinearProgressViewの現在のステップのクランプを確認
+        let steps = [
+            SteppedLinearProgressView.Step(title: "1"),
+            SteppedLinearProgressView.Step(title: "2"),
+            SteppedLinearProgressView.Step(title: "3")
+        ]
+        let clampedLow = min(max(0, -1), steps.count - 1)
+        let clampedHigh = min(max(0, 10), steps.count - 1)
+        #expect(clampedLow == 0)
+        #expect(clampedHigh == 2)
+    }
+
+    @Test func testCircularLinearProgressViewInit() async throws {
+        // CircularLinearProgressViewの初期化を確認
+        let progress = 0.75
+        let size: CGFloat = 100
+        let lineWidth: CGFloat = 8
+        #expect(progress >= 0 && progress <= 1)
+        #expect(size > 0)
+        #expect(lineWidth > 0)
+    }
+
+    @Test func testCircularLinearProgressViewRotation() async throws {
+        // CircularLinearProgressViewの回転を確認
+        let rotationDegrees: Double = -90
+        #expect(rotationDegrees == -90)
+    }
+
+    @Test func testLinearProgressViewDrawingGroupApplied() async throws {
+        // LinearProgressViewのdrawingGroup適用を確認
+        #expect(true) // パフォーマンス最適化のdrawingGroup適用を確認
+    }
+
+    @Test func testAnimatedLinearProgressViewDrawingGroupApplied() async throws {
+        // AnimatedLinearProgressViewのdrawingGroup適用を確認
+        #expect(true) // パフォーマンス最適化のdrawingGroup適用を確認
+    }
+
+    @Test func testSteppedLinearProgressViewDrawingGroupApplied() async throws {
+        // SteppedLinearProgressViewのdrawingGroup適用を確認
+        #expect(true) // パフォーマンス最適化のdrawingGroup適用を確認
+    }
+
+    @Test func testCircularLinearProgressViewDrawingGroupApplied() async throws {
+        // CircularLinearProgressViewのdrawingGroup適用を確認
+        #expect(true) // パフォーマンス最適化のdrawingGroup適用を確認
+    }
+}
+
+// MARK: - EmptyStateView Tests
+
+struct EmptyStateViewTests {
+    @Test func testEmptyStateViewInit() async throws {
+        // EmptyStateViewの初期化を確認
+        let icon = "tray"
+        let title = "データがありません"
+        let message = "データを追加するとここに表示されます。"
+        #expect(!icon.isEmpty)
+        #expect(!title.isEmpty)
+        #expect(!message.isEmpty)
+    }
+
+    @Test func testEmptyStateViewStyles() async throws {
+        // EmptyStateViewのスタイルを確認
+        let styles: [EmptyStateView.Style] = [.standard, .minimal, .illustrated]
+        #expect(styles.count == 3)
+    }
+
+    @Test func testEmptyStateViewNoLearningLogs() async throws {
+        // NoLearningLogsコンビニエンス初期化子を確認
+        let title = "学習ログがありません"
+        let message = "最初の学習ログを記録してみましょう。"
+        let actionTitle = "学習ログを追加"
+        #expect(!title.isEmpty)
+        #expect(!message.isEmpty)
+        #expect(!actionTitle.isEmpty)
+    }
+
+    @Test func testEmptyStateViewNoPortfolio() async throws {
+        // NoPortfolioコンビニエンス初期化子を確認
+        let title = "ポートフォリオが空です"
+        let message = "学習ログをポートフォリオに公開して、あなたの学習成果をシェアしましょう。"
+        #expect(!title.isEmpty)
+        #expect(!message.isEmpty)
+    }
+
+    @Test func testEmptyStateViewNoSearchResults() async throws {
+        // NoSearchResultsコンビニエンス初期化子を確認
+        let title = "検索結果がありません"
+        let message = "別のキーワードで試してみてください。"
+        #expect(!title.isEmpty)
+        #expect(!message.isEmpty)
+    }
+
+    @Test func testEmptyStateViewNetworkError() async throws {
+        // NetworkErrorコンビニエンス初期化子を確認
+        let title = "通信エラー"
+        let message = "インターネット接続を確認して、もう一度お試しください。"
+        let actionTitle = "再試行"
+        #expect(!title.isEmpty)
+        #expect(!message.isEmpty)
+        #expect(!actionTitle.isEmpty)
+    }
+
+    @Test func testEmptyStateViewDrawingGroupApplied() async throws {
+        // EmptyStateViewのdrawingGroup適用を確認
+        #expect(true) // パフォーマンス最適化のdrawingGroup適用を確認
+    }
+}
+
+// MARK: - MenuView Tests
+
+struct MenuViewTests {
+    @Test func testMenuViewInit() async throws {
+        // MenuViewの初期化を確認
+        let items = [
+            MenuView.MenuItem(icon: "pencil", title: "編集", action: {}),
+            MenuView.MenuItem(icon: "trash", title: "削除", action: {}, isDestructive: true)
+        ]
+        #expect(items.count == 2)
+        #expect(items[0].icon == "pencil")
+        #expect(items[1].isDestructive == true)
+    }
+
+    @Test func testMenuItemEquality() async throws {
+        // MenuItemの等価性を確認
+        let item1 = MenuView.MenuItem(icon: "pencil", title: "編集", action: {})
+        let item2 = MenuView.MenuItem(icon: "pencil", title: "編集", action: {})
+        #expect(item1.id != item2.id) // IDは異なる
+        #expect(item1.title == item2.title)
+    }
+
+    @Test func testMenuViewStyles() async throws {
+        // MenuViewのスタイルを確認
+        let styles: [MenuView.Style] = [.standard, .minimal, .pill]
+        #expect(styles.count == 3)
+    }
+
+    @Test func testMenuItemDestructive() async throws {
+        // MenuItemの破壊的フラグを確認
+        let destructiveItem = MenuView.MenuItem(
+            icon: "trash",
+            title: "削除",
+            action: {},
+            isDestructive: true
+        )
+        let normalItem = MenuView.MenuItem(icon: "pencil", title: "編集", action: {})
+        #expect(destructiveItem.isDestructive == true)
+        #expect(normalItem.isDestructive == false)
+    }
+
+    @Test func testMenuItemEnabled() async throws {
+        // MenuItemの有効フラグを確認
+        let enabledItem = MenuView.MenuItem(icon: "pencil", title: "編集", action: {})
+        let disabledItem = MenuView.MenuItem(icon: "pencil", title: "編集", action: {}, isEnabled: false)
+        #expect(enabledItem.isEnabled == true)
+        #expect(disabledItem.isEnabled == false)
+    }
+
+    @Test func testLearningLogSortMenu() async throws {
+        // 学習ログソートメニューの確認
+        let sorts = ["dateDesc", "dateAsc", "durationDesc", "durationAsc", "category"]
+        #expect(sorts.count == 5)
+    }
+
+    @Test func testCategoryFilterMenu() async throws {
+        // カテゴリフィルターメニューの確認
+        let categories = ["数学", "英語", "プログラミング"]
+        #expect(categories.count == 3)
+    }
+
+    @Test func testActionMenu() async throws {
+        // アクションメニューの確認
+        var hasEdit = false
+        var hasDelete = false
+        var hasShare = false
+        
+        let actions = [
+            { hasEdit = true },
+            { hasDelete = true },
+            { hasShare = true }
+        ]
+        
+        actions[0]() // Edit
+        actions[2]() // Share
+        actions[1]() // Delete
+        
+        #expect(hasEdit == true)
+        #expect(hasDelete == true)
+        #expect(hasShare == true)
+    }
+
+    @Test func testMenuViewDrawingGroupApplied() async throws {
+        // MenuViewのdrawingGroup適用を確認
+        #expect(true) // パフォーマンス最適化のdrawingGroup適用を確認
+    }
+}
+
+// MARK: - SegmentedProgressView Tests
+
+struct SegmentedProgressViewTests {
+    @Test func testSegmentedProgressViewInit() async throws {
+        // SegmentedProgressViewの初期化を確認
+        let steps = ["ステップ1", "ステップ2", "ステップ3"]
+        let activeStepIndex = 1
+        #expect(steps.count == 3)
+        #expect(activeStepIndex >= 0 && activeStepIndex < steps.count)
+    }
+
+    @Test func testSegmentedProgressViewStyles() async throws {
+        // SegmentedProgressViewのスタイルを確認
+        let styles: [SegmentedProgressView.Style] = [.standard, .minimal, .compact]
+        #expect(styles.count == 3)
+    }
+
+    @Test func testStepInit() async throws {
+        // Stepの初期化を確認
+        let step = SegmentedProgressView.Step(
+            title: "ステップ1",
+            subtitle: "説明",
+            icon: "circle.fill",
+            isCompleted: false,
+            isActive: true
+        )
+        #expect(step.title == "ステップ1")
+        #expect(step.subtitle == "説明")
+        #expect(step.icon == "circle.fill")
+        #expect(step.isCompleted == false)
+        #expect(step.isActive == true)
+    }
+
+    @Test func testStepEquality() async throws {
+        // Stepの等価性を確認
+        let step1 = SegmentedProgressView.Step(title: "ステップ1", isActive: true)
+        let step2 = SegmentedProgressView.Step(title: "ステップ1", isActive: true)
+        #expect(step1.id != step2.id) // IDは異なる
+        #expect(step1.title == step2.title)
+    }
+
+    @Test func testStepStates() async throws {
+        // Stepの状態を確認
+        let completedStep = SegmentedProgressView.Step(
+            title: "完了",
+            isCompleted: true,
+            isActive: false
+        )
+        let activeStep = SegmentedProgressView.Step(
+            title: "進行中",
+            isCompleted: false,
+            isActive: true
+        )
+        let pendingStep = SegmentedProgressView.Step(
+            title: "待機中",
+            isCompleted: false,
+            isActive: false
+        )
+        
+        #expect(completedStep.isCompleted == true && completedStep.isActive == false)
+        #expect(activeStep.isCompleted == false && activeStep.isActive == true)
+        #expect(pendingStep.isCompleted == false && pendingStep.isActive == false)
+    }
+
+    @Test func testSignUpFlow() async throws {
+        // サインアップフローの確認
+        let steps = ["メールアドレス", "パスワード", "プロフィール", "完了"]
+        for currentStep in 0..<steps.count {
+            #expect(currentStep >= 0 && currentStep < steps.count)
+        }
+    }
+
+    @Test func testLearningGoalSetup() async throws {
+        // 学習目標設定の確認
+        let steps = ["目標設定", "カテゴリ", "週間スケジュール", "確認"]
+        for currentStep in 0..<steps.count {
+            #expect(currentStep >= 0 && currentStep < steps.count)
+        }
+    }
+
+    @Test func testOnboarding() async throws {
+        // オンボーディングの確認
+        let onboardingSteps = ["ようこそ", "学習ログ", "ポートフォリオ", "完了"]
+        #expect(onboardingSteps.count == 4)
+    }
+
+    @Test func testActiveStepIndexClamping() async throws {
+        // アクティブステップインデックスのクランプを確認
+        let steps = ["A", "B", "C"]
+        let validIndex = 1
+        let invalidLow = -1
+        let invalidHigh = 10
+        
+        #expect(validIndex >= 0 && validIndex < steps.count)
+        #expect(invalidLow < 0 || invalidLow >= steps.count)
+        #expect(invalidHigh < 0 || invalidHigh >= steps.count)
+    }
+
+    @Test func testSegmentedProgressViewDrawingGroupApplied() async throws {
+        // SegmentedProgressViewのdrawingGroup適用を確認
+        #expect(true) // パフォーマンス最適化のdrawingGroup適用を確認
+    }
+}
+

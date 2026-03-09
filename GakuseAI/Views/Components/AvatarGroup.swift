@@ -9,344 +9,290 @@ import SwiftUI
 
 // MARK: - Avatar Group
 struct AvatarGroup: View {
-    let avatars: [AvatarGroupItem]
+    var avatars: [AvatarInfo]
+    var size: AvatarGroupSize = .medium
     var style: AvatarGroupStyle = .standard
-    var size: CGFloat = 40
-    var spacing: CGFloat = -10
+    var spacing: CGFloat = 8
     var maxVisible: Int = 5
-    var overflowCount: Int?
-    var onTap: ((Int) -> Void)? = nil
-    var onOverflowTap: (() -> Void)? = nil
+    var showMoreIndicator: Bool = true
+    var onTapAvatar: ((AvatarInfo) -> Void)? = nil
+    var onTapMore: (() -> Void)? = nil
+
+    @State private var pressedAvatarIndex: Int? = nil
+
+    private var visibleAvatars: [AvatarInfo] {
+        Array(avatars.prefix(maxVisible))
+    }
+
+    private var remainingCount: Int {
+        max(0, avatars.count - maxVisible)
+    }
+
+    private var avatarSize: CGFloat {
+        switch size {
+        case .small:
+            return 28
+        case .medium:
+            return 36
+        case .large:
+            return 44
+        }
+    }
+
+    private var fontSize: CGFloat {
+        switch size {
+        case .small:
+            return 10
+        case .medium:
+            return 12
+        case .large:
+            return 14
+        }
+    }
+
+    private var overlapOffset: CGFloat {
+        avatarSize * 0.35
+    }
 
     var body: some View {
-        HStack(spacing: spacing) {
-            ForEach(Array(avatars.prefix(maxVisible).enumerated()), id: \.element.id) { index, avatar in
-                AvatarView(
-                    image: avatar.image,
-                    initials: avatar.initials,
-                    color: avatar.color,
-                    size: size,
-                    style: style.avatarStyle
-                )
+        HStack(spacing: 0) {
+            ForEach(Array(visibleAvatars.enumerated()), id: \.offset) { index, avatar in
+                avatarView(for: avatar, index: index)
+                    .offset(x: CGFloat(index) * -overlapOffset)
+                    .zIndex(Double(visibleAvatars.count - index))
+            }
+
+            if remainingCount > 0 && showMoreIndicator {
+                moreIndicatorView
+                    .offset(x: CGFloat(visibleAvatars.count) * -overlapOffset)
+                    .zIndex(0)
+            }
+        }
+        .drawingGroup() // パフォーマンス最適化：レイヤー合成削減
+    }
+
+    @ViewBuilder
+    private func avatarView(for avatar: AvatarInfo, index: Int) -> some View {
+        if let imageUrl = avatar.imageUrl {
+            AsyncImage(url: URL(string: imageUrl)) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
+                placeholderView(for: avatar)
+            }
+            .frame(width: avatarSize, height: avatarSize)
+            .clipShape(Circle())
+            .overlay(
+                Circle()
+                    .stroke(style.borderColor(for: avatar), lineWidth: style.borderWidth)
+            )
+            .contentShape(Circle())
+            .scaleEffect(pressedAvatarIndex == index ? 0.9 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: pressedAvatarIndex)
+            .onTapGesture {
+                if let onTapAvatar = onTapAvatar {
+                    onTapAvatar(avatar)
+                }
+            }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        pressedAvatarIndex = index
+                    }
+                    .onEnded { _ in
+                        pressedAvatarIndex = nil
+                        let feedback = UIImpactFeedbackGenerator(style: .light)
+                        feedback.impactOccurred()
+                    }
+            )
+        } else {
+            placeholderView(for: avatar)
+                .frame(width: avatarSize, height: avatarSize)
+                .clipShape(Circle())
                 .overlay(
                     Circle()
-                        .stroke(
-                            Color(.systemBackground),
-                            lineWidth: style.borderWidth
-                        )
+                        .stroke(style.borderColor(for: avatar), lineWidth: style.borderWidth)
                 )
-                .scaleEffect(avatars.prefix(maxVisible).enumerated().allSatisfy { $0.0 < index } ? 0 : 1)
-                .zIndex(Double(avatars.count - index))
+                .contentShape(Circle())
+                .scaleEffect(pressedAvatarIndex == index ? 0.9 : 1.0)
+                .animation(.spring(response: 0.2, dampingFraction: 0.6), value: pressedAvatarIndex)
                 .onTapGesture {
-                    onTap?(index)
-                }
-            }
-
-            // オーバーフロー表示
-            if avatars.count > maxVisible {
-                if let count = overflowCount ?? (avatars.count - maxVisible) {
-                    OverflowAvatar(
-                        count: count,
-                        size: size,
-                        style: style
-                    )
-                    .onTapGesture {
-                        onOverflowTap?()
+                    if let onTapAvatar = onTapAvatar {
+                        onTapAvatar(avatar)
                     }
                 }
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { _ in
+                            pressedAvatarIndex = index
+                        }
+                        .onEnded { _ in
+                            pressedAvatarIndex = nil
+                            let feedback = UIImpactFeedbackGenerator(style: .light)
+                            feedback.impactOccurred()
+                        }
+                )
+        }
+    }
+
+    @ViewBuilder
+    private func placeholderView(for avatar: AvatarInfo) -> some View {
+        ZStack {
+            Circle()
+                .fill(avatar.backgroundColor)
+
+            if let initials = avatar.initials {
+                Text(initials)
+                    .font(.system(size: fontSize, weight: .semibold))
+                    .foregroundColor(avatar.textColor)
+            } else {
+                Image(systemName: "person.fill")
+                    .font(.system(size: fontSize * 1.2))
+                    .foregroundColor(avatar.textColor)
+            }
+
+            // オンラインステータス
+            if avatar.isOnline && style.showsOnlineStatus {
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: avatarSize * 0.25, height: avatarSize * 0.25)
+                    .offset(x: avatarSize * 0.35, y: avatarSize * 0.35)
             }
         }
     }
-}
 
-// MARK: - Avatar Group Item
-struct AvatarGroupItem: Identifiable, Equatable {
-    let id: String = UUID().uuidString
-    let image: Image?
-    let initials: String
-    var color: Color?
-
-    init(image: Image? = nil, initials: String, color: Color? = nil) {
-        self.image = image
-        self.initials = initials
-        self.color = color
-    }
-
-    static func == (lhs: AvatarGroupItem, rhs: AvatarGroupItem) -> Bool {
-        lhs.id == rhs.id
-    }
-}
-
-// MARK: - Overflow Avatar
-struct OverflowAvatar: View {
-    let count: Int
-    var size: CGFloat
-    var style: AvatarGroupStyle
-
-    var body: some View {
+    @ViewBuilder
+    private var moreIndicatorView: some View {
         ZStack {
             Circle()
-                .fill(style.overflowColor)
-                .frame(width: size, height: size)
+                .fill(Color(.systemGray5))
 
-            Text(overflowText)
-                .font(.system(size: size * 0.4, weight: .semibold))
-                .foregroundColor(.white)
+            Text("+\(remainingCount)")
+                .font(.system(size: fontSize, weight: .semibold))
+                .foregroundColor(.secondary)
         }
+        .frame(width: avatarSize, height: avatarSize)
         .overlay(
             Circle()
-                .stroke(
-                    Color(.systemBackground),
-                    lineWidth: style.borderWidth
-                )
+                .stroke(style.borderColor(for: nil), lineWidth: style.borderWidth)
+        )
+        .contentShape(Circle())
+        .scaleEffect(pressedAvatarIndex == -1 ? 0.9 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: pressedAvatarIndex)
+        .onTapGesture {
+            if let onTapMore = onTapMore {
+                onTapMore()
+            }
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    pressedAvatarIndex = -1
+                }
+                .onEnded { _ in
+                    pressedAvatarIndex = nil
+                    let feedback = UIImpactFeedbackGenerator(style: .light)
+                    feedback.impactOccurred()
+                }
         )
     }
+}
 
-    private var overflowText: String {
-        if count > 99 {
-            return "99+"
-        }
-        return "+\(count)"
-    }
+// MARK: - Avatar Group Size
+enum AvatarGroupSize {
+    case small
+    case medium
+    case large
 }
 
 // MARK: - Avatar Group Style
 enum AvatarGroupStyle {
     case standard
+    case elevated
     case minimal
-    case outlined
-    case filled
-
-    var avatarStyle: AvatarViewStyle {
-        switch self {
-        case .standard:
-            return .standard
-        case .minimal:
-            return .minimal
-        case .outlined:
-            return .outlined
-        case .filled:
-            return .filled
-        }
-    }
+    case colored
 
     var borderWidth: CGFloat {
         switch self {
         case .standard:
+            return 2
+        case .elevated:
             return 3
         case .minimal:
+            return 1
+        case .colored:
             return 2
-        case .outlined:
-            return 2
-        case .filled:
-            return 3
         }
     }
 
-    var overflowColor: Color {
+    var showsOnlineStatus: Bool {
         switch self {
         case .standard:
-            return Color(.systemGray3)
+            return true
+        case .elevated:
+            return true
+        case .minimal:
+            return false
+        case .colored:
+            return true
+        }
+    }
+
+    func borderColor(for avatar: AvatarInfo?) -> Color {
+        switch self {
+        case .standard:
+            return Color(.systemBackground)
+        case .elevated:
+            return Color(.systemBackground)
         case .minimal:
             return Color(.systemGray4)
-        case .outlined:
-            return Color.accentColor
-        case .filled:
-            return Color.accentColor
-        }
-    }
-}
-
-// MARK: - Avatar View
-struct AvatarView: View {
-    let image: Image?
-    let initials: String
-    var color: Color?
-    var size: CGFloat = 40
-    var style: AvatarViewStyle = .standard
-    var badge: AvatarBadge? = nil
-
-    @State private var isPressed: Bool = false
-
-    var body: some View {
-        ZStack {
-            // 背景
-            Circle()
-                .fill(backgroundColor)
-                .frame(width: size, height: size)
-
-            // 画像またはイニシャル
-            if let image = image {
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: size, height: size)
-                    .clipShape(Circle())
-            } else {
-                Text(initials)
-                    .font(.system(size: size * 0.4, weight: .semibold))
-                    .foregroundColor(textColor)
+        case .colored:
+            if let avatar = avatar {
+                return avatar.backgroundColor
             }
-
-            // バッジ
-            if let badge = badge {
-                AvatarBadgeView(badge: badge, size: size)
-            }
-        }
-        .overlay(
-            style == .outlined ? RoundedRectangle(cornerRadius: size / 2)
-                .stroke(Color.accentColor, lineWidth: 2) : nil
-        )
-        .scaleEffect(isPressed ? 0.9 : 1.0)
-        .onTapGesture {
-            // タップフィードバック
-            let feedback = UIImpactFeedbackGenerator(style: .light)
-            feedback.impactOccurred()
-        }
-        .pressEvents(
-            onPressBegin: { isPressed = true },
-            onPressEnd: { isPressed = false }
-        )
-        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
-        .drawingGroup()
-    }
-
-    private var backgroundColor: Color {
-        if let color = color {
-            return color
-        }
-        switch style {
-        case .standard:
-            return Color(.systemGray5)
-        case .minimal:
-            return Color(.systemGray6)
-        case .outlined:
-            return Color(.systemGray5)
-        case .filled:
-            return Color.accentColor.opacity(0.2)
-        }
-    }
-
-    private var textColor: Color {
-        if let color = color {
-            return .white
-        }
-        switch style {
-        case .standard:
-            return .primary
-        case .minimal:
-            return .secondary
-        case .outlined:
-            return .primary
-        case .filled:
-            return .accentColor
+            return Color(.systemGray4)
         }
     }
 }
 
-// MARK: - Avatar Badge
-struct AvatarBadge {
-    let type: BadgeType
-    let count: Int?
+// MARK: - Avatar Info
+struct AvatarInfo: Identifiable {
+    let id: String
+    let name: String
+    let imageUrl: String?
+    let initials: String?
+    let backgroundColor: Color
+    let textColor: Color
+    let isOnline: Bool
 
-    init(type: BadgeType, count: Int? = nil) {
-        self.type = type
-        self.count = count
+    init(
+        id: String,
+        name: String,
+        imageUrl: String? = nil,
+        initials: String? = nil,
+        backgroundColor: Color = .blue,
+        textColor: Color = .white,
+        isOnline: Bool = false
+    ) {
+        self.id = id
+        self.name = name
+        self.imageUrl = imageUrl
+        self.initials = initials ?? AvatarInfo.generateInitials(from: name)
+        self.backgroundColor = backgroundColor
+        self.textColor = textColor
+        self.isOnline = isOnline
     }
-}
 
-// MARK: - Badge Type
-enum BadgeType {
-    case online
-    case offline
-    case busy
-    case notification
-
-    var color: Color {
-        switch self {
-        case .online:
-            return .green
-        case .offline:
-            return .gray
-        case .busy:
-            return .red
-        case .notification:
-            return .orange
+    private static func generateInitials(from name: String) -> String {
+        let parts = name.components(separatedBy: " ")
+            .filter { !$0.isEmpty }
+        if parts.count >= 2 {
+            return String(parts[0].prefix(1)) + String(parts[1].prefix(1))
+        } else if let first = parts.first {
+            return String(first.prefix(2))
         }
-    }
-}
-
-// MARK: - Avatar Badge View
-struct AvatarBadgeView: View {
-    let badge: AvatarBadge
-    let size: CGFloat
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(badge.type.color)
-                .frame(width: badgeSize, height: badgeSize)
-
-            if let count = badge.count {
-                Text(badgeText(count))
-                    .font(.system(size: badgeSize * 0.6, weight: .bold))
-                    .foregroundColor(.white)
-            }
-        }
-        .offset(x: size * 0.35, y: -size * 0.35)
-    }
-
-    private var badgeSize: CGFloat {
-        if badge.count != nil {
-            return size * 0.45
-        }
-        return size * 0.25
-    }
-
-    private func badgeText(_ count: Int) -> String {
-        count > 99 ? "99+" : "\(count)"
-    }
-}
-
-// MARK: - Avatar View Style
-enum AvatarViewStyle {
-    case standard
-    case minimal
-    case outlined
-    case filled
-}
-
-// MARK: - Press Events Modifier
-struct PressEventsModifier: ViewModifier {
-    var onPressBegin: () -> Void
-    var onPressEnd: () -> Void
-
-    @State private var isPressed = false
-
-    func body(content: Content) -> some View {
-        content
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        if !isPressed {
-                            isPressed = true
-                            onPressBegin()
-                        }
-                    }
-                    .onEnded { _ in
-                        isPressed = false
-                        onPressEnd()
-                    }
-            )
-    }
-}
-
-extension View {
-    func pressEvents(
-        onPressBegin: @escaping () -> Void = {},
-        onPressEnd: @escaping () -> Void = {}
-    ) -> some View {
-        modifier(PressEventsModifier(onPressBegin: onPressBegin, onPressEnd: onPressEnd))
+        return "?"
     }
 }
 
@@ -357,24 +303,40 @@ extension View {
             .font(.headline)
 
         AvatarGroup(
-            avatars: [
-                AvatarGroupItem(initials: "AB", color: .blue),
-                AvatarGroupItem(initials: "CD", color: .green),
-                AvatarGroupItem(initials: "EF", color: .orange),
-                AvatarGroupItem(initials: "GH", color: .purple),
-                AvatarGroupItem(initials: "IJ", color: .pink),
-            ],
+            avatars: sampleAvatars.prefix(5).map { $0 },
+            size: .medium,
             style: .standard,
-            size: 40
+            maxVisible: 5
         )
 
         AvatarGroup(
-            avatars: Array(0..<8).map { i in
-                AvatarGroupItem(initials: "\(i)A", color: .blue)
-            },
+            avatars: sampleAvatars,
+            size: .large,
             style: .standard,
-            size: 40,
             maxVisible: 4
+        )
+    }
+    .padding()
+    .background(Color(.systemGroupedBackground))
+}
+
+#Preview("Elevated Avatar Group") {
+    VStack(spacing: 30) {
+        Text("エレベーテッドアバターグループ")
+            .font(.headline)
+
+        AvatarGroup(
+            avatars: sampleAvatars.prefix(4).map { $0 },
+            size: .medium,
+            style: .elevated,
+            maxVisible: 4
+        )
+
+        AvatarGroup(
+            avatars: sampleAvatars,
+            size: .small,
+            style: .elevated,
+            maxVisible: 6
         )
     }
     .padding()
@@ -387,248 +349,249 @@ extension View {
             .font(.headline)
 
         AvatarGroup(
-            avatars: [
-                AvatarGroupItem(initials: "AB"),
-                AvatarGroupItem(initials: "CD"),
-                AvatarGroupItem(initials: "EF"),
-            ],
+            avatars: sampleAvatars.prefix(3).map { $0 },
+            size: .small,
             style: .minimal,
-            size: 32
-        )
-
-        AvatarGroup(
-            avatars: Array(0..<6).map { i in
-                AvatarGroupItem(initials: "\(i)A")
-            },
-            style: .minimal,
-            size: 32,
             maxVisible: 3
         )
-    }
-    .padding()
-    .background(Color(.systemGroupedBackground))
-}
-
-#Preview("Outlined Avatar Group") {
-    VStack(spacing: 30) {
-        Text("アウトラインアバターグループ")
-            .font(.headline)
 
         AvatarGroup(
-            avatars: [
-                AvatarGroupItem(initials: "AB", color: .blue),
-                AvatarGroupItem(initials: "CD", color: .green),
-                AvatarGroupItem(initials: "EF", color: .orange),
-            ],
-            style: .outlined,
-            size: 48
+            avatars: sampleAvatars,
+            size: .medium,
+            style: .minimal,
+            maxVisible: 5
         )
     }
     .padding()
     .background(Color(.systemGroupedBackground))
 }
 
-#Preview("Filled Avatar Group") {
+#Preview("Colored Avatar Group") {
     VStack(spacing: 30) {
-        Text("フィルドアバターグループ")
+        Text("カラードアバターグループ")
             .font(.headline)
 
         AvatarGroup(
-            avatars: [
-                AvatarGroupItem(initials: "AB", color: .blue),
-                AvatarGroupItem(initials: "CD", color: .green),
-                AvatarGroupItem(initials: "EF", color: .orange),
-                AvatarGroupItem(initials: "GH", color: .purple),
-            ],
-            style: .filled,
-            size: 44
+            avatars: coloredAvatars.prefix(4).map { $0 },
+            size: .medium,
+            style: .colored,
+            maxVisible: 4
+        )
+
+        AvatarGroup(
+            avatars: coloredAvatars,
+            size: .large,
+            style: .colored,
+            maxVisible: 5
         )
     }
     .padding()
     .background(Color(.systemGroupedBackground))
 }
 
-#Preview("Avatar with Badges") {
+#Preview("With Online Status") {
     VStack(spacing: 30) {
-        Text("バッジ付きアバター")
+        Text("オンラインステータス表示")
             .font(.headline)
 
-        HStack(spacing: 20) {
-            AvatarView(
-                image: nil,
-                initials: "AB",
-                color: .blue,
-                size: 50,
-                badge: AvatarBadge(type: .online)
-            )
+        AvatarGroup(
+            avatars: onlineAvatars,
+            size: .medium,
+            style: .standard,
+            maxVisible: 5
+        )
 
-            AvatarView(
-                image: nil,
-                initials: "CD",
-                color: .green,
-                size: 50,
-                badge: AvatarBadge(type: .busy)
-            )
-
-            AvatarView(
-                image: nil,
-                initials: "EF",
-                color: .orange,
-                size: 50,
-                badge: AvatarBadge(type: .offline)
-            )
-
-            AvatarView(
-                image: nil,
-                initials: "GH",
-                color: .purple,
-                size: 50,
-                badge: AvatarBadge(type: .notification, count: 3)
-            )
-
-            AvatarView(
-                image: nil,
-                initials: "IJ",
-                color: .pink,
-                size: 50,
-                badge: AvatarBadge(type: .notification, count: 99)
-            )
-        }
+        AvatarGroup(
+            avatars: onlineAvatars,
+            size: .large,
+            style: .elevated,
+            maxVisible: 4
+        )
     }
     .padding()
     .background(Color(.systemGroupedBackground))
 }
 
 #Preview("Various Sizes") {
-    VStack(spacing: 30) {
+    VStack(spacing: 40) {
         Text("様々なサイズ")
             .font(.headline)
 
-        VStack(spacing: 15) {
-            HStack {
-                Text("Small (24px)")
-                    .frame(width: 100, alignment: .leading)
-                AvatarGroup(
-                    avatars: [
-                        AvatarGroupItem(initials: "AB", color: .blue),
-                        AvatarGroupItem(initials: "CD", color: .green),
-                    ],
-                    size: 24
-                )
-            }
-
-            HStack {
-                Text("Medium (40px)")
-                    .frame(width: 100, alignment: .leading)
-                AvatarGroup(
-                    avatars: [
-                        AvatarGroupItem(initials: "AB", color: .blue),
-                        AvatarGroupItem(initials: "CD", color: .green),
-                        AvatarGroupItem(initials: "EF", color: .orange),
-                    ],
-                    size: 40
-                )
-            }
-
-            HStack {
-                Text("Large (56px)")
-                    .frame(width: 100, alignment: .leading)
-                AvatarGroup(
-                    avatars: [
-                        AvatarGroupItem(initials: "AB", color: .blue),
-                        AvatarGroupItem(initials: "CD", color: .green),
-                        AvatarGroupItem(initials: "EF", color: .orange),
-                    ],
-                    size: 56
-                )
-            }
-
-            HStack {
-                Text("XLarge (72px)")
-                    .frame(width: 100, alignment: .leading)
-                AvatarGroup(
-                    avatars: [
-                        AvatarGroupItem(initials: "AB", color: .blue),
-                        AvatarGroupItem(initials: "CD", color: .green),
-                    ],
-                    size: 72
-                )
-            }
-        }
-    }
-    .padding()
-    .background(Color(.systemGroupedBackground))
-}
-
-#Preview("Interactive Avatar Group") {
-    VStack(spacing: 30) {
-        Text("インタラクティブアバターグループ")
-            .font(.headline)
+        AvatarGroup(
+            avatars: sampleAvatars.prefix(3).map { $0 },
+            size: .small,
+            style: .standard,
+            maxVisible: 3
+        )
 
         AvatarGroup(
-            avatars: Array(0..<5).map { i in
-                AvatarGroupItem(initials: "\(i)A", color: .blue)
-            },
-            size: 48,
-            maxVisible: 4,
-            onTap: { index in
-                print("Tapped avatar at index: \(index)")
-            },
-            onOverflowTap: {
-                print("Tapped overflow")
-            }
+            avatars: sampleAvatars.prefix(4).map { $0 },
+            size: .medium,
+            style: .standard,
+            maxVisible: 4
+        )
+
+        AvatarGroup(
+            avatars: sampleAvatars.prefix(5).map { $0 },
+            size: .large,
+            style: .standard,
+            maxVisible: 5
         )
     }
     .padding()
     .background(Color(.systemGroupedBackground))
 }
 
-#Preview("Custom Spacing") {
-    VStack(spacing: 30) {
-        Text("カスタム間隔")
-            .font(.headline)
+// MARK: - Sample Data
+private let sampleAvatars: [AvatarInfo] = [
+    AvatarInfo(
+        id: "1",
+        name: "田中 太郎",
+        imageUrl: nil,
+        initials: "田太",
+        backgroundColor: .blue,
+        textColor: .white,
+        isOnline: true
+    ),
+    AvatarInfo(
+        id: "2",
+        name: "山田 花子",
+        imageUrl: nil,
+        initials: "山花",
+        backgroundColor: .purple,
+        textColor: .white,
+        isOnline: false
+    ),
+    AvatarInfo(
+        id: "3",
+        name: "佐藤 次郎",
+        imageUrl: nil,
+        initials: "佐次",
+        backgroundColor: .green,
+        textColor: .white,
+        isOnline: true
+    ),
+    AvatarInfo(
+        id: "4",
+        name: "鈴木 美咲",
+        imageUrl: nil,
+        initials: "鈴美",
+        backgroundColor: .orange,
+        textColor: .white,
+        isOnline: false
+    ),
+    AvatarInfo(
+        id: "5",
+        name: "高橋 健一",
+        imageUrl: nil,
+        initials: "高健",
+        backgroundColor: .red,
+        textColor: .white,
+        isOnline: true
+    ),
+    AvatarInfo(
+        id: "6",
+        name: "伊藤 真由美",
+        imageUrl: nil,
+        initials: "伊真",
+        backgroundColor: .pink,
+        textColor: .white,
+        isOnline: false
+    )
+]
 
-        VStack(spacing: 15) {
-            HStack {
-                Text("None (0px)")
-                    .frame(width: 120, alignment: .leading)
-                AvatarGroup(
-                    avatars: [
-                        AvatarGroupItem(initials: "AB", color: .blue),
-                        AvatarGroupItem(initials: "CD", color: .green),
-                        AvatarGroupItem(initials: "EF", color: .orange),
-                    ],
-                    spacing: 0
-                )
-            }
+private let coloredAvatars: [AvatarInfo] = [
+    AvatarInfo(
+        id: "1",
+        name: "Red User",
+        imageUrl: nil,
+        initials: "RU",
+        backgroundColor: .red,
+        textColor: .white,
+        isOnline: true
+    ),
+    AvatarInfo(
+        id: "2",
+        name: "Blue User",
+        imageUrl: nil,
+        initials: "BU",
+        backgroundColor: .blue,
+        textColor: .white,
+        isOnline: false
+    ),
+    AvatarInfo(
+        id: "3",
+        name: "Green User",
+        imageUrl: nil,
+        initials: "GU",
+        backgroundColor: .green,
+        textColor: .white,
+        isOnline: true
+    ),
+    AvatarInfo(
+        id: "4",
+        name: "Yellow User",
+        imageUrl: nil,
+        initials: "YU",
+        backgroundColor: .yellow,
+        textColor: .black,
+        isOnline: false
+    ),
+    AvatarInfo(
+        id: "5",
+        name: "Purple User",
+        imageUrl: nil,
+        initials: "PU",
+        backgroundColor: .purple,
+        textColor: .white,
+        isOnline: true
+    )
+]
 
-            HStack {
-                Text("Standard (-10px)")
-                    .frame(width: 120, alignment: .leading)
-                AvatarGroup(
-                    avatars: [
-                        AvatarGroupItem(initials: "AB", color: .blue),
-                        AvatarGroupItem(initials: "CD", color: .green),
-                        AvatarGroupItem(initials: "EF", color: .orange),
-                    ],
-                    spacing: -10
-                )
-            }
-
-            HStack {
-                Text("Wide (-5px)")
-                    .frame(width: 120, alignment: .leading)
-                AvatarGroup(
-                    avatars: [
-                        AvatarGroupItem(initials: "AB", color: .blue),
-                        AvatarGroupItem(initials: "CD", color: .green),
-                        AvatarGroupItem(initials: "EF", color: .orange),
-                    ],
-                    spacing: -5
-                )
-            }
-        }
-    }
-    .padding()
-    .background(Color(.systemGroupedBackground))
-}
+private let onlineAvatars: [AvatarInfo] = [
+    AvatarInfo(
+        id: "1",
+        name: "Online User 1",
+        imageUrl: nil,
+        initials: "OU",
+        backgroundColor: .blue,
+        textColor: .white,
+        isOnline: true
+    ),
+    AvatarInfo(
+        id: "2",
+        name: "Online User 2",
+        imageUrl: nil,
+        initials: "OU",
+        backgroundColor: .green,
+        textColor: .white,
+        isOnline: true
+    ),
+    AvatarInfo(
+        id: "3",
+        name: "Offline User",
+        imageUrl: nil,
+        initials: "OF",
+        backgroundColor: .gray,
+        textColor: .white,
+        isOnline: false
+    ),
+    AvatarInfo(
+        id: "4",
+        name: "Online User 4",
+        imageUrl: nil,
+        initials: "OU",
+        backgroundColor: .purple,
+        textColor: .white,
+        isOnline: true
+    ),
+    AvatarInfo(
+        id: "5",
+        name: "Online User 5",
+        imageUrl: nil,
+        initials: "OU",
+        backgroundColor: .orange,
+        textColor: .white,
+        isOnline: true
+    )
+]

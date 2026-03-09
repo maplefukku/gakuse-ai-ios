@@ -57,6 +57,7 @@ struct CustomSlider: View {
                     .offset(x: thumbOffset)
             }
             .frame(height: style.trackHeight)
+            .drawingGroup() // パフォーマンス最適化：レイヤー合成削減
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
@@ -201,6 +202,7 @@ struct RangeSlider: View {
                     )
             }
             .frame(height: style.trackHeight)
+            .drawingGroup() // パフォーマンス最適化：レイヤー合成削減
 
             // 値表示
             HStack {
