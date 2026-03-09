@@ -154,6 +154,7 @@ struct StatisticsView: View {
                     }
                 }
             }
+            .drawingGroup() // パフォーマンス改善: レイヤー合成を最適化
             .chartOverlay { proxy in
                 GeometryReader { geometry in
                     Rectangle()
@@ -215,6 +216,7 @@ struct StatisticsView: View {
                 .foregroundStyle(item.color)
             }
             .frame(height: 200)
+            .drawingGroup() // パフォーマンス改善: レイヤー合成を最適化
             .chartBackground { _ in
                 VStack {
                     Text("\(viewModel.totalLogsCount)")

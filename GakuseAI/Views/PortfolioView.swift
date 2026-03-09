@@ -144,6 +144,7 @@ struct PortfolioView: View {
                 }
             }
             .chartXAxis(.hidden)
+            .drawingGroup() // パフォーマンス改善: レイヤー合成を最適化
             .animation(.easeInOut(duration: 0.8), value: viewModel.weeklyData.count)
         }
         .padding()
@@ -167,6 +168,7 @@ struct PortfolioView: View {
                 .foregroundStyle(item.color)
             }
             .frame(height: 200)
+            .drawingGroup() // パフォーマンス改善: レイヤー合成を最適化
             .animation(.easeInOut(duration: 1.0), value: viewModel.categoryChartData.count)
             .chartBackground { _ in
                 VStack {
