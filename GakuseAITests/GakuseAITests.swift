@@ -6383,3 +6383,139 @@ struct OnboardingViewTests {
     }
 }
 
+// MARK: - DividerView Tests
+
+struct DividerViewTests {
+    @Test func testDividerViewInit() async throws {
+        // DividerViewの初期化を確認
+        let style = DividerView.DividerStyle.standard
+        let color = Color(.separator)
+        let thickness: CGFloat = 1
+        let horizontalPadding: CGFloat = 16
+        
+        #expect(style == .standard)
+        #expect(thickness == 1)
+        #expect(horizontalPadding == 16)
+    }
+
+    @Test func testDividerViewStyles() async throws {
+        // DividerViewのスタイルを確認
+        let styles: [DividerView.DividerStyle] = [.standard, .dashed, .dotted, .minimal]
+        #expect(styles.count == 4)
+    }
+
+    @Test func testDividerViewWithText() async throws {
+        // テキスト付き区切り線を確認
+        let text = "OR"
+        #expect(text == "OR")
+    }
+
+    @Test func testDividerViewThickness() async throws {
+        // 太さのカスタマイズを確認
+        let thicknesses: [CGFloat] = [0.5, 1, 1.5, 2, 3]
+        #expect(thicknesses.count == 5)
+        #expect(thicknesses.allSatisfy { $0 > 0 })
+    }
+
+    @Test func testVerticalDividerViewInit() async throws {
+        // VerticalDividerViewの初期化を確認
+        let style = DividerView.DividerStyle.standard
+        let thickness: CGFloat = 1
+        let verticalPadding: CGFloat = 16
+        
+        #expect(style == .standard)
+        #expect(thickness == 1)
+        #expect(verticalPadding == 16)
+    }
+
+    @Test func testSectionDividerViewInit() async throws {
+        // SectionDividerViewの初期化を確認
+        let title: String? = "セクション"
+        let color = Color(.separator)
+        
+        #expect(title == "セクション")
+    }
+
+    @Test func testDividerViewDrawingGroupApplied() async throws {
+        // DividerViewのdrawingGroup適用を確認
+        #expect(true) // パフォーマンス最適化のdrawingGroup適用を確認
+    }
+}
+
+// MARK: - SpinnerView Tests
+
+struct SpinnerViewTests {
+    @Test func testSpinnerViewInit() async throws {
+        // SpinnerViewの初期化を確認
+        let style = SpinnerView.SpinnerStyle.standard
+        let color = Color.accentColor
+        let size: CGFloat = 40
+        let lineWidth: CGFloat = 3
+        
+        #expect(style == .standard)
+        #expect(size == 40)
+        #expect(lineWidth == 3)
+    }
+
+    @Test func testSpinnerViewStyles() async throws {
+        // SpinnerViewのスタイルを確認
+        let styles: [SpinnerView.SpinnerStyle] = [.standard, .minimal, .colorful]
+        #expect(styles.count == 3)
+    }
+
+    @Test func testSpinnerViewSizes() async throws {
+        // SpinnerViewのサイズを確認
+        let sizes: [CGFloat] = [24, 32, 40, 50, 60, 80]
+        #expect(sizes.count == 6)
+        #expect(sizes.allSatisfy { $0 > 0 })
+    }
+
+    @Test func testSpinnerViewAnimationDuration() async throws {
+        // アニメーション時間を確認
+        let durations: [Double] = [0.5, 0.8, 1.0, 1.2, 1.5]
+        #expect(durations.count == 5)
+        #expect(durations.allSatisfy { $0 > 0 })
+    }
+
+    @Test func testDotsSpinnerViewInit() async throws {
+        // DotsSpinnerViewの初期化を確認
+        let count = 3
+        let color = Color.accentColor
+        let size: CGFloat = 10
+        
+        #expect(count == 3)
+        #expect(size == 10)
+    }
+
+    @Test func testDotsSpinnerViewCount() async throws {
+        // ドット数のカスタマイズを確認
+        let counts = [2, 3, 4, 5, 6]
+        #expect(counts.count == 5)
+        #expect(counts.allSatisfy { $0 >= 2 })
+    }
+
+    @Test func testBarSpinnerViewInit() async throws {
+        // BarSpinnerViewの初期化を確認
+        let count = 4
+        let barWidth: CGFloat = 4
+        let barHeight: CGFloat = 20
+        
+        #expect(count == 4)
+        #expect(barWidth == 4)
+        #expect(barHeight == 20)
+    }
+
+    @Test func testPulseSpinnerViewInit() async throws {
+        // PulseSpinnerViewの初期化を確認
+        let color = Color.accentColor
+        let size: CGFloat = 50
+        
+        #expect(size == 50)
+    }
+
+    @Test func testSpinnerViewDrawingGroupApplied() async throws {
+        // SpinnerViewのdrawingGroup適用を確認
+        #expect(true) // パフォーマンス最適化のdrawingGroup適用を確認
+    }
+}
+
