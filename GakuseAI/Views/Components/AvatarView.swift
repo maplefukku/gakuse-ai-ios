@@ -1,5 +1,46 @@
 import SwiftUI
 
+// MARK: - Avatar Info Model
+
+struct AvatarInfo: Identifiable {
+    let id: String
+    let name: String
+    let imageUrl: String?
+    let initials: String?
+    let backgroundColor: Color
+    let textColor: Color
+    let isOnline: Bool
+
+    init(
+        id: String,
+        name: String,
+        imageUrl: String? = nil,
+        initials: String? = nil,
+        backgroundColor: Color = .blue,
+        textColor: Color = .white,
+        isOnline: Bool = false
+    ) {
+        self.id = id
+        self.name = name
+        self.imageUrl = imageUrl
+        self.initials = initials ?? AvatarInfo.generateInitials(from: name)
+        self.backgroundColor = backgroundColor
+        self.textColor = textColor
+        self.isOnline = isOnline
+    }
+
+    private static func generateInitials(from name: String) -> String {
+        let parts = name.components(separatedBy: " ")
+            .filter { !$0.isEmpty }
+        if parts.count >= 2 {
+            return String(parts[0].prefix(1)) + String(parts[1].prefix(1))
+        } else if let first = parts.first {
+            return String(first.prefix(2))
+        }
+        return "?"
+    }
+}
+
 // MARK: - Avatar View Component
 
 struct AvatarView: View {
@@ -47,6 +88,20 @@ struct AvatarView: View {
         self.size = size
         self.gradient = gradient
         self.onTap = onTap
+    }
+
+    /// プロファイル用のコンビニエンスイニシャライザ
+    /// ProfileAvatarViewの置換用
+    init(
+        name: String? = nil,
+        avatarIcon: String? = nil,
+        size: AvatarSize = .medium
+    ) {
+        self.name = name ?? "User"
+        self.avatarImage = avatarIcon
+        self.size = size
+        self.gradient = [.pink, .purple]
+        self.onTap = nil
     }
 
     private var initials: String {
@@ -114,92 +169,59 @@ struct AvatarView: View {
     }
 }
 
-// MARK: - Avatar Group (Multiple Avatars)
+// MARK: - Profile Avatar Convenience Initializer
 
-struct AvatarGroup: View {
-    let names: [String]
-    let avatarImages: [String?]
-    let size: AvatarView.AvatarSize
-    let maxVisible: Int
-    let remainingColor: Color
-    let onAvatarTap: ((Int) -> Void)?
-
-    init(
-        names: [String],
-        avatarImages: [String?] = [],
-        size: AvatarView.AvatarSize = .medium,
-        maxVisible: Int = 3,
-        remainingColor: Color = .gray,
-        onAvatarTap: ((Int) -> Void)? = nil
-    ) {
-        self.names = names
-        self.avatarImages = avatarImages.isEmpty ? Array(repeating: nil, count: names.count) : avatarImages
-        self.size = size
-        self.maxVisible = maxVisible
-        self.remainingColor = remainingColor
-        self.onAvatarTap = onAvatarTap
-    }
-
-    var body: some View {
-        HStack(spacing: -8) {
-            ForEach(0..<min(names.count, maxVisible), id: \.self) { index in
-                AvatarView(
-                    name: names[index],
-                    avatarImage: index < avatarImages.count ? avatarImages[index] : nil,
-                    size: size
-                )
-                .overlay(
-                    Circle()
-                        .stroke(Color(UIColor.systemBackground), lineWidth: 2)
-                )
-                .onTapGesture {
-                    onAvatarTap?(index)
-                }
-            }
-
-            if names.count > maxVisible {
-                ZStack {
-                    Circle()
-                        .fill(remainingColor.opacity(0.2))
-                        .frame(width: size.dimension, height: size.dimension)
-
-                    Text("+\(names.count - maxVisible)")
-                        .font(size.fontSize)
-                        .fontWeight(.semibold)
-                        .foregroundColor(remainingColor)
-                }
-                .overlay(
-                    Circle()
-                        .stroke(Color(UIColor.systemBackground), lineWidth: 2)
-                )
-            }
-        }
-        .drawingGroup() // パフォーマンス最適化
+extension AvatarView {
+    /// プロファイル用のアバタービューを作成
+    /// - Parameters:
+    ///   - avatarIcon: アバターアイコン（SF Symbol名）
+    ///   - name: ユーザー名
+    ///   - size: アバターサイズ（デフォルト: .large）
+    /// - Returns: プロファイル用にカスタマイズされたAvatarView
+    static func profile(
+        avatarIcon: String? = nil,
+        name: String?,
+        size: AvatarSize = .large
+    ) -> AvatarView {
+        AvatarView(
+            name: name ?? "Unknown",
+            avatarImage: avatarIcon,
+            size: size,
+            gradient: [.pink, .purple],
+            onTap: nil
+        )
     }
 }
 
-// MARK: - Avatar With Status
+// MARK: - Avatar With Status Component
 
 struct AvatarWithStatus: View {
     let name: String
     let avatarImage: String?
-    let size: AvatarView.AvatarSize
     let status: UserStatus
-    let gradient: [Color]?
-    let onTap: (() -> Void)?
+    let size: AvatarView.AvatarSize
 
-    enum UserStatus {
-        case online
-        case away
-        case busy
-        case offline
+    enum UserStatus: String, CaseIterable {
+        case online = "online"
+        case away = "away"
+        case busy = "busy"
+        case offline = "offline"
 
         var color: Color {
             switch self {
             case .online: return .green
-            case .away: return .orange
+            case .away: return .yellow
             case .busy: return .red
             case .offline: return .gray
+            }
+        }
+
+        var label: String {
+            switch self {
+            case .online: return "オンライン"
+            case .away: return "退席中"
+            case .busy: return "取り込み中"
+            case .offline: return "オフライン"
             }
         }
     }
@@ -209,35 +231,20 @@ struct AvatarWithStatus: View {
             AvatarView(
                 name: name,
                 avatarImage: avatarImage,
-                size: size,
-                gradient: gradient,
-                onTap: onTap
+                size: size
             )
 
-            // Status indicator
             Circle()
                 .fill(status.color)
-                .frame(width: size.dimension / 4, height: size.dimension / 4)
+                .frame(width: size.dimension * 0.3, height: size.dimension * 0.3)
                 .overlay(
                     Circle()
-                        .stroke(Color(UIColor.systemBackground), lineWidth: 2)
+                        .stroke(Color.white, lineWidth: 2)
                 )
-                .offset(x: size.dimension / 8, y: size.dimension / 8)
+                .offset(x: -size.dimension * 0.1, y: -size.dimension * 0.1)
         }
-        .drawingGroup() // パフォーマンス最適化
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(name)のアバター")
-        .accessibilityValue(statusText)
-        .accessibilityHint(onTap != nil ? "タップして詳細を表示" : "")
-    }
-
-    private var statusText: String {
-        switch status {
-        case .online: return "オンライン"
-        case .away: return "退席中"
-        case .busy: return "取り込み中"
-        case .offline: return "オフライン"
-        }
+        .accessibilityLabel("\(name) - \(status.label)")
     }
 }
 
@@ -279,31 +286,14 @@ struct AvatarWithStatus: View {
     HStack(spacing: 16) {
         AvatarView(
             name: "田中太郎",
-            gradient: [.blue, .cyan],
-            size: .large
+            size: .large,
+            gradient: [.blue, .cyan]
         )
         AvatarView(
             name: "山田花子",
             avatarImage: "star.fill",
-            gradient: [.orange, .yellow],
-            size: .large
-        )
-    }
-    .padding()
-}
-
-#Preview("Avatar Group") {
-    VStack(spacing: 24) {
-        AvatarGroup(
-            names: ["田中", "山田", "佐藤", "鈴木"],
-            size: .medium,
-            maxVisible: 3
-        )
-
-        AvatarGroup(
-            names: ["田中", "山田"],
             size: .large,
-            maxVisible: 3
+            gradient: [.orange, .yellow]
         )
     }
     .padding()
@@ -312,17 +302,17 @@ struct AvatarWithStatus: View {
 #Preview("Avatar With Status") {
     VStack(spacing: 24) {
         HStack(spacing: 16) {
-            AvatarWithStatus(name: "田中", status: .online, size: .large)
-            AvatarWithStatus(name: "山田", status: .away, size: .large)
-            AvatarWithStatus(name: "佐藤", status: .busy, size: .large)
-            AvatarWithStatus(name: "鈴木", status: .offline, size: .large)
+            AvatarWithStatus(name: "田中", avatarImage: nil, status: AvatarWithStatus.UserStatus.online, size: .large)
+            AvatarWithStatus(name: "山田", avatarImage: nil, status: AvatarWithStatus.UserStatus.away, size: .large)
+            AvatarWithStatus(name: "佐藤", avatarImage: nil, status: AvatarWithStatus.UserStatus.busy, size: .large)
+            AvatarWithStatus(name: "鈴木", avatarImage: nil, status: AvatarWithStatus.UserStatus.offline, size: .large)
         }
 
         HStack(spacing: 16) {
             AvatarWithStatus(
                 name: "田中",
                 avatarImage: "person.circle.fill",
-                status: .online,
+                status: AvatarWithStatus.UserStatus.online,
                 size: .xLarge
             )
         }

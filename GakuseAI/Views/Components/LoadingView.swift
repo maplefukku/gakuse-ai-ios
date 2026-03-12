@@ -27,6 +27,9 @@ struct LoadingView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(UIColor.systemBackground))
         .drawingGroup()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(message ?? "読み込み中")
+        .accessibilityAddTraits(.updatesFrequently)
     }
 }
 
@@ -91,18 +94,18 @@ struct SkeletonLoadingView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // タイトル用スケルトン
-            SkeletonRow(widthRatio: 0.8, height: 24)
+            SkeletonView(width: 240, height: 24, cornerRadius: 12)
 
             // 本文用スケルトン
-            SkeletonRow(widthRatio: 1.0, height: 16)
-            SkeletonRow(widthRatio: 0.9, height: 16)
-            SkeletonRow(widthRatio: 0.7, height: 16)
+            SkeletonView(width: 300, height: 16, cornerRadius: 8)
+            SkeletonView(width: 270, height: 16, cornerRadius: 8)
+            SkeletonView(width: 210, height: 16, cornerRadius: 8)
 
             // メタデータ用スケルトン
             HStack {
-                SkeletonRow(widthRatio: 0.3, height: 14)
+                SkeletonView(width: 90, height: 14, cornerRadius: 7)
                 Spacer()
-                SkeletonRow(widthRatio: 0.2, height: 14)
+                SkeletonView(width: 60, height: 14, cornerRadius: 7)
             }
         }
         .padding()
@@ -118,46 +121,6 @@ struct SkeletonLoadingView: View {
                 isAnimating = true
             }
         }
-    }
-}
-
-/// スケルトン行
-struct SkeletonRow: View {
-    let widthRatio: CGFloat
-    let height: CGFloat
-    @State private var isAnimating = false
-    
-    var body: some View {
-        GeometryReader { geometry in
-            RoundedRectangle(cornerRadius: 4)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(UIColor.systemGray4),
-                            Color(UIColor.systemGray5),
-                            Color(UIColor.systemGray4)
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .frame(
-                    width: geometry.size.width * widthRatio,
-                    height: height
-                )
-                .offset(x: isAnimating ? geometry.size.width : -geometry.size.width)
-                .drawingGroup()
-                .onAppear {
-                    withAnimation(
-                        Animation
-                            .easeInOut(duration: 1.5)
-                            .repeatForever()
-                    ) {
-                        isAnimating = true
-                    }
-                }
-        }
-        .frame(height: height)
     }
 }
 

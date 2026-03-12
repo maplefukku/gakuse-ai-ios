@@ -167,9 +167,9 @@ struct MultiProgressRing: View {
 
 #Preview("Multi Progress Ring") {
     MultiProgressRing(progressItems: [
-        ProgressItem(progress: 0.8, color: .pink, label: "Swift"),
-        ProgressItem(progress: 0.6, color: .purple, label: "UI/UX"),
-        ProgressItem(progress: 0.4, color: .blue, label: "学習")
+        MultiProgressRing.ProgressItem(progress: 0.8, color: .pink, label: "Swift"),
+        MultiProgressRing.ProgressItem(progress: 0.6, color: .purple, label: "UI/UX"),
+        MultiProgressRing.ProgressItem(progress: 0.4, color: .blue, label: "学習")
     ])
     .padding()
 }

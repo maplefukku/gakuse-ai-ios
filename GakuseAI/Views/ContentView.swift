@@ -6,7 +6,7 @@ struct ContentView: View {
     @Namespace private var animation
 
     var body: some View {
-        TabView(selection: $navigationViewModel.selectedTab) {
+        SwiftUI.TabView(selection: $navigationViewModel.selectedTab) {
             LearningLogView()
                 .tabItem {
                     Label("学習ログ", systemImage: "book.fill")

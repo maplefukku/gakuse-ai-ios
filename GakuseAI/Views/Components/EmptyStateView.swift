@@ -107,7 +107,7 @@ struct EmptyStateView: View {
                         .background(Color.accentColor)
                         .cornerRadius(8)
                 }
-                .buttonStyle(ScaleButtonStyle(scale: 0.95))
+                .buttonStyle(EmptyStateScaleButtonStyle(scale: 0.95))
                 .padding(.top, 8)
             }
         }
@@ -181,7 +181,7 @@ struct EmptyStateView: View {
                     }
                     .foregroundColor(.accentColor)
                 }
-                .buttonStyle(ScaleButtonStyle(scale: 0.95))
+                .buttonStyle(EmptyStateScaleButtonStyle(scale: 0.95))
                 .padding(.top, 8)
             }
         }
@@ -239,11 +239,11 @@ extension EmptyStateView {
     }
 }
 
-// MARK: - ScaleButtonStyle
+// MARK: - EmptyStateScaleButtonStyle
 
-struct ScaleButtonStyle: ButtonStyle {
+struct EmptyStateScaleButtonStyle: ButtonStyle {
     var scale: CGFloat = 0.95
-    
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? scale : 1.0)

@@ -2,542 +2,308 @@
 //  SliderView.swift
 //  GakuseAI
 //
-//  Created by OpenClaw on 2026-03-09.
+//  Created by fe-dev-2 on 2026-03-10.
 //
 
 import SwiftUI
 
-// MARK: - SliderView
-/// 汎用スライダーコンポーネント
-struct SliderView: View {
-    // MARK: - Properties
+// MARK: - Slider View
+
+/// スライダーコンポーネント
+///
+/// - カスタマイズ可能なスタイル
+/// - ステップ（間隔）対応
+/// - ツールチップ表示オプション
+public struct SliderView: View {
     @Binding private var value: Double
     private let range: ClosedRange<Double>
     private let step: Double
-    private let title: String?
-    private let minValueLabel: String?
-    private let maxValueLabel: String?
+    private let style: SliderStyle
     private let color: Color
-    private let onEditingChanged: ((Bool) -> Void)?
-    
-    // MARK: - Initialization
+    private let showTooltip: Bool
+    private let onValueChanged: ((Double) -> Void)?
+
+    public enum SliderStyle {
+        case standard
+        case minimal
+        case filled
+    }
+
     /// スライダービューを初期化
     /// - Parameters:
-    ///   - value: 現在の値
-    ///   - range: 値の範囲
-    ///   - step: ステップ値（デフォルト: 1.0）
-    ///   - title: タイトル（オプション）
-    ///   - minValueLabel: 最小値ラベル（オプション）
-    ///   - maxValueLabel: 最大値ラベル（オプション）
-    ///   - color: アクセントカラー（デフォルト: 青）
-    ///   - onEditingChanged: 編集状態変更コールバック
-    init(
+    ///   - value: スライダーの値（バインディング）
+    ///   - range: 値の範囲（デフォルト: 0...100）
+    ///   - step: ステップ値（デフォルト: 1）
+    ///   - style: スライダーのスタイル（デフォルト: standard）
+    ///   - color: スライダーの色（デフォルト: アクセントカラー）
+    ///   - showTooltip: ツールチップ表示（デフォルト: true）
+    ///   - onValueChanged: 値変更時のコールバック
+    public init(
         value: Binding<Double>,
-        in range: ClosedRange<Double> = 0...100,
-        step: Double = 1.0,
-        title: String? = nil,
-        minValueLabel: String? = nil,
-        maxValueLabel: String? = nil,
-        color: Color = .blue,
-        onEditingChanged: ((Bool) -> Void)? = nil
-    ) {
-        self._value = value
-        self.range = range
-        self.step = step
-        self.title = title
-        self.minValueLabel = minValueLabel
-        self.maxValueLabel = maxValueLabel
-        self.color = color
-        self.onEditingChanged = onEditingChanged
-    }
-    
-    // MARK: - Body
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let title = title {
-                Text(title)
-                    .font(.system(.headline, design: .rounded))
-                    .foregroundStyle(.primary)
-            }
-            
-            HStack(alignment: .center) {
-                if let minValueLabel = minValueLabel {
-                    Text(minValueLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 40, alignment: .leading)
-                }
-                
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        // 背景トラック
-                        Capsule()
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(height: 8)
-                        
-                        // プログレストラック
-                        Capsule()
-                            .fill(color)
-                            .frame(width: CGFloat((value - range.lowerBound) / (range.upperBound - range.lowerBound)) * geometry.size.width, height: 8)
-                        
-                        // スライダーサム
-                        Circle()
-                            .fill(.white)
-                            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                            .frame(width: 24, height: 24)
-                            .overlay(
-                                Circle()
-                                    .fill(color)
-                                    .frame(width: 12, height: 12)
-                            )
-                            .offset(x: CGFloat((value - range.lowerBound) / (range.upperBound - range.lowerBound)) * geometry.size.width - 12)
-                    }
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { gesture in
-                                let newValue = range.lowerBound + Double(gesture.location.x / geometry.size.width) * (range.upperBound - range.lowerBound)
-                                value = snapToStep(newValue, step: step, in: range)
-                                onEditingChanged?(true)
-                            }
-                            .onEnded { _ in
-                                onEditingChanged?(false)
-                            }
-                    )
-                }
-                .frame(height: 30)
-                
-                if let maxValueLabel = maxValueLabel {
-                    Text(maxValueLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 40, alignment: .trailing)
-                }
-            }
-            
-            // 現在の値表示
-            HStack {
-                Text("\(String(format: "%.0f", value))")
-                    .font(.system(.body, design: .rounded))
-                    .foregroundStyle(.primary)
-                    .fontWeight(.semibold)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(color.opacity(0.15))
-                    )
-                Spacer()
-            }
-        }
-        .padding(.vertical, 4)
-        .drawingGroup()
-    }
-    
-    // MARK: - Private Methods
-    /// 値をステップに合わせて丸める
-    private func snapToStep(_ value: Double, step: Double, in range: ClosedRange<Double>) -> Double {
-        let snappedValue = round(value / step) * step
-        return min(max(snappedValue, range.lowerBound), range.upperBound)
-    }
-}
-
-// MARK: - RangeSliderView
-/// 範囲スライダーコンポーネント
-struct RangeSliderView: View {
-    // MARK: - Properties
-    @Binding private var lowerValue: Double
-    @Binding private var upperValue: Double
-    private let range: ClosedRange<Double>
-    private let step: Double
-    private let title: String?
-    private let color: Color
-    private let onEditingChanged: ((Bool) -> Void)?
-    
-    // MARK: - Initialization
-    /// 範囲スライダービューを初期化
-    /// - Parameters:
-    ///   - lowerValue: 下限値
-    ///   - upperValue: 上限値
-    ///   - range: 値の範囲
-    ///   - step: ステップ値（デフォルト: 1.0）
-    ///   - title: タイトル（オプション）
-    ///   - color: アクセントカラー（デフォルト: 青）
-    ///   - onEditingChanged: 編集状態変更コールバック
-    init(
-        lowerValue: Binding<Double>,
-        upperValue: Binding<Double>,
-        in range: ClosedRange<Double> = 0...100,
-        step: Double = 1.0,
-        title: String? = nil,
-        color: Color = .blue,
-        onEditingChanged: ((Bool) -> Void)? = nil
-    ) {
-        self._lowerValue = lowerValue
-        self._upperValue = upperValue
-        self.range = range
-        self.step = step
-        self.title = title
-        self.color = color
-        self.onEditingChanged = onEditingChanged
-    }
-    
-    // MARK: - Body
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let title = title {
-                Text(title)
-                    .font(.system(.headline, design: .rounded))
-                    .foregroundStyle(.primary)
-            }
-            
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    // 背景トラック
-                    Capsule()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 8)
-                    
-                    // 範囲トラック
-                    Capsule()
-                        .fill(color)
-                        .frame(
-                            width: CGFloat((upperValue - lowerValue) / (range.upperBound - range.lowerBound)) * geometry.size.width,
-                            height: 8
-                        )
-                        .offset(x: CGFloat((lowerValue - range.lowerBound) / (range.upperBound - range.lowerBound)) * geometry.size.width)
-                    
-                    // 下限サム
-                    Circle()
-                        .fill(.white)
-                        .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                        .frame(width: 24, height: 24)
-                        .overlay(
-                            Circle()
-                                .fill(color)
-                                .frame(width: 12, height: 12)
-                        )
-                        .offset(x: CGFloat((lowerValue - range.lowerBound) / (range.upperBound - range.lowerBound)) * geometry.size.width - 12)
-                        .gesture(
-                            DragGesture(minimumDistance: 0)
-                                .onChanged { gesture in
-                                    let newValue = range.lowerBound + Double(gesture.location.x / geometry.size.width) * (range.upperBound - range.lowerBound)
-                                    lowerValue = min(snapToStep(newValue, step: step, in: range), upperValue - step)
-                                    onEditingChanged?(true)
-                                }
-                                .onEnded { _ in
-                                    onEditingChanged?(false)
-                                }
-                        )
-                    
-                    // 上限サム
-                    Circle()
-                        .fill(.white)
-                        .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                        .frame(width: 24, height: 24)
-                        .overlay(
-                            Circle()
-                                .fill(color)
-                                .frame(width: 12, height: 12)
-                        )
-                        .offset(x: CGFloat((upperValue - range.lowerBound) / (range.upperBound - range.lowerBound)) * geometry.size.width - 12)
-                        .gesture(
-                            DragGesture(minimumDistance: 0)
-                                .onChanged { gesture in
-                                    let newValue = range.lowerBound + Double(gesture.location.x / geometry.size.width) * (range.upperBound - range.lowerBound)
-                                    upperValue = max(snapToStep(newValue, step: step, in: range), lowerValue + step)
-                                    onEditingChanged?(true)
-                                }
-                                .onEnded { _ in
-                                    onEditingChanged?(false)
-                                }
-                        )
-                }
-                .contentShape(Rectangle())
-            }
-            .frame(height: 40)
-            
-            // 現在の値表示
-            HStack {
-                Text("\(String(format: "%.0f", lowerValue))")
-                    .font(.system(.body, design: .rounded))
-                    .foregroundStyle(.primary)
-                    .fontWeight(.semibold)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(color.opacity(0.15))
-                    )
-                
-                Spacer()
-                
-                Text("\(String(format: "%.0f", upperValue))")
-                    .font(.system(.body, design: .rounded))
-                    .foregroundStyle(.primary)
-                    .fontWeight(.semibold)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(color.opacity(0.15))
-                    )
-            }
-        }
-        .padding(.vertical, 4)
-        .drawingGroup()
-    }
-    
-    // MARK: - Private Methods
-    /// 値をステップに合わせて丸める
-    private func snapToStep(_ value: Double, step: Double, in range: ClosedRange<Double>) -> Double {
-        let snappedValue = round(value / step) * step
-        return min(max(snappedValue, range.lowerBound), range.upperBound)
-    }
-}
-
-// MARK: - StepperSliderView
-/// ステッパー付きスライダーコンポーネント
-struct StepperSliderView: View {
-    // MARK: - Properties
-    @Binding private var value: Double
-    private let range: ClosedRange<Double>
-    private let step: Double
-    private let title: String?
-    private let color: Color
-    private let onValueChanged: ((Double) -> Void)?
-    @State private var isEditing: Bool = false
-    
-    // MARK: - Initialization
-    /// ステッパー付きスライダービューを初期化
-    /// - Parameters:
-    ///   - value: 現在の値
-    ///   - range: 値の範囲
-    ///   - step: ステップ値（デフォルト: 1.0）
-    ///   - title: タイトル（オプション）
-    ///   - color: アクセントカラー（デフォルト: 青）
-    ///   - onValueChanged: 値変更コールバック
-    init(
-        value: Binding<Double>,
-        in range: ClosedRange<Double> = 0...100,
-        step: Double = 1.0,
-        title: String? = nil,
-        color: Color = .blue,
+        range: ClosedRange<Double> = 0...100,
+        step: Double = 1,
+        style: SliderStyle = .standard,
+        color: Color = .accentColor,
+        showTooltip: Bool = true,
         onValueChanged: ((Double) -> Void)? = nil
     ) {
         self._value = value
         self.range = range
         self.step = step
-        self.title = title
+        self.style = style
         self.color = color
+        self.showTooltip = showTooltip
         self.onValueChanged = onValueChanged
     }
-    
-    // MARK: - Body
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let title = title {
-                Text(title)
-                    .font(.system(.headline, design: .rounded))
-                    .foregroundStyle(.primary)
-            }
-            
-            HStack(spacing: 16) {
-                // 減少ボタン
-                Button(action: {
-                    let newValue = max(value - step, range.lowerBound)
-                    value = newValue
-                    onValueChanged?(newValue)
-                }) {
-                    Image(systemName: "minus.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(value > range.lowerBound ? color : .gray.opacity(0.3))
-                        .symbolEffect(.pulse, options: .repeating, isActive: isEditing && value > range.lowerBound)
-                }
-                .disabled(value <= range.lowerBound)
-                .buttonStyle(ScaleButtonStyle(scale: 0.9))
-                
-                // スライダー
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        // 背景トラック
-                        Capsule()
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(height: 8)
-                        
-                        // プログレストラック
-                        Capsule()
-                            .fill(color)
-                            .frame(width: CGFloat((value - range.lowerBound) / (range.upperBound - range.lowerBound)) * geometry.size.width, height: 8)
-                        
-                        // スライダーサム
-                        Circle()
-                            .fill(.white)
-                            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                            .frame(width: 24, height: 24)
-                            .overlay(
-                                Circle()
-                                    .fill(color)
-                                    .frame(width: 12, height: 12)
-                            )
-                            .offset(x: CGFloat((value - range.lowerBound) / (range.upperBound - range.lowerBound)) * geometry.size.width - 12)
-                    }
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { gesture in
-                                isEditing = true
-                                let newValue = range.lowerBound + Double(gesture.location.x / geometry.size.width) * (range.upperBound - range.lowerBound)
-                                value = snapToStep(newValue, step: step, in: range)
-                            }
-                            .onEnded { _ in
-                                isEditing = false
-                                onValueChanged?(value)
-                            }
-                    )
-                }
-                .frame(height: 30)
-                
-                // 増加ボタン
-                Button(action: {
-                    let newValue = min(value + step, range.upperBound)
-                    value = newValue
-                    onValueChanged?(newValue)
-                }) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(value < range.upperBound ? color : .gray.opacity(0.3))
-                        .symbolEffect(.pulse, options: .repeating, isActive: isEditing && value < range.upperBound)
-                }
-                .disabled(value >= range.upperBound)
-                .buttonStyle(ScaleButtonStyle(scale: 0.9))
-            }
-            
-            // 現在の値表示
-            HStack {
-                Text("\(String(format: "%.0f", value))")
-                    .font(.system(.body, design: .rounded))
-                    .foregroundStyle(.primary)
-                    .fontWeight(.semibold)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(color.opacity(0.15))
-                    )
-                Spacer()
+
+    public var body: some View {
+        VStack(spacing: 12) {
+            sliderContent
+
+            if showTooltip {
+                valueText
             }
         }
-        .padding(.vertical, 4)
         .drawingGroup()
     }
-    
-    // MARK: - Private Methods
-    /// 値をステップに合わせて丸める
-    private func snapToStep(_ value: Double, step: Double, in range: ClosedRange<Double>) -> Double {
-        let snappedValue = round(value / step) * step
-        return min(max(snappedValue, range.lowerBound), range.upperBound)
+
+    // MARK: - Slider Content
+
+    @ViewBuilder
+    private var sliderContent: some View {
+        switch style {
+        case .standard:
+            standardSlider
+        case .minimal:
+            minimalSlider
+        case .filled:
+            filledSlider
+        }
+    }
+
+    @ViewBuilder
+    private var standardSlider: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                // トラック背景
+                trackBackground
+
+                // 塗りつぶされたトラック
+                filledTrack(geometry: geometry)
+
+                // ノブ
+                thumb(geometry: geometry)
+            }
+            .gesture(dragGesture(geometry: geometry))
+        }
+        .frame(height: 44)
+    }
+
+    @ViewBuilder
+    private var minimalSlider: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                // トラック背景
+                Capsule()
+                    .fill(Color(.separator))
+                    .frame(height: 4)
+
+                // 塗りつぶされたトラック
+                Capsule()
+                    .fill(color)
+                    .frame(width: trackWidth(geometry: geometry), height: 4)
+
+                // ノブ
+                thumb(geometry: geometry)
+            }
+            .gesture(dragGesture(geometry: geometry))
+        }
+        .frame(height: 44)
+    }
+
+    @ViewBuilder
+    private var filledSlider: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                // トラック背景
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(.systemGray6))
+                    .frame(height: 12)
+
+                // 塗りつぶされたトラック
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(color)
+                    .frame(width: trackWidth(geometry: geometry), height: 12)
+
+                // ノブ
+                thumb(geometry: geometry)
+            }
+            .gesture(dragGesture(geometry: geometry))
+        }
+        .frame(height: 44)
+    }
+
+    // MARK: - Track Background
+
+    @ViewBuilder
+    private var trackBackground: some View {
+        RoundedRectangle(cornerRadius: 4)
+            .fill(Color(.systemGray6))
+            .frame(height: 8)
+    }
+
+    // MARK: - Filled Track
+
+    @ViewBuilder
+    private func filledTrack(geometry: GeometryProxy) -> some View {
+        RoundedRectangle(cornerRadius: 4)
+            .fill(color)
+            .frame(width: trackWidth(geometry: geometry), height: 8)
+    }
+
+    // MARK: - Thumb
+
+    @ViewBuilder
+    private func thumb(geometry: GeometryProxy) -> some View {
+        Circle()
+            .fill(Color(.systemBackground))
+            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+            .overlay(
+                Circle()
+                    .stroke(color, lineWidth: 2)
+            )
+            .frame(width: thumbSize, height: thumbSize)
+            .position(
+                x: thumbPosition(geometry: geometry),
+                y: geometry.size.height / 2
+            )
+            .scaleEffect(isDragging ? 1.1 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isDragging)
+    }
+
+    // MARK: - Value Text
+
+    @ViewBuilder
+    private var valueText: some View {
+        Text("\(Int(value))")
+            .font(.system(size: 14, weight: .medium))
+            .foregroundColor(color)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(color.opacity(0.1))
+            )
+    }
+
+    // MARK: - Computed Properties
+
+    @State private var isDragging = false
+
+    private var thumbSize: CGFloat {
+        24
+    }
+
+    private func trackWidth(geometry: GeometryProxy) -> CGFloat {
+        let normalizedValue = (value - range.lowerBound) / (range.upperBound - range.lowerBound)
+        return geometry.size.width * CGFloat(normalizedValue)
+    }
+
+    private func thumbPosition(geometry: GeometryProxy) -> CGFloat {
+        let normalizedValue = (value - range.lowerBound) / (range.upperBound - range.lowerBound)
+        return geometry.size.width * CGFloat(normalizedValue)
+    }
+
+    private func normalizedValue(for location: CGFloat, in geometry: GeometryProxy) -> Double {
+        let clampedLocation = max(0, min(location, geometry.size.width))
+        let normalized = Double(clampedLocation / geometry.size.width)
+        let rawValue = range.lowerBound + normalized * (range.upperBound - range.lowerBound)
+        return snapToStep(rawValue)
+    }
+
+    private func snapToStep(_ rawValue: Double) -> Double {
+        let snapped = round(rawValue / step) * step
+        return min(max(snapped, range.lowerBound), range.upperBound)
+    }
+
+    // MARK: - Drag Gesture
+
+    private func dragGesture(geometry: GeometryProxy) -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                isDragging = true
+                let newValue = normalizedValue(for: value.location.x, in: geometry)
+                self.value = newValue
+                onValueChanged?(newValue)
+            }
+            .onEnded { _ in
+                isDragging = false
+                let snappedValue = snapToStep(value)
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
+                    self.value = snappedValue
+                    onValueChanged?(snappedValue)
+                }
+            }
     }
 }
 
-// MARK: - SwiftUI Previews
-#Preview("SliderView - Basic") {
-    VStack(spacing: 20) {
-        SliderView(
-            value: .constant(50),
-            title: "音量",
-            minValueLabel: "0",
-            maxValueLabel: "100"
-        )
-        
+// MARK: - Previews
+
+#Preview("Standard Slider") {
+    VStack(alignment: .leading, spacing: 24) {
+        Text("Standard Slider")
+            .font(.headline)
+
+        SliderView(value: .constant(50))
+
         SliderView(
             value: .constant(75),
-            in: 0...10,
-            step: 0.5,
-            title: "明るさ",
-            minValueLabel: "暗い",
-            maxValueLabel: "明るい",
-            color: .orange
-        )
-    }
-    .padding()
-}
-
-#Preview("SliderView - Color Variations") {
-    VStack(spacing: 20) {
-        SliderView(
-            value: .constant(60),
-            title: "青色",
             color: .blue
         )
-        
+
         SliderView(
-            value: .constant(60),
-            title: "緑色",
+            value: .constant(30),
+            range: 0...200,
+            step: 10
+        )
+    }
+    .padding()
+}
+
+#Preview("Minimal Slider") {
+    VStack(alignment: .leading, spacing: 24) {
+        Text("Minimal Slider")
+            .font(.headline)
+
+        SliderView(
+            value: .constant(50),
+            style: .minimal
+        )
+
+        SliderView(
+            value: .constant(75),
+            style: .minimal,
             color: .green
         )
-        
+    }
+    .padding()
+}
+
+#Preview("Filled Slider") {
+    VStack(alignment: .leading, spacing: 24) {
+        Text("Filled Slider")
+            .font(.headline)
+
         SliderView(
-            value: .constant(60),
-            title: "赤色",
+            value: .constant(50),
+            style: .filled
+        )
+
+        SliderView(
+            value: .constant(75),
+            style: .filled,
             color: .red
         )
-        
-        SliderView(
-            value: .constant(60),
-            title: "紫",
-            color: .purple
-        )
     }
     .padding()
-}
-
-#Preview("RangeSliderView") {
-    VStack(spacing: 20) {
-        RangeSliderView(
-            lowerValue: .constant(30),
-            upperValue: .constant(70),
-            title: "年齢範囲"
-        )
-        
-        RangeSliderView(
-            lowerValue: .constant(10000),
-            upperValue: .constant(50000),
-            in: 0...100000,
-            step: 5000,
-            title: "価格範囲（円）",
-            color: .green
-        )
-    }
-    .padding()
-}
-
-#Preview("StepperSliderView") {
-    VStack(spacing: 20) {
-        StepperSliderView(
-            value: .constant(50),
-            title: "数量"
-        )
-        
-        StepperSliderView(
-            value: .constant(5),
-            in: 1...10,
-            step: 1,
-            title: "レベル",
-            color: .orange
-        )
-    }
-    .padding()
-}
-
-// MARK: - ScaleButtonStyle
-/// スケールアニメーション付きボタンスタイル
-struct ScaleButtonStyle: ButtonStyle {
-    let scale: CGFloat
-    
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? scale : 1.0)
-            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
-    }
 }

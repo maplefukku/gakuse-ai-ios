@@ -3,419 +3,323 @@
 //  GakuseAI
 //
 //  Created by fe-dev-2 on 2026-03-10.
-//  Copyright © 2026 GakuseAI. All rights reserved.
 //
 
 import SwiftUI
 
-/// ステップ形式の進捗を表示する汎用コンポーネント
+// MARK: - Segmented Progress View
+
+/// セグメントプログレスビュー
 ///
-/// - 複数のスタイル: standard, minimal, compact
-/// - カスタマイズ可能なステップ、色、サイズ
-/// - アクティブ/完了/未完了の状態管理
-struct SegmentedProgressView: View {
-    // MARK: - Styles
+/// - カスタマイズ可能なスタイル
+/// - 複数のセグメント対応
+/// - アニメーション付きプログレス表示
+public struct SegmentedProgressView: View {
+    private let segments: [Segment]
+    private let style: SegmentedProgressStyle
+    private let showLabels: Bool
+    private let animationDuration: Double
     
-    enum Style {
+    public enum SegmentedProgressStyle {
         case standard
         case minimal
-        case compact
+        case pill
+        case rounded
     }
     
-    // MARK: - Step
-    
-    struct Step: Identifiable, Equatable {
-        let id = UUID()
-        let title: String
-        let subtitle: String?
-        let icon: String?
-        let isCompleted: Bool
-        let isActive: Bool
+    public struct Segment: Identifiable {
+        public let id = UUID()
+        public let value: Double
+        public let color: Color
+        public let label: String?
         
-        init(
-            title: String,
-            subtitle: String? = nil,
-            icon: String? = nil,
-            isCompleted: Bool = false,
-            isActive: Bool = false
+        public init(
+            value: Double,
+            color: Color,
+            label: String? = nil
         ) {
-            self.title = title
-            self.subtitle = subtitle
-            self.icon = icon
-            self.isCompleted = isCompleted
-            self.isActive = isActive
-        }
-        
-        static func == (lhs: Step, rhs: Step) -> Bool {
-            lhs.id == rhs.id
+            self.value = value
+            self.color = color
+            self.label = label
         }
     }
     
-    // MARK: - Properties
-    
-    private let steps: [Step]
-    private let activeStepIndex: Int
-    private let style: Style
-    private let activeColor: Color
-    private let completedColor: Color
-    private let incompleteColor: Color
-    
-    // MARK: - Initialization
-    
-    /// 基本的なSegmentedProgressViewを初期化
-    init(
-        steps: [Step],
-        activeStepIndex: Int,
-        style: Style = .standard,
-        activeColor: Color = .accentColor,
-        completedColor: Color = .green,
-        incompleteColor: Color = .gray.opacity(0.3)
+    /// セグメントプログレスビューを初期化
+    /// - Parameters:
+    ///   - segments: セグメントの配列
+    ///   - style: プログレスバーのスタイル（デフォルト: standard）
+    ///   - showLabels: ラベル表示（デフォルト: true）
+    ///   - animationDuration: アニメーション時間（秒）（デフォルト: 0.5）
+    public init(
+        segments: [Segment],
+        style: SegmentedProgressStyle = .standard,
+        showLabels: Bool = true,
+        animationDuration: Double = 0.5
     ) {
-        self.steps = steps
-        self.activeStepIndex = activeStepIndex
+        self.segments = segments
         self.style = style
-        self.activeColor = activeColor
-        self.completedColor = completedColor
-        self.incompleteColor = incompleteColor
+        self.showLabels = showLabels
+        self.animationDuration = animationDuration
     }
     
-    /// シンプルなタイトル配列を持つSegmentedProgressViewを初期化
-    init(
-        titles: [String],
-        activeStepIndex: Int,
-        style: Style = .standard
-    ) {
-        self.steps = titles.enumerated().map { index, title in
-            Step(
-                title: title,
-                isCompleted: index < activeStepIndex,
-                isActive: index == activeStepIndex
-            )
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            progressBar
+            
+            if showLabels {
+                labelsView
+            }
         }
-        self.activeStepIndex = activeStepIndex
-        self.style = style
-        self.activeColor = .accentColor
-        self.completedColor = .green
-        self.incompleteColor = .gray.opacity(0.3)
+        .drawingGroup()
     }
     
-    // MARK: - Body
-    
-    var body: some View {
-        content
-            .drawingGroup()
-    }
-    
-    // MARK: - Content
+    // MARK: - Progress Bar
     
     @ViewBuilder
-    private var content: some View {
-        switch style {
-        case .standard:
-            standardProgressView
-        case .minimal:
-            minimalProgressView
-        case .compact:
-            compactProgressView
-        }
-    }
-    
-    // MARK: - Style Views
-    
-    private var standardProgressView: some View {
-        VStack(spacing: 0) {
+    private var progressBar: some View {
+        GeometryReader { geometry in
+            let totalWidth = geometry.size.width
+            let totalValue = segments.reduce(0) { $0 + $1.value }
+            
             HStack(spacing: 0) {
-                ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
-                    VStack(spacing: 8) {
-                        ZStack {
-                            Circle()
-                                .fill(stepColor(for: step))
-                                .frame(width: 40, height: 40)
-                            
-                            if step.isCompleted {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .foregroundColor(.white)
-                            } else if step.isActive {
-                                Image(systemName: step.icon ?? "circle.fill")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.white)
-                            } else {
-                                Text("\(index + 1)")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
-                            }
-                        }
-                        .overlay(
-                            Circle()
-                                .stroke(step.isActive ? activeColor : Color.clear, lineWidth: 2)
-                        )
-                        
-                        VStack(spacing: 2) {
-                            Text(step.title)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundColor(stepTextColor(for: step))
-                            
-                            if let subtitle = step.subtitle {
-                                Text(subtitle)
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                    }
+                ForEach(segments.indices, id: \.self) { index in
+                    let segment = segments[index]
+                    let segmentWidth = totalValue > 0 ? (segment.value / totalValue) * totalWidth : 0
                     
-                    if index < steps.count - 1 {
-                        Spacer()
-                            .frame(maxWidth: .infinity)
-                    }
+                    Rectangle()
+                        .fill(segment.color)
+                        .frame(width: segmentWidth)
+                        .animation(.easeInOut(duration: animationDuration), value: segmentWidth)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 20)
+            .frame(height: 12)
         }
+        .frame(height: 12)
     }
     
-    private var minimalProgressView: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 0) {
-                ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
-                    Circle()
-                        .fill(stepColor(for: step))
-                        .frame(width: 12, height: 12)
-                        .overlay(
-                            Circle()
-                                .stroke(step.isActive ? activeColor : Color.clear, lineWidth: 2)
-                        )
-                    
-                    if index < steps.count - 1 {
-                        Capsule()
-                            .fill(lineColor(from: step, to: steps[index + 1]))
-                            .frame(height: 4)
+    @ViewBuilder
+    private var labelsView: some View {
+        HStack(alignment: .center, spacing: 16) {
+            ForEach(segments) { segment in
+                if let label = segment.label {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(segment.color)
+                            .frame(width: 8, height: 8)
+                        
+                        Text(label)
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
                     }
                 }
             }
             
-            HStack(spacing: 0) {
-                ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
-                    Text(step.title)
-                        .font(.caption)
-                        .foregroundColor(stepTextColor(for: step))
-                        .frame(maxWidth: .infinity)
+            Spacer()
+            
+            Text("\(Int(segments.reduce(0) { $0 + $1.value }))%")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.primary)
+        }
+    }
+}
+
+// MARK: - Segmented Progress View Extension
+
+extension SegmentedProgressView {
+    @ViewBuilder
+    func progressBarStyle(_ style: SegmentedProgressStyle) -> some View {
+        switch style {
+        case .standard:
+            self
+                .cornerRadius(2)
+        case .minimal:
+            self
+        case .pill:
+            self
+                .cornerRadius(6)
+        case .rounded:
+            self
+                .cornerRadius(10)
+        }
+    }
+}
+
+// MARK: - Segmented Progress View (Equal Width)
+
+/// 等幅セグメントプログレスビュー
+public struct EqualWidthSegmentedProgressView: View {
+    private let progressValues: [Double]
+    private let colors: [Color]
+    private let labels: [String?]
+    private let style: SegmentedProgressView.SegmentedProgressStyle
+    private let showLabels: Bool
+    
+    public init(
+        progressValues: [Double],
+        colors: [Color],
+        labels: [String?]? = nil,
+        style: SegmentedProgressView.SegmentedProgressStyle = .standard,
+        showLabels: Bool = true
+    ) {
+        self.progressValues = progressValues
+        self.colors = colors
+        self.labels = labels ?? progressValues.map { _ in nil }
+        self.style = style
+        self.showLabels = showLabels
+    }
+    
+    public var body: some View {
+        SegmentedProgressView(
+            segments: zip(progressValues, zip(colors, labels)).map { value, pair in
+                SegmentedProgressView.Segment(value: value, color: pair.0, label: pair.1)
+            },
+            style: style,
+            showLabels: showLabels
+        )
+    }
+}
+
+// MARK: - Segmented Progress View (Week)
+
+/// 曜日別セグメントプログレスビュー
+public struct WeekProgressView: View {
+    private let weekData: [Double]
+    private let style: SegmentedProgressView.SegmentedProgressStyle
+    
+    private let weekDays = ["月", "火", "水", "木", "金", "土", "日"]
+    private let weekColors: [Color] = [
+        .blue, .green, .orange, .purple, .pink, .red, .cyan
+    ]
+    
+    public init(
+        weekData: [Double],
+        style: SegmentedProgressView.SegmentedProgressStyle = .standard
+    ) {
+        self.weekData = weekData
+        self.style = style
+    }
+    
+    public var body: some View {
+        VStack(spacing: 12) {
+            Text("週間進捗")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.primary)
+            
+            SegmentedProgressView(
+                segments: zip(weekData, zip(weekColors, weekDays)).map { value, pair in
+                    SegmentedProgressView.Segment(
+                        value: value,
+                        color: pair.0,
+                        label: pair.1
+                    )
+                },
+                style: style,
+                showLabels: true
+            )
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .drawingGroup()
+    }
+}
+
+// MARK: - Segmented Progress View (Category)
+
+/// カテゴリ別セグメントプログレスビュー
+public struct CategoryProgressView: View {
+    private let categories: [Category]
+    private let style: SegmentedProgressView.SegmentedProgressStyle
+    
+    public struct Category: Identifiable {
+        public let id = UUID()
+        public let name: String
+        public let value: Double
+        public let color: Color
+    }
+    
+    public init(
+        categories: [Category],
+        style: SegmentedProgressView.SegmentedProgressStyle = .standard
+    ) {
+        self.categories = categories
+        self.style = style
+    }
+    
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("カテゴリ別進捗")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(.primary)
+            
+            SegmentedProgressView(
+                segments: categories.map { category in
+                    SegmentedProgressView.Segment(
+                        value: category.value,
+                        color: category.color,
+                        label: category.name
+                    )
+                },
+                style: style,
+                showLabels: true
+            )
+            
+            categoryList
+        }
+        .padding(20)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .drawingGroup()
+    }
+    
+    @ViewBuilder
+    private var categoryList: some View {
+        VStack(spacing: 12) {
+            ForEach(categories) { category in
+                HStack {
+                    Circle()
+                        .fill(category.color)
+                        .frame(width: 12, height: 12)
                     
-                    if index < steps.count - 1 {
-                        Spacer()
-                    }
+                    Text(category.name)
+                        .font(.system(size: 14))
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Text("\(Int(category.value))%")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.secondary)
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
-    }
-    
-    private var compactProgressView: some View {
-        HStack(spacing: 4) {
-            ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(stepColor(for: step))
-                    .frame(height: 8)
-                    .frame(maxWidth: .infinity)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-    }
-    
-    // MARK: - Helper Methods
-    
-    private func stepColor(for step: Step) -> Color {
-        if step.isCompleted {
-            return completedColor
-        } else if step.isActive {
-            return activeColor
-        } else {
-            return incompleteColor
-        }
-    }
-    
-    private func stepTextColor(for step: Step) -> Color {
-        if step.isCompleted || step.isActive {
-            return .primary
-        } else {
-            return .secondary
-        }
-    }
-    
-    private func lineColor(from: Step, to: Step) -> Color {
-        if from.isCompleted && to.isCompleted {
-            return completedColor
-        } else if from.isCompleted {
-            return activeColor
-        } else {
-            return incompleteColor
-        }
     }
 }
 
-// MARK: - Convenience Initializers
+// MARK: - Simple Segmented Progress View
 
-extension SegmentedProgressView {
-    /// アカウント作成フロー用のSegmentedProgressView
-    static func signUpFlow(
-        currentStep: Int
-    ) -> SegmentedProgressView {
-        let steps: [String] = ["メールアドレス", "パスワード", "プロフィール", "完了"]
-        return SegmentedProgressView(
-            titles: steps,
-            activeStepIndex: currentStep,
-            style: .standard
-        )
+/// シンプルなセグメントプログレスビュー
+public struct SimpleSegmentedProgressView: View {
+    private let values: [Double]
+    private let colors: [Color]
+    
+    public init(
+        values: [Double],
+        colors: [Color]
+    ) {
+        self.values = values
+        self.colors = colors
     }
     
-    /// 学習目標設定用のSegmentedProgressView
-    static func learningGoalSetup(
-        currentStep: Int
-    ) -> SegmentedProgressView {
-        let steps: [String] = ["目標設定", "カテゴリ", "週間スケジュール", "確認"]
-        return SegmentedProgressView(
-            titles: steps,
-            activeStepIndex: currentStep,
-            style: .minimal
-        )
-    }
-    
-    /// オンボーディング用のSegmentedProgressView
-    static func onboarding(
-        currentStep: Int
-    ) -> SegmentedProgressView {
-        let steps = [
-            Step(
-                title: "ようこそ",
-                subtitle: "GakuseAIへ",
-                icon: "hand.wave.fill",
-                isCompleted: currentStep > 0,
-                isActive: currentStep == 0
-            ),
-            Step(
-                title: "学習ログ",
-                subtitle: "記録する",
-                icon: "book.fill",
-                isCompleted: currentStep > 1,
-                isActive: currentStep == 1
-            ),
-            Step(
-                title: "ポートフォリオ",
-                subtitle: "公開する",
-                icon: "doc.text.fill",
-                isCompleted: currentStep > 2,
-                isActive: currentStep == 2
-            ),
-            Step(
-                title: "完了",
-                subtitle: "始めよう",
-                icon: "checkmark.circle.fill",
-                isCompleted: currentStep > 3,
-                isActive: currentStep == 3
-            )
-        ]
-        return SegmentedProgressView(
-            steps: steps,
-            activeStepIndex: currentStep,
-            style: .standard
+    public var body: some View {
+        SegmentedProgressView(
+            segments: zip(values, colors).map { value, color in
+                SegmentedProgressView.Segment(value: value, color: color)
+            },
+            style: .minimal,
+            showLabels: false
         )
     }
 }
 
-// MARK: - Preview
 
-#Preview("Standard Style") {
-    SegmentedProgressView(
-        titles: ["ステップ1", "ステップ2", "ステップ3", "ステップ4"],
-        activeStepIndex: 1,
-        style: .standard
-    )
-}
-
-#Preview("Minimal Style") {
-    SegmentedProgressView(
-        titles: ["開始", "進行中", "完了"],
-        activeStepIndex: 1,
-        style: .minimal
-    )
-}
-
-#Preview("Compact Style") {
-    SegmentedProgressView(
-        titles: ["1", "2", "3", "4", "5"],
-        activeStepIndex: 2,
-        style: .compact
-    )
-}
-
-#Preview("Custom Steps with Icons") {
-    let steps = [
-        SegmentedProgressView.Step(
-            title: "メール",
-            subtitle: "アドレス入力",
-            icon: "envelope.fill",
-            isCompleted: true,
-            isActive: false
-        ),
-        SegmentedProgressView.Step(
-            title: "パスワード",
-            subtitle: "設定",
-            icon: "lock.fill",
-            isCompleted: false,
-            isActive: true
-        ),
-        SegmentedProgressView.Step(
-            title: "プロフィール",
-            subtitle: "設定",
-            icon: "person.fill",
-            isCompleted: false,
-            isActive: false
-        ),
-        SegmentedProgressView.Step(
-            title: "完了",
-            subtitle: "",
-            icon: "checkmark.circle.fill",
-            isCompleted: false,
-            isActive: false
-        )
-    ]
-    
-    return SegmentedProgressView(
-        steps: steps,
-        activeStepIndex: 1,
-        style: .standard
-    )
-}
-
-#Preview("Sign Up Flow") {
-    SegmentedProgressView.signUpFlow(currentStep: 1)
-}
-
-#Preview("Learning Goal Setup") {
-    SegmentedProgressView.learningGoalSetup(currentStep: 2)
-}
-
-#Preview("Onboarding") {
-    SegmentedProgressView.onboarding(currentStep: 1)
-}
-
-#Preview("Completed All Steps") {
-    SegmentedProgressView(
-        titles: ["完了", "完了", "完了"],
-        activeStepIndex: 2,
-        style: .standard
-    )
-}
-
-#Preview("Dark Mode") {
-    SegmentedProgressView(
-        titles: ["ステップ1", "ステップ2", "ステップ3"],
-        activeStepIndex: 1,
-        style: .standard
-    )
-    .preferredColorScheme(.dark)
-}

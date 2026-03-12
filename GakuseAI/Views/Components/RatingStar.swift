@@ -123,7 +123,6 @@ struct StarView: View {
             .aspectRatio(contentMode: .fit)
             .frame(width: size, height: size)
             .foregroundColor(starColor)
-            .symbolEffect(.bounce, value: starFill, options: .repeating.speed(1))
     }
 
     private var starImageName: String {
@@ -320,84 +319,4 @@ struct RatingBar: View {
     }
 }
 
-// MARK: - SwiftUI Previews
-#Preview("Standard Rating") {
-    VStack(spacing: 20) {
-        RatingStar(rating: 3.5)
-        RatingStar(rating: 4.0, style: .filled)
-        RatingStar(rating: 5.0, style: .outlined)
-        RatingStar(rating: 2.0, style: .minimal)
-        RatingStar(rating: 4.5, style: .gold, size: 32)
-    }
-    .padding()
-}
 
-#Preview("Interactive Rating") {
-    VStack(spacing: 30) {
-        Text("タップして評価してください")
-            .font(.headline)
-
-        RatingStar(
-            rating: 0,
-            isInteractive: true,
-            onRatingChange: { rating in
-                print("Rating: \(rating)")
-            }
-        )
-
-        RatingStar(
-            rating: 0,
-            isInteractive: true,
-            allowHalfRating: true,
-            onRatingChange: { rating in
-                print("Rating (half): \(rating)")
-            }
-        )
-    }
-    .padding()
-}
-
-#Preview("Rating Summary") {
-    HStack(spacing: 20) {
-        RatingSummary(
-            rating: 4.5,
-            reviewCount: 128,
-            style: .standard
-        )
-
-        RatingSummary(
-            rating: 3.8,
-            reviewCount: 56,
-            style: .gold,
-            starSize: 28,
-            showAverageRating: false
-        )
-
-        RatingSummary(
-            rating: 5.0,
-            reviewCount: 0,
-            style: .filled,
-            showReviewCount: false
-        )
-    }
-    .padding()
-}
-
-#Preview("Rating Breakdown") {
-    RatingBreakdown(
-        rating: 4.2,
-        ratings: [80, 40, 20, 10, 5] // 5星: 80, 4星: 40, 3星: 20, 2星: 10, 1星: 5
-    )
-    .padding()
-}
-
-#Preview("Various Sizes") {
-    VStack(spacing: 20) {
-        RatingStar(rating: 3.5, size: 16)
-        RatingStar(rating: 3.5, size: 20)
-        RatingStar(rating: 3.5, size: 24)
-        RatingStar(rating: 3.5, size: 32)
-        RatingStar(rating: 3.5, size: 48)
-    }
-    .padding()
-}

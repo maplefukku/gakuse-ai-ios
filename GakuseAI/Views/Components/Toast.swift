@@ -159,15 +159,15 @@ struct Toast: View {
                 onDismiss?()
             }
         }
-        .pressEvents(
-            onPressBegin: { isPressed = true },
-            onPressEnd: { isPressed = false }
-        )
-        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
-        .transition(.move(edge: .top).combined(with: .opacity))
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+            withAnimation {
+                isPressed = pressing
+            }
+        }, perform: {})
+        .animation(Animation.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
+        .transition(AnyTransition.move(edge: .top).combined(with: .opacity))
         .accessibilityLabel(message.text)
-        .accessibilityRole(.alert)
-        .accessibilityAddTraits(.button)
+        .accessibilityAddTraits([.isStaticText])
     }
 
     @ViewBuilder
@@ -318,40 +318,6 @@ enum ToastStyle {
     }
 }
 
-// MARK: - Press Events Modifier
-struct PressEventsModifier: ViewModifier {
-    var onPressBegin: () -> Void
-    var onPressEnd: () -> Void
-
-    @State private var isPressed = false
-
-    func body(content: Content) -> some View {
-        content
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        if !isPressed {
-                            isPressed = true
-                            onPressBegin()
-                        }
-                    }
-                    .onEnded { _ in
-                        isPressed = false
-                        onPressEnd()
-                    }
-            )
-    }
-}
-
-extension View {
-    func pressEvents(
-        onPressBegin: @escaping () -> Void = {},
-        onPressEnd: @escaping () -> Void = {}
-    ) -> some View {
-        modifier(PressEventsModifier(onPressBegin: onPressBegin, onPressEnd: onPressEnd))
-    }
-}
-
 // MARK: - Toast Container
 struct ToastContainer: View {
     @Binding var messages: [ToastMessage]
@@ -382,187 +348,4 @@ struct ToastContainer: View {
     }
 }
 
-// MARK: - SwiftUI Previews
-#Preview("Standard Toasts") {
-    VStack(spacing: 20) {
-        Toast(
-            message: ToastMessage(
-                text: "保存しました",
-                type: .success,
-                duration: 3.0
-            ),
-            style: .standard
-        )
 
-        Toast(
-            message: ToastMessage(
-                text: "エラーが発生しました",
-                type: .error,
-                duration: 3.0
-            ),
-            style: .standard
-        )
-
-        Toast(
-            message: ToastMessage(
-                text: "警告: 保存されていません",
-                type: .warning,
-                duration: 3.0
-            ),
-            style: .standard
-        )
-
-        Toast(
-            message: ToastMessage(
-                text: "新しい通知が届きました",
-                type: .info,
-                duration: 3.0
-            ),
-            style: .standard
-        )
-    }
-    .padding()
-    .background(Color(.systemGroupedBackground))
-}
-
-#Preview("Minimal Toasts") {
-    VStack(spacing: 20) {
-        Toast(
-            message: ToastMessage(text: "成功", type: .success),
-            style: .minimal
-        )
-
-        Toast(
-            message: ToastMessage(text: "エラー", type: .error),
-            style: .minimal
-        )
-
-        Toast(
-            message: ToastMessage(text: "警告", type: .warning),
-            style: .minimal
-        )
-
-        Toast(
-            message: ToastMessage(text: "情報", type: .info),
-            style: .minimal
-        )
-    }
-    .padding()
-    .background(Color(.systemGroupedBackground))
-}
-
-#Preview("Floating Toasts") {
-    VStack(spacing: 20) {
-        Toast(
-            message: ToastMessage(
-                text: "データを正常に保存しました。バックアップも完了しました。",
-                type: .success,
-                duration: 5.0
-            ),
-            style: .floating
-        )
-
-        Toast(
-            message: ToastMessage(
-                text: "ネットワークエラーが発生しました。再試行してください。",
-                type: .error,
-                duration: 5.0
-            ),
-            style: .floating
-        )
-    }
-    .padding()
-    .background(Color(.systemGroupedBackground))
-}
-
-#Preview("Toast with Action") {
-    VStack(spacing: 20) {
-        Toast(
-            message: ToastMessage(
-                text: "削除しました",
-                type: .success,
-                action: ToastAction(title: "元に戻す") {
-                    print("Undo action")
-                }
-            ),
-            style: .standard,
-            onAction: {
-                print("Action triggered")
-            }
-        )
-
-        Toast(
-            message: ToastMessage(
-                text: "接続が切断されました",
-                type: .warning,
-                action: ToastAction(title: "再接続") {
-                    print("Reconnect action")
-                }
-            ),
-            style: .floating
-        )
-    }
-    .padding()
-    .background(Color(.systemGroupedBackground))
-}
-
-#Preview("Toast Container") {
-    ZStack {
-        Color(.systemGroupedBackground)
-
-        VStack {
-            Text("コンテンツ")
-                .font(.largeTitle)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-        VStack {
-            Spacer()
-
-            ToastContainer(
-                messages: .constant([
-                    ToastMessage(text: "最初のトースト", type: .success),
-                    ToastMessage(text: "2番目のトースト", type: .info),
-                    ToastMessage(text: "3番目のトースト", type: .warning),
-                ]),
-                style: .floating,
-                maxToasts: 3
-            )
-        }
-    }
-}
-
-#Preview("Toast Duration") {
-    VStack(spacing: 20) {
-        Text("異なる表示時間のトースト")
-            .font(.headline)
-
-        VStack(spacing: 10) {
-            HStack {
-                Text("2秒")
-                Toast(
-                    message: ToastMessage(text: "短いメッセージ", type: .info, duration: 2.0),
-                    style: .minimal
-                )
-            }
-
-            HStack {
-                Text("3秒")
-                Toast(
-                    message: ToastMessage(text: "標準メッセージ", type: .info, duration: 3.0),
-                    style: .minimal
-                )
-            }
-
-            HStack {
-                Text("5秒")
-                Toast(
-                    message: ToastMessage(text: "長いメッセージ", type: .info, duration: 5.0),
-                    style: .minimal
-                )
-            }
-        }
-    }
-    .padding()
-    .background(Color(.systemGroupedBackground))
-}

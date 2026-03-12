@@ -278,10 +278,10 @@ enum AppTheme: String, Codable, CaseIterable {
         }
     }
     
-    var colorScheme: ColorScheme? {
+    var colorScheme: SwiftUI.ColorScheme? {
         switch self {
-        case .light: return .light
-        case .dark: return .dark
+        case .light: return SwiftUI.ColorScheme.light
+        case .dark: return SwiftUI.ColorScheme.dark
         default: return nil
         }
     }

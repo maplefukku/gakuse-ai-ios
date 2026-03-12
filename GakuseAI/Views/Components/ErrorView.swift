@@ -173,73 +173,6 @@ struct AuthenticationErrorView: View {
     }
 }
 
-/// 空状態のコンポーネント
-struct EmptyStateView: View {
-    let icon: String
-    let title: String
-    let message: String
-    let action: (() -> Void)?
-    let actionTitle: String?
-    
-    init(icon: String, title: String, message: String, action: (() -> Void)? = nil, actionTitle: String? = nil) {
-        self.icon = icon
-        self.title = title
-        self.message = message
-        self.action = action
-        self.actionTitle = actionTitle
-    }
-    
-    var body: some View {
-        VStack(spacing: 24) {
-            Image(systemName: icon)
-                .font(.system(size: 64))
-                .foregroundColor(.gray)
-
-            Text(title)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
-
-            Text(message)
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-
-            if let action = action, let actionTitle = actionTitle {
-                Button(action: action) {
-                    Text(actionTitle)
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.pink)
-                        )
-                }
-                .padding(.horizontal)
-            }
-
-            Spacer()
-        }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .drawingGroup()
-    }
-}
-
-// MARK: - Button Styles
-
-/// スケールアニメーション付きのボタンスタイル
-struct ScaleButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
-    }
-}
-
 #Preview("Error View - Network Error") {
     ErrorView(
         error: APIError.networkError(URLError(.notConnectedToInternet)),
@@ -278,7 +211,19 @@ struct ScaleButtonStyle: ButtonStyle {
         icon: "book.closed",
         title: "学習ログがありません",
         message: "最初の学習ログを追加して始めましょう！",
-        action: {},
-        actionTitle: "追加"
+        actionTitle: "追加",
+        action: {}
     )
+}
+
+// MARK: - ScaleButtonStyle
+
+struct ScaleButtonStyle: ButtonStyle {
+    var scale: CGFloat = 0.95
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scale : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
+    }
 }
