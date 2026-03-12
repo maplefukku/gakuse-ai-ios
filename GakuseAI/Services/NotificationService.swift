@@ -22,6 +22,7 @@ class NotificationService: NSObject, ObservableObject {
         setupNotificationDelegate()
         Task {
             await checkNotificationPermission()
+            await setupNotificationCategories()
         }
     }
 
@@ -73,6 +74,7 @@ class NotificationService: NSObject, ObservableObject {
         content.body = "今日の学習ログを記録しましょう"
         content.sound = .default
         content.badge = 1
+        content.categoryIdentifier = "LEARNING_REMINDER"
 
         // トリガーの作成（毎日同じ時間）
         let trigger = UNCalendarNotificationTrigger(
@@ -111,6 +113,7 @@ class NotificationService: NSObject, ObservableObject {
         content.body = "今週の成果を確認しましょう"
         content.sound = .default
         content.badge = 1
+        content.categoryIdentifier = "LEARNING_REMINDER"
 
         // トリガーの作成（毎週月曜日の9時）
         var dateComponents = DateComponents()
@@ -210,19 +213,36 @@ extension NotificationService: @preconcurrency UNUserNotificationCenterDelegate 
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        let userInfo = response.notification.request.content.userInfo
+        let _ = response.notification.request.content.userInfo
 
-        // 通知の種類に応じた処理
-        let identifier = response.notification.request.identifier
-        print("通知がタップされました: \(identifier)")
+        // アクション識別子をチェック
+        let actionIdentifier = response.actionIdentifier
 
-        switch identifier {
-        case "daily_learning_reminder":
-            // 学習ログ画面に遷移する処理（NavigationViewModelを通じて）
-            handleDailyReminderTap()
-        case "weekly_summary":
-            // 統計画面に遷移する処理
-            handleWeeklySummaryTap()
+        switch actionIdentifier {
+        case UNNotificationDefaultActionIdentifier:
+            // 通知本体をタップした場合
+            let identifier = response.notification.request.identifier
+            print("通知がタップされました: \(identifier)")
+
+            switch identifier {
+            case "daily_learning_reminder":
+                handleDailyReminderTap()
+            case "weekly_summary":
+                handleWeeklySummaryTap()
+            default:
+                break
+            }
+
+        case "LEARN_NOW":
+            // 「今すぐ学習」アクションボタンをタップした場合
+            print("「今すぐ学習」がタップされました")
+            handleLearnNowAction()
+
+        case "REMIND_LATER":
+            // 「後で通知」アクションボタンをタップした場合
+            print("「後で通知」がタップされました")
+            handleRemindLaterAction()
+
         default:
             break
         }
@@ -230,17 +250,37 @@ extension NotificationService: @preconcurrency UNUserNotificationCenterDelegate 
         completionHandler()
     }
 
+    private func handleLearnNowAction() {
+        // 学習ログ画面に遷移
+        print("学習ログ画面に遷移します")
+        Task { @MainActor in
+            NavigationViewModel.shared.selectedTab = 0 // LearningLogタブ
+        }
+    }
+
+    private func handleRemindLaterAction() {
+        // 30分後に再通知
+        print("30分後に再通知します")
+        Task {
+            await sendImmediateNotification(title: "学習リマインダー", body: "学習の時間です！")
+        }
+    }
+
     private func handleDailyReminderTap() {
         // 学習ログ画面に遷移
         // NavigationViewModelを通じてタブを切り替え
         print("学習ログ画面に遷移します")
-        // TODO: NavigationViewModelとの連携を実装
+        Task { @MainActor in
+            NavigationViewModel.shared.selectedTab = 0 // LearningLogタブ
+        }
     }
 
     private func handleWeeklySummaryTap() {
         // 統計画面に遷移
         print("統計画面に遷移します")
-        // TODO: NavigationViewModelとの連携を実装
+        Task { @MainActor in
+            NavigationViewModel.shared.selectedTab = 2 // Statisticsタブ
+        }
     }
 }
 
@@ -268,6 +308,6 @@ extension NotificationService {
             options: []
         )
 
-        try? await center.setNotificationCategories([category])
+        center.setNotificationCategories([category])
     }
 }

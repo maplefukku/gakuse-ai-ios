@@ -68,6 +68,9 @@ public struct DividerView: View {
         .padding(.horizontal, horizontalPadding)
         .padding(.vertical, verticalPadding)
         .drawingGroup()
+        .accessibilityElement()
+        .accessibilityLabel(text ?? "区切り線")
+        .accessibility(hidden: text == nil)
     }
     
     // MARK: - Simple Divider
@@ -130,7 +133,6 @@ public struct DividerView: View {
                 let dashLength: CGFloat = 6
                 let gapLength: CGFloat = 4
                 let totalLength = dashLength + gapLength
-                let pattern: [CGFloat] = [dashLength, gapLength]
                 
                 var x: CGFloat = 0
                 while x < width {
@@ -374,7 +376,7 @@ public struct SectionDividerView: View {
         
         DividerView(text: "セクション", textColor: .blue)
         
-        DividerView(text: "または", color: .green)
+        SectionDividerView(title: "または", color: .green)
     }
     .padding()
 }

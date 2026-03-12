@@ -194,7 +194,7 @@ actor SyncService {
 
     /// 増分同期（最後の同期以降に変更されたデータのみ同期）
     func syncIncremental() async throws -> SyncResult {
-        guard let lastSync = lastSyncTime else {
+        guard let _ = lastSyncTime else {
             // 初回同期はフル同期を実行
             return try await syncAllData()
         }
