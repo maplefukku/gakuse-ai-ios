@@ -161,31 +161,3 @@ struct InlineLoadingIndicator: View {
         .drawingGroup()
     }
 }
-
-// MARK: - Preview
-
-#Preview("Loading View") {
-    LoadingView(message: "読み込み中...")
-}
-
-#Preview("Loading Button") {
-    LoadingButton(
-        title: "保存",
-        isLoading: false,
-        action: {}
-    )
-    .padding()
-}
-
-#Preview("Skeleton Loading View") {
-    SkeletonLoadingView()
-    .padding()
-}
-
-#Preview("List Skeleton View") {
-    ListSkeletonView(count: 5)
-}
-
-#Preview("Inline Loading Indicator") {
-    InlineLoadingIndicator(message: "保存中...")
-}

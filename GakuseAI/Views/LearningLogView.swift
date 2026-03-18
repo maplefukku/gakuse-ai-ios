@@ -207,7 +207,3 @@ struct LearningLogView: View {
         }
     }
 }
-
-#Preview {
-    LearningLogView()
-}

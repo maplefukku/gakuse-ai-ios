@@ -173,49 +173,6 @@ struct AuthenticationErrorView: View {
     }
 }
 
-#Preview("Error View - Network Error") {
-    ErrorView(
-        error: APIError.networkError(URLError(.notConnectedToInternet)),
-        onRetry: {},
-        onUseCachedData: {}
-    )
-}
-
-#Preview("Error View - Timeout") {
-    ErrorView(
-        error: APIError.timeout,
-        onRetry: {}
-    )
-}
-
-#Preview("Error View - Unauthenticated") {
-    ErrorView(
-        error: APIError.unauthenticated,
-        onRetry: {}
-    )
-}
-
-#Preview("Network Error View") {
-    NetworkErrorView(
-        onRetry: {},
-        onUseCachedData: {}
-    )
-}
-
-#Preview("Authentication Error View") {
-    AuthenticationErrorView(onLogin: {})
-}
-
-#Preview("Empty State View") {
-    EmptyStateView(
-        icon: "book.closed",
-        title: "学習ログがありません",
-        message: "最初の学習ログを追加して始めましょう！",
-        actionTitle: "追加",
-        action: {}
-    )
-}
-
 // MARK: - ScaleButtonStyle
 
 struct ScaleButtonStyle: ButtonStyle {

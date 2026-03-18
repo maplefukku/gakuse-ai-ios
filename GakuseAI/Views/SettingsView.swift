@@ -208,7 +208,3 @@ struct ToggleRow: View {
         .accessibilityIdentifier("toggleRow_\(title)")
     }
 }
-
-#Preview {
-    SettingsView()
-}

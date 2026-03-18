@@ -2,47 +2,55 @@
 //  StatisticsStatCard.swift
 //  GakuseAI
 //
-//  Created by fe-dev-2 on 2026-03-13.
+//  Created by fe-dev-2 on 2026-03-17.
 //
 
 import SwiftUI
 
-/// 統計ステータスカード
-///
-/// 統計画面の概要セクションで使用するカードコンポーネント
+/// 統計カードコンポーネント
 struct StatisticsStatCard: View {
     let title: String
     let value: String
     let icon: String
     let color: Color
-    @State private var isPressed = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.title2)
                 .foregroundColor(color)
 
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
-
             Text(value)
                 .font(.title.bold())
                 .foregroundColor(.primary)
+
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .padding()
         .background(Color(.systemBackground))
         .cornerRadius(12)
-        .scaleEffect(isPressed ? 0.95 : 1.0)
-        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
-        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
-            withAnimation {
-                isPressed = pressing
-            }
-        }, perform: {})
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title): \(value)")
+        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
+}
+
+#Preview {
+    VStack(spacing: 16) {
+        StatisticsStatCard(
+            title: "総ログ数",
+            value: "128",
+            icon: "book.fill",
+            color: .pink
+        )
+
+        StatisticsStatCard(
+            title: "総スキル数",
+            value: "24",
+            icon: "star.fill",
+            color: .orange
+        )
+    }
+    .padding()
 }

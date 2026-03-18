@@ -78,11 +78,6 @@ struct ContentView: View {
     }
 }
 
-#Preview {
-    ContentView()
-        .environmentObject(AuthViewModel())
-}
-
 // MARK: - Toolbar Menu Button
 
 struct ToolbarMenuButton: View {

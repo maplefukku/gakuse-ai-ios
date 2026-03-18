@@ -2,17 +2,14 @@
 //  CategoryStatRow.swift
 //  GakuseAI
 //
-//  Created by fe-dev-2 on 2026-03-13.
+//  Created by fe-dev-2 on 2026-03-17.
 //
 
 import SwiftUI
 
 /// カテゴリ統計行
-///
-/// 統計画面のカテゴリ分析セクションで使用する行コンポーネント
 struct CategoryStatRow: View {
     let item: CategoryDataPoint
-    @State private var isPressed = false
 
     var body: some View {
         HStack {
@@ -21,20 +18,43 @@ struct CategoryStatRow: View {
                 .frame(width: 12, height: 12)
 
             Text(item.category.rawValue)
-                .font(.subheadline)
+                .font(.body)
+                .foregroundColor(.primary)
 
             Spacer()
 
             Text("\(item.count)")
-                .font(.headline)
-                .foregroundColor(.pink)
+                .font(.body.bold())
+                .foregroundColor(.primary)
+
+            let percentage = item.totalCount > 0 ? Double(item.count) / Double(item.totalCount) : 0
+            Text("(\(Int(percentage * 100))%)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .frame(width: 50, alignment: .trailing)
         }
-        .scaleEffect(isPressed ? 0.98 : 1.0)
-        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
-        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
-            withAnimation {
-                isPressed = pressing
-            }
-        }, perform: {})
     }
+}
+
+extension CategoryDataPoint {
+    var totalCount: Int {
+        return count
+    }
+}
+
+#Preview {
+    VStack(alignment: .leading, spacing: 8) {
+        CategoryStatRow(item: CategoryDataPoint(
+            category: .programming,
+            count: 42,
+            color: .blue
+        ))
+
+        CategoryStatRow(item: CategoryDataPoint(
+            category: .language,
+            count: 28,
+            color: .green
+        ))
+    }
+    .padding()
 }

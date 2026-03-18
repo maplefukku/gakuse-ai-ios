@@ -10,7 +10,6 @@ struct SignUpView: View {
     @State private var confirmPassword = ""
     @State private var showingTerms = false
     @State private var isSignUpButtonPressed = false
-    @State private var isTermsButtonPressed = false
 
     var body: some View {
         NavigationStack {
@@ -97,118 +96,13 @@ struct SignUpView: View {
                 .textFieldStyle(.roundedBorder)
 
             // Password strength indicator
-            passwordStrengthView
+            PasswordStrengthView(password: password)
 
             // Terms
-            termsView
+            SignUpTermsView(showingTerms: $showingTerms)
         }
         .padding(.horizontal)
         .drawingGroup()
-    }
-
-    // MARK: - Password Strength
-
-    private var passwordStrengthView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 4) {
-                ForEach(0..<4, id: \.self) { index in
-                    Rectangle()
-                        .fill(passwordStrengthColor(for: index))
-                        .frame(height: 4)
-                        .cornerRadius(2)
-                }
-            }
-
-            Text(passwordStrengthText)
-                .font(.caption2)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal)
-    }
-
-    private func passwordStrengthColor(for index: Int) -> Color {
-        let strength = passwordStrength
-        if index < strength {
-            switch strength {
-            case 1: return .red
-            case 2: return .orange
-            case 3: return .yellow
-            case 4: return .green
-            default: return .gray.opacity(0.3)
-            }
-        }
-        return .gray.opacity(0.3)
-    }
-
-    private var passwordStrength: Int {
-        guard !password.isEmpty else { return 0 }
-        var score = 0
-        if password.count >= 8 { score += 1 }
-        if password.contains(where: { $0.isUppercase }) { score += 1 }
-        if password.contains(where: { $0.isNumber }) { score += 1 }
-        if password.contains(where: { !$0.isLetter && !$0.isNumber }) { score += 1 }
-        return score
-    }
-
-    private var passwordStrengthText: String {
-        switch passwordStrength {
-        case 0: return ""
-        case 1: return "弱い"
-        case 2: return "普通"
-        case 3: return "強い"
-        case 4: return "非常に強い"
-        default: return ""
-        }
-    }
-
-    // MARK: - Terms View
-
-    private var termsView: some View {
-        VStack(spacing: 8) {
-            Text("アカウントを作成することで、以下に同意したことになります：")
-                .font(.caption)
-                .foregroundColor(.secondary)
-
-            HStack(spacing: 4) {
-                Button {
-                    showingTerms = true
-                } label: {
-                    Text("利用規約")
-                        .font(.caption)
-                        .underline()
-                        .foregroundColor(.pink)
-                }
-                .scaleEffect(isTermsButtonPressed ? 0.95 : 1.0)
-                .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isTermsButtonPressed)
-                .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
-                    withAnimation {
-                        isTermsButtonPressed = pressing
-                    }
-                }, perform: {})
-
-                Text("と")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                Button {
-                    showingTerms = true
-                } label: {
-                    Text("プライバシーポリシー")
-                        .font(.caption)
-                        .underline()
-                        .foregroundColor(.pink)
-                }
-                .scaleEffect(isTermsButtonPressed ? 0.95 : 1.0)
-                .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isTermsButtonPressed)
-                .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
-                    withAnimation {
-                        isTermsButtonPressed = pressing
-                    }
-                }, perform: {})
-            }
-        }
-        .padding(.top, 8)
     }
 
     // MARK: - Action Buttons
@@ -261,7 +155,7 @@ struct SignUpView: View {
         password == confirmPassword &&
         isValidEmail(email)
     }
-    
+
     private func isValidEmail(_ email: String) -> Bool {
         let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)

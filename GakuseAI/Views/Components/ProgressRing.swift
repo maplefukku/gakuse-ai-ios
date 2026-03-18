@@ -134,42 +134,4 @@ struct MultiProgressRing: View {
     }
 }
 
-// MARK: - Preview
 
-#Preview("Progress Ring") {
-    VStack(spacing: 32) {
-        ProgressRing(progress: 0.0)
-        ProgressRing(progress: 0.25)
-        ProgressRing(progress: 0.5)
-        ProgressRing(progress: 0.75)
-        ProgressRing(progress: 1.0)
-    }
-    .padding()
-}
-
-#Preview("Progress Ring With Text") {
-    VStack(spacing: 32) {
-        ProgressRingWithText(progress: 0.3, text: "30%")
-        ProgressRingWithText(progress: 0.6, text: "60%")
-        ProgressRingWithText(progress: 0.9, text: "90%")
-    }
-    .padding()
-}
-
-#Preview("Progress Ring Percent") {
-    VStack(spacing: 32) {
-        ProgressRingPercent(progress: 0.2, color: .blue)
-        ProgressRingPercent(progress: 0.5, color: .green)
-        ProgressRingPercent(progress: 0.8, color: .orange)
-    }
-    .padding()
-}
-
-#Preview("Multi Progress Ring") {
-    MultiProgressRing(progressItems: [
-        MultiProgressRing.ProgressItem(progress: 0.8, color: .pink, label: "Swift"),
-        MultiProgressRing.ProgressItem(progress: 0.6, color: .purple, label: "UI/UX"),
-        MultiProgressRing.ProgressItem(progress: 0.4, color: .blue, label: "学習")
-    ])
-    .padding()
-}

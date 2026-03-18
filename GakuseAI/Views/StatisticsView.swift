@@ -63,7 +63,7 @@ struct StatisticsView: View {
                     .presentationDragIndicator(.visible)
             }
         }
-        .drawingGroup() // パフォーマンス最適化: レイヤー合成をまとめる
+        .drawingGroup()
     }
 
     // MARK: - Empty State
@@ -155,7 +155,7 @@ struct StatisticsView: View {
                     }
                 }
             }
-            .drawingGroup() // パフォーマンス改善: レイヤー合成を最適化
+            .drawingGroup()
             .chartOverlay { proxy in
                 GeometryReader { geometry in
                     Rectangle()
@@ -163,7 +163,6 @@ struct StatisticsView: View {
                         .contentShape(Rectangle())
                         .gesture(
                             SimultaneousGesture(
-                                // タップ（短押し）で選択
                                 DragGesture(minimumDistance: 0)
                                     .onChanged { value in
                                         let x = value.location.x - geometry[proxy.plotFrame!].minX
@@ -171,7 +170,6 @@ struct StatisticsView: View {
                                             selectedDataPoint = viewModel.weeklyData.first { $0.date == date }
                                         }
                                     },
-                                // 長押しで詳細ポップアップ表示
                                 LongPressGesture(minimumDuration: 0.5)
                                     .onEnded { _ in
                                         if selectedDataPoint != nil {
@@ -217,7 +215,7 @@ struct StatisticsView: View {
                 .foregroundStyle(item.color)
             }
             .frame(height: 200)
-            .drawingGroup() // パフォーマンス改善: レイヤー合成を最適化
+            .drawingGroup()
             .chartBackground { _ in
                 VStack {
                     Text("\(viewModel.totalLogsCount)")
@@ -228,7 +226,6 @@ struct StatisticsView: View {
                 }
             }
 
-            // カテゴリ一覧
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(viewModel.categoryData, id: \.category) { item in
                     CategoryStatRow(item: item)
@@ -263,8 +260,4 @@ struct StatisticsView: View {
         .background(Color(.systemGray6))
         .cornerRadius(12)
     }
-}
-
-#Preview {
-    StatisticsView()
 }

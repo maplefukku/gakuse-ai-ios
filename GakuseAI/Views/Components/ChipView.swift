@@ -111,268 +111,85 @@ public struct ChipView: View {
     
     /// 標準スタイルチップ
     private var standardChip: some View {
-        HStack(spacing: 6) {
-            if iconPosition == .leading, let icon = icon {
-                icon
-                    .font(.system(size: 14))
-            }
-
-            Text(text)
-                .font(.system(size: 14, weight: .medium))
-
-            if iconPosition == .trailing, let icon = icon {
-                icon
-                    .font(.system(size: 14))
-            }
-
-            // 削除ボタン
-            if isRemovable {
-                Button(action: {
-                    onRemove?()
-                }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.secondary)
-                        .frame(width: 16, height: 16)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-        }
-        .padding(.horizontal, isRemovable ? 12 : 14)
-        .padding(.vertical, 8)
-        .background(isSelected ? colorScheme.selectedBackgroundColor : colorScheme.backgroundColor)
-        .foregroundColor(isSelected ? colorScheme.selectedTextColor : colorScheme.textColor)
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(colorScheme.borderColor, lineWidth: isSelected ? 0 : 1)
+        StandardChip(
+            text: text,
+            isSelected: $isSelected,
+            icon: icon,
+            iconPosition: iconPosition,
+            colorScheme: colorScheme,
+            onTap: onTap,
+            isRemovable: isRemovable,
+            onRemove: onRemove
         )
-        .shadow(color: colorScheme.shadowColor, radius: isSelected ? 2 : 0, x: 0, y: 1)
-        .onTapGesture {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isSelected.toggle()
-            }
-            onTap?()
-        }
     }
     
     /// 塗りつぶしスタイルチップ
     private var filledChip: some View {
-        HStack(spacing: 6) {
-            if iconPosition == .leading, let icon = icon {
-                icon
-                    .font(.system(size: 14))
-            }
-
-            Text(text)
-                .font(.system(size: 14, weight: .semibold))
-
-            if iconPosition == .trailing, let icon = icon {
-                icon
-                    .font(.system(size: 14))
-            }
-
-            // 削除ボタン
-            if isRemovable {
-                Button(action: {
-                    onRemove?()
-                }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.secondary)
-                        .frame(width: 16, height: 16)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-        }
-        .padding(.horizontal, isRemovable ? 14 : 16)
-        .padding(.vertical, 10)
-        .background(isSelected ? colorScheme.selectedBackgroundColor : colorScheme.backgroundColor)
-        .foregroundColor(isSelected ? colorScheme.selectedTextColor : colorScheme.textColor)
-        .cornerRadius(20)
-        .shadow(color: colorScheme.shadowColor, radius: isSelected ? 3 : 1, x: 0, y: 2)
-        .onTapGesture {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isSelected.toggle()
-            }
-            onTap?()
-        }
+        FilledChip(
+            text: text,
+            isSelected: $isSelected,
+            icon: icon,
+            iconPosition: iconPosition,
+            colorScheme: colorScheme,
+            onTap: onTap,
+            isRemovable: isRemovable,
+            onRemove: onRemove
+        )
     }
     
     /// アウトラインスタイルチップ
     private var outlinedChip: some View {
-        HStack(spacing: 6) {
-            if iconPosition == .leading, let icon = icon {
-                icon
-                    .font(.system(size: 14))
-            }
-
-            Text(text)
-                .font(.system(size: 14, weight: .medium))
-
-            if iconPosition == .trailing, let icon = icon {
-                icon
-                    .font(.system(size: 14))
-            }
-
-            // 削除ボタン
-            if isRemovable {
-                Button(action: {
-                    onRemove?()
-                }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.secondary)
-                        .frame(width: 16, height: 16)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-        }
-        .padding(.horizontal, isRemovable ? 12 : 14)
-        .padding(.vertical, 8)
-        .background(Color.clear)
-        .foregroundColor(isSelected ? colorScheme.selectedTextColor : colorScheme.textColor)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(isSelected ? colorScheme.selectedBackgroundColor : colorScheme.borderColor, lineWidth: 2)
+        OutlinedChip(
+            text: text,
+            isSelected: $isSelected,
+            icon: icon,
+            iconPosition: iconPosition,
+            colorScheme: colorScheme,
+            onTap: onTap,
+            isRemovable: isRemovable,
+            onRemove: onRemove
         )
-        .onTapGesture {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isSelected.toggle()
-            }
-            onTap?()
-        }
     }
     
     /// ミニマルスタイルチップ
     private var minimalChip: some View {
-        HStack(spacing: 6) {
-            if iconPosition == .leading, let icon = icon {
-                icon
-                    .font(.system(size: 12))
-            }
-
-            Text(text)
-                .font(.system(size: 13))
-
-            if iconPosition == .trailing, let icon = icon {
-                icon
-                    .font(.system(size: 12))
-            }
-
-            // 削除ボタン
-            if isRemovable {
-                Button(action: {
-                    onRemove?()
-                }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundColor(.secondary)
-                        .frame(width: 14, height: 14)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-        }
-        .padding(.horizontal, isRemovable ? 8 : 10)
-        .padding(.vertical, 5)
-        .background(isSelected ? colorScheme.selectedBackgroundColor.opacity(0.1) : Color.clear)
-        .foregroundColor(isSelected ? colorScheme.selectedTextColor : colorScheme.textColor)
-        .cornerRadius(4)
-        .onTapGesture {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isSelected.toggle()
-            }
-            onTap?()
-        }
+        MinimalChip(
+            text: text,
+            isSelected: $isSelected,
+            icon: icon,
+            iconPosition: iconPosition,
+            colorScheme: colorScheme,
+            onTap: onTap,
+            isRemovable: isRemovable,
+            onRemove: onRemove
+        )
     }
     
     /// ピルスタイルチップ
     private var pillChip: some View {
-        HStack(spacing: 6) {
-            if iconPosition == .leading, let icon = icon {
-                icon
-                    .font(.system(size: 14))
-            }
-
-            Text(text)
-                .font(.system(size: 14, weight: .medium))
-
-            if iconPosition == .trailing, let icon = icon {
-                icon
-                    .font(.system(size: 14))
-            }
-
-            // 削除ボタン
-            if isRemovable {
-                Button(action: {
-                    onRemove?()
-                }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.secondary)
-                        .frame(width: 16, height: 16)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-        }
-        .padding(.horizontal, isRemovable ? 16 : 18)
-        .padding(.vertical, 9)
-        .background(isSelected ? colorScheme.selectedBackgroundColor : colorScheme.backgroundColor)
-        .foregroundColor(isSelected ? colorScheme.selectedTextColor : colorScheme.textColor)
-        .clipShape(Capsule())
-        .shadow(color: colorScheme.shadowColor, radius: isSelected ? 2 : 0, x: 0, y: 1)
-        .onTapGesture {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isSelected.toggle()
-            }
-            onTap?()
-        }
+        PillChip(
+            text: text,
+            isSelected: $isSelected,
+            icon: icon,
+            iconPosition: iconPosition,
+            colorScheme: colorScheme,
+            onTap: onTap,
+            isRemovable: isRemovable,
+            onRemove: onRemove
+        )
     }
     
     /// 丸角スタイルチップ
     private var roundedChip: some View {
-        HStack(spacing: 6) {
-            if iconPosition == .leading, let icon = icon {
-                icon
-                    .font(.system(size: 14))
-            }
-
-            Text(text)
-                .font(.system(size: 14, weight: .medium))
-
-            if iconPosition == .trailing, let icon = icon {
-                icon
-                    .font(.system(size: 14))
-            }
-
-            // 削除ボタン
-            if isRemovable {
-                Button(action: {
-                    onRemove?()
-                }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.secondary)
-                        .frame(width: 16, height: 16)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-        }
-        .padding(.horizontal, isRemovable ? 12 : 14)
-        .padding(.vertical, 8)
-        .background(isSelected ? colorScheme.selectedBackgroundColor : colorScheme.backgroundColor)
-        .foregroundColor(isSelected ? colorScheme.selectedTextColor : colorScheme.textColor)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(colorScheme.borderColor, lineWidth: isSelected ? 0 : 1)
+        RoundedChip(
+            text: text,
+            isSelected: $isSelected,
+            icon: icon,
+            iconPosition: iconPosition,
+            colorScheme: colorScheme,
+            onTap: onTap,
+            isRemovable: isRemovable,
+            onRemove: onRemove
         )
-        .shadow(color: colorScheme.shadowColor, radius: isSelected ? 2 : 0, x: 0, y: 1)
-        .onTapGesture {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isSelected.toggle()
-            }
-            onTap?()
-        }
     }
 }
